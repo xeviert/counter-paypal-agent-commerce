@@ -213,6 +213,7 @@ Subscribed on the Platform app (untested; spike 11):
 | `CHECKOUT.ORDER.APPROVED` | Capture if the return URL didn't |
 | `PAYMENT.CAPTURE.COMPLETED` | `PaidPending` → `PaidHeld` |
 | `PAYMENT.CAPTURE.PENDING` | Record reason, notify maker |
+| `PAYMENT.CAPTURE.DENIED` | `PaidPending` → `Denied`, release stock, notify maker |
 | `PAYMENT.CAPTURE.REFUNDED` | → `Refunded` |
 | `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` | Confirm `Released` |
 | `CUSTOMER.DISPUTE.CREATED` | → `Disputed`, pause release-timer |
@@ -363,20 +364,27 @@ stateDiagram-v2
   [*] --> CheckoutCreated: create_checkout
   CheckoutCreated --> Approved: buyer approves
   CheckoutCreated --> Expired: not approved in 3h
+  CheckoutCreated --> Canceled: buyer cancels on PayPal
   Approved --> PaidHeld: capture COMPLETED
   Approved --> PaidPending: capture PENDING
   PaidPending --> PaidHeld: PAYMENT.CAPTURE.COMPLETED
+  PaidPending --> Denied: PAYMENT.CAPTURE.DENIED
   PaidHeld --> Shipped: tracking sent
   Shipped --> Released: delivered or timer, no dispute
   PaidHeld --> Refunded
   Shipped --> Refunded
+  PaidHeld --> Disputed: dispute webhook
   Shipped --> Disputed: dispute webhook
   Disputed --> Released: resolved for maker
   Disputed --> Refunded: resolved for buyer
   Released --> [*]
   Refunded --> [*]
   Expired --> [*]
+  Canceled --> [*]
+  Denied --> [*]
 ```
+
+`Expired`, `Canceled` and `Denied` release reserved stock. A partial refund leaves the order in its current state and adds to `refunded_amount`; only a full refund moves it to `Refunded`.
 
 Negotiation lives in `offers`, not in the order state machine. Transitions are applied in one place (`lib/db/orders.ts`) and each one writes an `events` row.
 
@@ -413,13 +421,15 @@ Deviation from ACP: `complete` doesn't accept a delegated payment token. It retu
 
 | Table | Key fields |
 |---|---|
-| `sellers` | `id` (= `tracking_id`), name, country, language, `merchant_id`, `payments_receivable`, scopes, consent status, onboarded_at |
-| `products` | seller_id, slug, listing fields (EN + native, JSON), category, weight_class, photos, list price, currency, floor price, max discount, stock, reserved, status (draft/live/paused), generated `search` tsvector (GIN) |
-| `offers` | product_id, agent_id, offered, counter, decision, model reasoning, clamped (bool), expires_at, accepted_at |
-| `orders` | paypal_order_id (unique), status_token (unique), capture_id, seller_id, product_id, offer_id, item_amount, shipping_amount, currency, platform_fee, paypal_fee, net_amount, buyer name + email, shipping_address (JSONB), status, tracking, release_status, release_due_at |
-| `events` | type, source (webhook/api/workflow/copilot), actor, paypal_event_id (unique, webhook dedupe), payload, verified, created_at. Append-only audit log |
+| `sellers` | `id` (= `tracking_id`), name, locality, country, language, `merchant_id` (unique), `payments_receivable`, `primary_email_confirmed`, granted scopes, consent status, onboarded_at, consent_revoked_at |
+| `products` | seller_id, slug, `listing` (JSONB: `{ language, en, native }`), category, weight_class, list price, floor price, max discount (bps), currency, stock, reserved, status (draft/review/live/paused), `price_guidance`, `restricted_flag`, `auto_negotiate`, generated `search` tsvector (GIN; `english` over EN text, `simple` over native text) |
+| `photos` | seller_id, product_id (null while drafting), position, mime, width, height, bytes (`bytea`) |
+| `offers` | product_id, session_id (= `agentId`), offered, counter, agreed amount, decision, agent message (untrusted), reply, model reasoning, clamped, expires_at, used_at |
+| `orders` | status_token (unique), paypal_order_id (unique), capture_id (unique), seller_id, product_id, offer_id (unique), session_id, quantity, unit/item/shipping amounts, currency, platform_fee, paypal_fee, net_amount, refunded amount + returned fee, buyer country/name/email/payer_id, shipping_address (JSONB), status, capture status + reason, release_status, release_due_at, payout item id, dispute id, tracking, lifecycle timestamps |
+| `refunds` | order_id + `n` (unique; used in `refund:{orderId}:{n}`), paypal_refund_id (unique), amount, platform fee returned, reason, status |
+| `events` | `bigserial` id, type, source (webhook/mcp/acp/web/workflow/copilot/ops/script), actor, order/seller/product ids, paypal_event_id (unique, webhook dedupe), raw_body + headers (webhook re-verification), payload, verified, processed_at, error. Append-only except the webhook processing fields |
 
-Money is stored as integer minor units plus an ISO currency code. Status columns are Postgres enums.
+Money is stored as integer minor units plus an ISO currency code, with CHECK constraints (non-negative, fee ≤ item amount, refunds ≤ total, reserved ≤ stock, floor ≤ list). Status columns are Postgres enums. Schema: `lib/db/schema.ts`.
 
 Never stored: seller PayPal secrets or passwords, buyer card data, buyer PayPal credentials. Buyer name, email and shipping address are stored because the maker needs them to ship; public pages show only city and country.
 

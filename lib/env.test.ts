@@ -6,6 +6,7 @@ const base = {
   PLATFORM_CLIENT_ID: "client-id",
   PLATFORM_CLIENT_SECRET: "client-secret",
   PLATFORM_MERCHANT_ID: "9MGXZVWN9N9EE",
+  DATABASE_URL: "postgres://counter:counter@localhost:5433/counter",
 };
 
 describe("parseEnv", () => {
@@ -27,7 +28,7 @@ describe("parseEnv", () => {
     expect(() => parseEnv({ ...base, PLATFORM_CLIENT_SECRET: " ", PLATFORM_FEE_BPS: "12.5" })).toThrow(
       /PLATFORM_CLIENT_SECRET[\s\S]*PLATFORM_FEE_BPS/,
     );
-    expect(() => parseEnv({})).toThrow(/APP_BASE_URL/);
+    expect(() => parseEnv({})).toThrow(/APP_BASE_URL[\s\S]*DATABASE_URL/);
   });
 
   it("never echoes secret values in the error", () => {

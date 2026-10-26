@@ -18,7 +18,8 @@ const envSchema = z.object({
   // Fractional values allowed so the demo can release after minutes.
   RELEASE_AFTER_DAYS: z.coerce.number().positive().default(14),
 
-  DATABASE_URL: later, // P0 §4.2
+  DATABASE_URL: z.url(),
+  TEST_DATABASE_URL: z.url().optional(),
   ANTHROPIC_API_KEY: later, // P2 listing pipeline
   SESSION_SECRET: required.min(32).optional(), // P2 maker sessions
 });

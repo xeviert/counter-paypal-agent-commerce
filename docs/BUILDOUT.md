@@ -76,11 +76,12 @@ gantt
 
 Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these before the first migration:
 
-- [ ] Money as integer minor units + ISO currency column. No floats anywhere
-- [ ] Status columns are Postgres enums matching ARCHITECTURE §6.5
-- [ ] Unique constraints: `orders.paypal_order_id`, `orders.status_token`, `events.paypal_event_id` (PayPal retries webhooks; dedupe on insert)
-- [ ] `orders` extra fields: `status_token`, `item_amount`, `shipping_amount`, `paypal_fee`, `net_amount`, `shipping_address` (JSONB from PayPal), buyer name + email
-- [ ] `products` extra fields: `category` (fixed list), `weight_class` (small/medium/large), generated `search` tsvector over EN + native text with a GIN index
+- [x] Money as integer minor units + ISO currency column. No floats anywhere
+- [x] Status columns are Postgres enums matching ARCHITECTURE §6.5 (added `Canceled`, `Denied`)
+- [x] Unique constraints: `orders.paypal_order_id`, `orders.status_token`, `events.paypal_event_id` (PayPal retries webhooks; dedupe on insert)
+- [x] `orders` extra fields: `status_token`, `item_amount`, `shipping_amount`, `paypal_fee`, `net_amount`, `shipping_address` (JSONB from PayPal), buyer name + email
+- [x] `products` extra fields: `category` (fixed list), `weight_class` (small/medium/large), generated `search` tsvector over EN + native text with a GIN index
+- [x] Local Postgres 17 via `docker-compose.yml` (`pnpm db:up`, port 5433); schema tests in `lib/db/schema.test.ts` run against `counter_test` and in CI
 
 ### 4.3 Render
 
@@ -181,7 +182,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [ ] `/checkout/cancel`: release stock, show "you weren't charged"
 - [ ] `/o/[statusToken]`: random 128-bit token, never the DB id. "I received it" releases funds in P2, so a guessable URL would let anyone trigger a release. Shows status, item, and ship-to city + country only (no full address)
 - [ ] `/p/[slug]`: plain product page (JSON-LD in P3)
-- [ ] Handlers for `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`
+- [ ] Handlers for `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`
 - [ ] Handler tests replay P0 fixtures: duplicate delivery, `COMPLETED` arriving before the return URL fires, `PENDING` then `COMPLETED`
 
 ### 5.7 Seed data
@@ -398,7 +399,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 | # | Decision | By | Recommendation |
 |---|---|---|---|
 | 1 | Maker login | Oct 30 | Email magic link if a sender is set up in < 1h; else a demo-maker picker plus simple email/password. Judges only need the seeded makers |
-| 2 | Photo storage | Oct 27 | Resized WebP in a Postgres `photos` table, served from `/api/photos/[id]` with long cache headers. ~30 products fits easily; no extra vendor. Add to ARCHITECTURE §8 |
+| 2 | Photo storage ✅ decided | Oct 27 | Resized WebP in a Postgres `photos` table, served from `/api/photos/[id]` with long cache headers. ~30 products fits easily; no extra vendor. Add to ARCHITECTURE §8 |
 | 3 | STT provider | Oct 31 | Web Speech API unless Tagalog/Swahili accuracy blocks the < 60s listing |
 | 4 | Maker notifications | Oct 30 | In-app inbox first; web push only if time in P4 |
 | 5 | Demo hero persona | Oct 27 | MX weaver (Spanish voice note, USD → MXN conversion is clean) |
@@ -412,7 +413,8 @@ Cut from the top when a phase misses its exit by more than half a day:
 
 - [x] ARCHITECTURE: shipping + fee base, buyer address, status token, order create/capture details, MCP session mode + errors, env vars, Render paid plans (Oct 26)
 - [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it), maker auth once decided
-- [ ] ARCHITECTURE §8: new tables `photos`, `notifications`, `copilot_messages`, `copilot_actions`; `offers` gains session binding + `used_at`; `products` gains `price_guidance`, `restricted_flag`, auto-negotiate toggle
+- [x] ARCHITECTURE §8: `photos`, `refunds`; `offers` session binding + `used_at`; `products` `price_guidance`, `restricted_flag`, auto-negotiate toggle (Oct 27)
+- [ ] ARCHITECTURE §8: `notifications` (P2), `copilot_messages` + `copilot_actions` (P3)
 - [ ] ARCHITECTURE §5–6: release rules from §6.3 (buyer confirm, stale `PaidHeld`, no refund after release), floor-leak check, i18n (`en`/`es`/`fil`/`sw`), `OPS_PASSWORD` in §10 env list
 - [ ] Planning doc §10: replace with a pointer to this file (also resolves ARCHITECTURE §11 #8: copilot uses REST tools with assertion, not PayPal MCP)
 - [ ] Planning doc §12: tick eligibility, personas, cited stats as they close
