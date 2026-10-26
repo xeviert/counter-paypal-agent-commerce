@@ -403,7 +403,7 @@ Negotiation lives in `offers`, not in the order state machine. Transitions are a
 | `create_checkout` | `productId` or `offerId`, quantity, buyer country → approval link, `/o/{statusToken}` URL, total breakdown (item, shipping), expiry |
 | `get_order_status` | `statusToken` → lifecycle state, tracking, release status |
 
-Agents are anonymous. The server runs in stateful Streamable HTTP mode so each agent has an `Mcp-Session-Id`. Calls are rate-limited per session and IP, and every call is logged with the session id as `agentId`. Tools return `structuredContent` plus a text summary; errors use `isError` with stable codes (`OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY`, `OFFER_EXPIRED`).
+Agents are anonymous. Built on `@modelcontextprotocol/server` v2 with no session state: MCP 2026-07-28 removed `Mcp-Session-Id`, and one handler serves both 2025-era clients (stateless legacy fallback) and 2026-07-28 clients. Each caller gets an `agentId` (hash of client IP + User-Agent); calls are rate-limited per `agentId` and IP and logged with it. Cross-call state uses server-minted handles passed as tool arguments (`offerId`, `statusToken`). Tools return `structuredContent` plus a text summary; errors use `isError` with stable codes (`OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY`, `OFFER_EXPIRED`).
 
 ### 7.2 ACP-shaped checkout (`/api/acp/checkout_sessions`)
 
@@ -424,8 +424,8 @@ Deviation from ACP: `complete` doesn't accept a delegated payment token. It retu
 | `sellers` | `id` (= `tracking_id`), name, locality, country, language, `merchant_id` (unique), `payments_receivable`, `primary_email_confirmed`, granted scopes, consent status, onboarded_at, consent_revoked_at |
 | `products` | seller_id, slug, `listing` (JSONB: `{ language, en, native }`), category, weight_class, list price, floor price, max discount (bps), currency, stock, reserved, status (draft/review/live/paused), `price_guidance`, `restricted_flag`, `auto_negotiate`, generated `search` tsvector (GIN; `english` over EN text, `simple` over native text) |
 | `photos` | seller_id, product_id (null while drafting), position, mime, width, height, bytes (`bytea`) |
-| `offers` | product_id, session_id (= `agentId`), offered, counter, agreed amount, decision, agent message (untrusted), reply, model reasoning, clamped, expires_at, used_at |
-| `orders` | status_token (unique), paypal_order_id (unique), capture_id (unique), seller_id, product_id, offer_id (unique), session_id, quantity, unit/item/shipping amounts, currency, platform_fee, paypal_fee, net_amount, refunded amount + returned fee, buyer country/name/email/payer_id, shipping_address (JSONB), status, capture status + reason, release_status, release_due_at, payout item id, dispute id, tracking, lifecycle timestamps |
+| `offers` | product_id, agent_id, offered, counter, agreed amount, decision, agent message (untrusted), reply, model reasoning, clamped, expires_at, used_at |
+| `orders` | status_token (unique), paypal_order_id (unique), capture_id (unique), seller_id, product_id, offer_id (unique), agent_id, quantity, unit/item/shipping amounts, currency, platform_fee, paypal_fee, net_amount, refunded amount + returned fee, buyer country/name/email/payer_id, shipping_address (JSONB), status, capture status + reason, release_status, release_due_at, payout item id, dispute id, tracking, lifecycle timestamps |
 | `refunds` | order_id + `n` (unique; used in `refund:{orderId}:{n}`), paypal_refund_id (unique), amount, platform fee returned, reason, status |
 | `events` | `bigserial` id, type, source (webhook/mcp/acp/web/workflow/copilot/ops/script), actor, order/seller/product ids, paypal_event_id (unique, webhook dedupe), raw_body + headers (webhook re-verification), payload, verified, processed_at, error. Append-only except the webhook processing fields |
 

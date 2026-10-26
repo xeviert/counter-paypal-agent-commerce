@@ -28,7 +28,7 @@ CREATE TABLE "events" (
 CREATE TABLE "offers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"product_id" uuid NOT NULL,
-	"session_id" text NOT NULL,
+	"agent_id" text NOT NULL,
 	"offered_amount" integer NOT NULL,
 	"counter_amount" integer,
 	"agreed_amount" integer,
@@ -52,7 +52,7 @@ CREATE TABLE "orders" (
 	"seller_id" uuid NOT NULL,
 	"product_id" uuid NOT NULL,
 	"offer_id" uuid,
-	"session_id" text,
+	"agent_id" text,
 	"quantity" integer DEFAULT 1 NOT NULL,
 	"unit_amount" integer NOT NULL,
 	"item_amount" integer NOT NULL,
@@ -190,7 +190,7 @@ ALTER TABLE "refunds" ADD CONSTRAINT "refunds_order_id_orders_id_fk" FOREIGN KEY
 CREATE INDEX "events_order_idx" ON "events" USING btree ("order_id","id");--> statement-breakpoint
 CREATE INDEX "events_seller_idx" ON "events" USING btree ("seller_id","id");--> statement-breakpoint
 CREATE INDEX "events_type_idx" ON "events" USING btree ("type","created_at");--> statement-breakpoint
-CREATE INDEX "offers_product_session_idx" ON "offers" USING btree ("product_id","session_id");--> statement-breakpoint
+CREATE INDEX "offers_product_agent_idx" ON "offers" USING btree ("product_id","agent_id");--> statement-breakpoint
 CREATE INDEX "orders_status_expires_idx" ON "orders" USING btree ("status","expires_at");--> statement-breakpoint
 CREATE INDEX "orders_status_release_idx" ON "orders" USING btree ("status","release_due_at");--> statement-breakpoint
 CREATE INDEX "orders_seller_created_idx" ON "orders" USING btree ("seller_id","created_at");--> statement-breakpoint

@@ -133,7 +133,7 @@ describe.skipIf(!url)("db schema", () => {
       .insert(offers)
       .values({
         productId: product.id,
-        sessionId: "mcp-session-1",
+        agentId: "agt_test",
         offeredAmount: 12000,
         counterAmount: 13000,
         agreedAmount: 13000,

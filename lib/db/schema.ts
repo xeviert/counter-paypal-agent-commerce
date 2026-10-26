@@ -180,8 +180,8 @@ export const offers = pgTable(
     productId: uuid("product_id")
       .notNull()
       .references(() => products.id),
-    /** MCP session id, used as `agentId`. */
-    sessionId: text("session_id").notNull(),
+    /** Caller key from lib/mcp/agent.ts. Offers are bound to it and capped per product. */
+    agentId: text("agent_id").notNull(),
     offeredAmount: money("offered_amount").notNull(),
     counterAmount: money("counter_amount"),
     /** The price `create_checkout(offerId)` charges. Null on reject. */
@@ -198,7 +198,7 @@ export const offers = pgTable(
     createdAt: createdAt(),
   },
   (t) => [
-    index("offers_product_session_idx").on(t.productId, t.sessionId),
+    index("offers_product_agent_idx").on(t.productId, t.agentId),
     check(
       "offers_amount_check",
       sql`${t.offeredAmount} >= 0 AND (${t.counterAmount} IS NULL OR ${t.counterAmount} > 0) AND (${t.agreedAmount} IS NULL OR ${t.agreedAmount} > 0)`,
@@ -224,7 +224,7 @@ export const orders = pgTable(
     offerId: uuid("offer_id")
       .unique()
       .references(() => offers.id),
-    sessionId: text("session_id"),
+    agentId: text("agent_id"),
     quantity: integer("quantity").notNull().default(1),
 
     unitAmount: money("unit_amount").notNull(),
