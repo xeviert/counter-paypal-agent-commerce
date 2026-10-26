@@ -21,6 +21,16 @@ Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`. DB tests run when `TEST_DATA
 
 Schema changes: edit `lib/db/schema.ts`, then `pnpm db:generate` and commit the new file in `drizzle/`.
 
+## Deploy (Render)
+
+`render.yaml` is a Render Blueprint: one web service and one Postgres 17 database, on paid plans so the service never sleeps and the database outlives the free tier's 30 days.
+
+1. In Render: **New → Blueprint**, pick this repo.
+2. Fill the prompted secrets: `PLATFORM_CLIENT_ID`, `PLATFORM_CLIENT_SECRET`, `ANTHROPIC_API_KEY`. `PAYPAL_WEBHOOK_ID` can stay blank until the webhook exists.
+3. Each deploy runs migrations (`node scripts/migrate.ts`) before starting, and Render waits for `/api/health` to return 200. Pushes to `main` deploy after CI passes.
+
+The database accepts no external connections by default; add your IP under the database's **Access Control** to connect from a laptop.
+
 ## License
 
 [MIT](LICENSE)

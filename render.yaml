@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+# Render Blueprint. Nothing deploys until this repo is connected in the Render dashboard
+# (New → Blueprint). Region, database name and Postgres version can't change after creation.
+
+services:
+  - type: web
+    name: counter
+    runtime: node
+    region: oregon
+    # Paid plans: free web services sleep after 15 min idle (MCP calls and webhooks would hit
+    # cold starts) and free Postgres expires after 30 days, before judging ends Dec 15.
+    plan: 0.5c-512mb
+    branch: main
+    buildCommand: npm install -g corepack && corepack enable && pnpm install --frozen-lockfile && pnpm build
+    preDeployCommand: node scripts/migrate.ts
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: counter-db
+          property: connectionString
+      - key: PAYPAL_ENVIRONMENT
+        value: SANDBOX
+      - key: PLATFORM_MERCHANT_ID
+        value: 9MGXZVWN9N9EE
+      - key: PLATFORM_FEE_BPS
+        value: "500"
+      - key: RELEASE_AFTER_DAYS
+        value: "14"
+      - key: SESSION_SECRET
+        generateValue: true
+      # Prompted once when the Blueprint is created.
+      - key: PLATFORM_CLIENT_ID
+        sync: false
+      - key: PLATFORM_CLIENT_SECRET
+        sync: false
+      # Set after spike 11 creates the webhook; leave blank until then.
+      - key: PAYPAL_WEBHOOK_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # APP_BASE_URL defaults to RENDER_EXTERNAL_URL (lib/env.ts); set it only for a custom domain.
+
+databases:
+  - name: counter-db
+    databaseName: counter
+    user: counter
+    region: oregon
+    plan: 0.1c-256mb
+    postgresMajorVersion: "17"
+    # No external connections. Add your IP in the dashboard when you need to seed or inspect.
+    ipAllowList: []

@@ -2,6 +2,7 @@
   "name": "counter",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +13,7 @@
     "test:watch": "vitest",
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
+    "db:migrate": "node scripts/migrate.ts",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {

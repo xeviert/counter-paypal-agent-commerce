@@ -85,9 +85,9 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 ### 4.3 Render
 
-- [ ] `render.yaml` blueprint: web service + Postgres (+ workflows once confirmed). Doubles as reproducible setup for judges
-- [ ] **Paid web instance + paid Postgres from day one** (the $50 credits cover it). Free Postgres expires after 30 days, which is before judging ends Dec 15. Free web services sleep after 15 min idle, so agent MCP calls and PayPal webhooks hit cold starts
-- [ ] Pre-deploy command runs `drizzle-kit migrate`; health check at `/api/health` (pings DB); auto-deploy from `main`
+- [x] `render.yaml` blueprint: web service + Postgres (+ workflows once confirmed). Doubles as reproducible setup for judges. Validated against Render's schema; **not applied yet** (connect repo → New → Blueprint)
+- [x] **Paid web instance + paid Postgres from day one** (`0.5c-512mb` web, `0.1c-256mb` Postgres 17, Oregon) (the $50 credits cover it). Free Postgres expires after 30 days, which is before judging ends Dec 15. Free web services sleep after 15 min idle, so agent MCP calls and PayPal webhooks hit cold starts
+- [x] Pre-deploy command runs migrations (`node scripts/migrate.ts`, drizzle-orm migrator, no drizzle-kit at runtime); health check at `/api/health` (pings DB, 503 when down); auto-deploy from `main` only after CI passes (`autoDeployTrigger: checksPass`)
 
 ### 4.4 Spike 4: MCP endpoint
 

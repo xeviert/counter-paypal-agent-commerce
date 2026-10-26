@@ -24,6 +24,21 @@ describe("parseEnv", () => {
     expect(env.RELEASE_AFTER_DAYS).toBe(0.002);
   });
 
+  it("treats blank values as unset", () => {
+    const env = parseEnv({ ...base, PLATFORM_FEE_BPS: "", RELEASE_AFTER_DAYS: " ", PAYPAL_WEBHOOK_ID: "" });
+    expect(env.PLATFORM_FEE_BPS).toBe(500);
+    expect(env.RELEASE_AFTER_DAYS).toBe(14);
+    expect(env.PAYPAL_WEBHOOK_ID).toBeUndefined();
+  });
+
+  it("falls back to RENDER_EXTERNAL_URL for APP_BASE_URL", () => {
+    const env = parseEnv({ ...base, APP_BASE_URL: undefined, RENDER_EXTERNAL_URL: "https://counter.onrender.com" });
+    expect(env.APP_BASE_URL).toBe("https://counter.onrender.com");
+    expect(parseEnv({ ...base, RENDER_EXTERNAL_URL: "https://counter.onrender.com" }).APP_BASE_URL).toBe(
+      "https://counter.example.com",
+    );
+  });
+
   it("names every missing or invalid var", () => {
     expect(() => parseEnv({ ...base, PLATFORM_CLIENT_SECRET: " ", PLATFORM_FEE_BPS: "12.5" })).toThrow(
       /PLATFORM_CLIENT_SECRET[\s\S]*PLATFORM_FEE_BPS/,

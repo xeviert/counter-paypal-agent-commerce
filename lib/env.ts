@@ -27,7 +27,12 @@ const envSchema = z.object({
 export type Env = z.infer<typeof envSchema>;
 
 export function parseEnv(source: Record<string, string | undefined>): Env {
-  const result = envSchema.safeParse(source);
+  // Blank values (`KEY=` from .env.example, empty Render prompts) count as unset;
+  // otherwise z.coerce.number turns "" into 0.
+  const present = Object.fromEntries(Object.entries(source).filter(([, value]) => value?.trim()));
+  // Render sets RENDER_EXTERNAL_URL on web services, so APP_BASE_URL only needs setting for a custom domain.
+  present.APP_BASE_URL ??= present.RENDER_EXTERNAL_URL;
+  const result = envSchema.safeParse(present);
   if (!result.success) {
     const problems = result.error.issues
       .map((issue) => `  ${issue.path.join(".")}: ${issue.message}`)

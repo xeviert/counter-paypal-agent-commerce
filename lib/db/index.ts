@@ -4,7 +4,7 @@ import { getEnv } from "@/lib/env";
 import * as schema from "./schema";
 
 function connect(url: string) {
-  return drizzle(postgres(url, { max: 10 }), { schema });
+  return drizzle(postgres(url, { max: 10, connect_timeout: 5, onnotice: () => {} }), { schema });
 }
 
 export type Db = ReturnType<typeof connect>;
