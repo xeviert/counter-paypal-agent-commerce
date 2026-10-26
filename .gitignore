@@ -1,0 +1,64 @@
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/*
+!.yarn/releases
+.pnp.*
+
+# Next.js / build output
+.next/
+out/
+build/
+dist/
+next-env.d.ts
+*.tsbuildinfo
+
+# Vercel / Render local state
+.vercel/
+.render/
+
+# Testing
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local DB / drizzle scratch
+*.db
+*.sqlite
+*.sqlite3
+pgdata/
+
+# Uploaded media during local dev (seller photos, voice notes)
+uploads/
+tmp/
+
+# Demo video renders
+*.mp4
+*.mov
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local settings
+.claude/settings.local.json
