@@ -348,7 +348,7 @@ Public GitHub repos created since Oct 1 whose name or description matches the ke
 | 8 | Hold funds, then release | ✅ `disbursement_mode: DELAYED` + `POST /v1/payments/referenced-payouts-items` |
 | 9 | Act for the seller after the sale | ✅ Refund and v2 tracking with `PayPal-Auth-Assertion`. ⏳ Reporting and disputes 403 despite being granted (propagation?) |
 | 10 | One-click seller onboarding | ✅ Partner Referrals `action_url` → seller consents → `merchant-integrations` confirms |
-| 11 | Webhooks to Render | ⏳ Not tested |
+| 11 | Webhooks | ✅ Oct 27, via tunnel: approve, capture, order completed, refund and referenced-payout release all delivered and signature-verified. Render URL still to set |
 
 **Sandbox constraints the build must respect**
 - Every demo seller must finish **Connect PayPal** before a capture, or it fails with `PAYEE_NOT_CONSENTED`. PH is done; onboard KE, IN and MX the same way.

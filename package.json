@@ -14,7 +14,9 @@
     "db:up": "docker compose up -d --wait",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/migrate.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "paypal:webhook": "tsx scripts/paypal-webhook.ts",
+    "spike:webhooks": "tsx scripts/spike-webhooks.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -42,6 +44,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "typescript-eslint": "8.72.1",
     "vitest": "^5.0.5"

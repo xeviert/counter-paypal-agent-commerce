@@ -30,7 +30,8 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["lib/log.ts"],
+    // CLI output in scripts is for the person running them.
+    files: ["lib/log.ts", "scripts/**"],
     rules: { "no-console": "off" },
   },
   // Override default ignores of eslint-config-next.

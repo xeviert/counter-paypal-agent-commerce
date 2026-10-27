@@ -206,7 +206,7 @@ Implemented in `lib/policy/currency.ts`:
 
 ### 4.6 Webhooks
 
-Subscribed on the Platform app (untested; spike 11):
+Subscribed on the Platform app. Spike 11 (Oct 27) confirmed delivery and signature verification for approve, capture, refund and release on a payee-routed `DELAYED` order:
 
 | Event | Effect |
 |---|---|
@@ -215,7 +215,10 @@ Subscribed on the Platform app (untested; spike 11):
 | `PAYMENT.CAPTURE.PENDING` | Record reason, notify maker |
 | `PAYMENT.CAPTURE.DENIED` | `PaidPending` → `Denied`, release stock, notify maker |
 | `PAYMENT.CAPTURE.REFUNDED` | → `Refunded` |
-| `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` | Confirm `Released` |
+| `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` | Confirm `Released` (`resource.reference_id` = capture id). Not in PayPal's event-type list, but accepted and delivered |
+| `PAYMENT.REFERENCED-PAYOUT-ITEM.FAILED` | `release_status` → `failed`, flag in `/ops` |
+| `PAYMENT.CAPTURE.DECLINED`, `PAYMENT.CAPTURE.REVERSED` | Record; reversal flags the order in `/ops` |
+| `CUSTOMER.DISPUTE.UPDATED`, `CUSTOMER.DISPUTE.RESOLVED` | Resume or cancel the release-timer |
 | `CUSTOMER.DISPUTE.CREATED` | → `Disputed`, pause release-timer |
 | `MERCHANT.ONBOARDING.COMPLETED` | Mark maker connected |
 | `MERCHANT.PARTNER-CONSENT.REVOKED` | Unpublish maker's listings |

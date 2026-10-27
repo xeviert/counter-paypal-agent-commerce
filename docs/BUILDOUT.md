@@ -98,12 +98,13 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 ### 4.5 Spike 11: webhooks
 
-- [ ] Create the webhook on the Platform app (dashboard or `POST /v1/notifications/webhooks`) subscribed to every ARCHITECTURE §4.6 event; save its id as `PAYPAL_WEBHOOK_ID`
-- [ ] `/api/webhooks/paypal`: read body as text → insert into `events` (dedupe on PayPal event `id`) → verify → mark verified → process
-- [ ] Verification call: build the `verify-webhook-signature` body as a string with the raw payload spliced in as `webhook_event`. Re-serialized JSON can fail verification. Headers to forward: `paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`
-- [ ] Test with a **real** sandbox order (create → approve → capture). Simulator events can't be signature-verified
-- [ ] Record which events actually arrive for payee-routed captures and for a referenced-payout release. Any that don't arrive move to the poll fallback below
-- [ ] Save real payloads to `test/fixtures/webhooks/` for P1 handler tests
+- [x] Create the webhook on the Platform app subscribed to every ARCHITECTURE §4.6 event; save its id as `PAYPAL_WEBHOOK_ID`. `pnpm paypal:webhook <public URL>` creates or repoints it (sandbox id `4XM06760VD720062T`, currently pointing at a Cloudflare quick tunnel; repoint to Render on deploy)
+- [x] `/api/webhooks/paypal`: read body as text → insert into `events` (dedupe on PayPal event `id`) → verify → mark verified → process
+- [x] Verification call: build the `verify-webhook-signature` body as a string with the raw payload spliced in as `webhook_event`. Re-serialized JSON can fail verification. Headers to forward: `paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`
+- [x] Test with a **real** sandbox order (create → approve → capture). Simulator events can't be signature-verified. `pnpm spike:webhooks`: PH maker payee, $0.50 fee, `DELAYED`, $2 partial refund with assertion, release. **All 5 deliveries passed signature verification** (Oct 27)
+- [x] Record which events actually arrive for payee-routed captures and for a referenced-payout release. Arrived within ~30s, subscribed with `*`: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` (resource `reference_id` = capture id). The payout events are missing from PayPal's `webhooks-event-types` list but PayPal accepts them in an explicit subscription. No poll fallback needed
+- [ ] Re-confirm the release event arrives under the explicit list (not just `*`) on the next `e2e-release.ts` run
+- [x] Save real payloads to `test/fixtures/webhooks/` for P1 handler tests
 
 ### 4.6 Render Workflows check
 
@@ -259,7 +260,7 @@ Four days, three tracks. Build in never-cut order so a slip only costs negotiati
   - `PaidHeld` with no tracking after N days → notify maker, flag in `/ops`. No auto-refund
   - After a partial refund, the remainder releases on the normal schedule
   - No in-app refund after `Released` (money is in the maker's balance); maker handles it in PayPal
-- [ ] `lib/paypal/release.ts`: referenced-payouts-items, `PayPal-Request-Id: release:{orderId}`. `release_status = requested` until `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` arrives (or a poll confirms, if P0 showed that webhook doesn't arrive)
+- [ ] `lib/paypal/release.ts`: referenced-payouts-items, `PayPal-Request-Id: release:{orderId}`. `release_status = requested` until `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` arrives (confirmed in P0; match on `resource.reference_id` = capture id)
 - [ ] `lib/paypal/refunds.ts`: full + partial with assertion, `PayPal-Request-Id: refund:{orderId}:{n}`; stores refunded amount and returned platform fee
 - [ ] `workflows/release-timer`: start on `Shipped`, cancel on full refund, pause on dispute, resume on resolution; `RELEASE_AFTER_DAYS` in minutes for demo
 - [ ] Webhooks: `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED`, `CUSTOMER.DISPUTE.CREATED`, `MERCHANT.ONBOARDING.COMPLETED`, `MERCHANT.PARTNER-CONSENT.REVOKED`

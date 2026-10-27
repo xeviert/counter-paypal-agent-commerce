@@ -13,5 +13,8 @@ export default defineConfig({
     include: ["**/*.test.ts"],
     exclude: ["node_modules/**", ".next/**"],
     env: TEST_DATABASE_URL ? { TEST_DATABASE_URL } : {},
+    globalSetup: ["test/global-setup.ts"],
+    // DB test files share one database.
+    fileParallelism: false,
   },
 });

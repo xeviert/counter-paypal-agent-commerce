@@ -1,11 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
-import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { createDb, type Db } from "./index";
+import { testDatabaseUrl, testDb, truncateAll } from "@/test/db";
+import type { Db } from "./index";
 import { events, offers, orders, products, sellers } from "./schema";
-
-const url = process.env.TEST_DATABASE_URL;
 
 /** Drizzle wraps driver errors; the Postgres message is on `cause`. */
 async function pgError(query: PromiseLike<unknown>): Promise<string> {
@@ -18,19 +16,11 @@ async function pgError(query: PromiseLike<unknown>): Promise<string> {
   throw new Error("expected query to fail");
 }
 
-describe.skipIf(!url)("db schema", () => {
+describe.skipIf(!testDatabaseUrl)("db schema", () => {
   let db: Db;
 
-  beforeAll(async () => {
-    // The suite drops the public schema, so refuse anything that isn't a test database.
-    if (!new URL(url!).pathname.endsWith("_test")) {
-      throw new Error(`TEST_DATABASE_URL must point at a *_test database, got ${new URL(url!).pathname}`);
-    }
-    db = createDb(url!);
-    await db.execute(sql`DROP SCHEMA IF EXISTS public CASCADE`);
-    await db.execute(sql`DROP SCHEMA IF EXISTS drizzle CASCADE`);
-    await db.execute(sql`CREATE SCHEMA public`);
-    await migrate(db, { migrationsFolder: "drizzle" });
+  beforeAll(() => {
+    db = testDb();
   });
 
   afterAll(async () => {
@@ -38,7 +28,7 @@ describe.skipIf(!url)("db schema", () => {
   });
 
   beforeEach(async () => {
-    await db.execute(sql`TRUNCATE sellers, products, photos, offers, orders, refunds, events CASCADE`);
+    await truncateAll(db);
   });
 
   async function seedProduct(listing: object = { language: "es", en: {}, native: {} }) {
