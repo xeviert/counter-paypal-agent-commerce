@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { testDatabaseUrl, testDb, truncateAll } from "@/test/db";
+import type { ListingContent } from "@/lib/schemas/listing";
 import type { Db } from "./index";
 import { events, offers, orders, products, sellers } from "./schema";
 
@@ -31,7 +32,13 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
     await truncateAll(db);
   });
 
-  async function seedProduct(listing: object = { language: "es", en: {}, native: {} }) {
+  async function seedProduct(
+    listing: ListingContent = {
+      language: "es",
+      en: { title: "Rug", description: "A rug" },
+      native: { title: "Tapete", description: "Un tapete" },
+    },
+  ) {
     const [seller] = await db.insert(sellers).values({ name: "Ana", country: "MX", language: "es" }).returning();
     const [product] = await db
       .insert(products)
@@ -156,8 +163,8 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
       });
       await seedProduct({
         language: "fil",
-        en: { title: "Rattan basket" },
-        native: { title: "Basket na yari sa rattan" },
+        en: { title: "Rattan basket", description: "Woven in Manila" },
+        native: { title: "Basket na yari sa rattan", description: "Hinabi sa Maynila" },
       });
     });
 

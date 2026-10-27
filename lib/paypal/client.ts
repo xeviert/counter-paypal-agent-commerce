@@ -1,5 +1,7 @@
+import type { z } from "zod";
 import { getEnv } from "@/lib/env";
 import { log, paypalErrorFields } from "@/lib/log";
+import { tokenResponse } from "@/lib/schemas/paypal";
 
 const BASE_URLS = {
   SANDBOX: "https://api-m.sandbox.paypal.com",
@@ -49,7 +51,7 @@ async function fetchToken(): Promise<{ value: string; expiresAt: number }> {
     log.paypalError("oauth2.token", response, body);
     throw new PayPalError("oauth2.token", response, body);
   }
-  const { access_token, expires_in } = body as { access_token: string; expires_in: number };
+  const { access_token, expires_in } = tokenResponse.parse(body);
   const ttl = Math.min(expires_in * 1000 - 60_000, MAX_TOKEN_AGE_MS);
   return { value: access_token, expiresAt: Date.now() + ttl };
 }
@@ -59,14 +61,16 @@ export async function getAccessToken(forceRefresh = false): Promise<string> {
   return token.value;
 }
 
-export type PayPalRequest = {
+export type PayPalRequest<T> = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   /** Objects are JSON-encoded; strings are sent as-is (needed for webhook verification). */
   body?: unknown;
   headers?: Record<string, string>;
+  /** Parses a successful response. Without it the body is cast to `T` unchecked (scripts only). */
+  schema?: z.ZodType<T>;
 };
 
-export async function paypalRequest<T>(operation: string, path: string, req: PayPalRequest = {}): Promise<T> {
+export async function paypalRequest<T>(operation: string, path: string, req: PayPalRequest<T> = {}): Promise<T> {
   const send = async (accessToken: string) =>
     fetch(`${paypalBaseUrl()}${path}`, {
       method: req.method ?? "GET",
@@ -88,5 +92,11 @@ export async function paypalRequest<T>(operation: string, path: string, req: Pay
     log.paypalError(operation, response, body);
     throw new PayPalError(operation, response, body);
   }
-  return body as T;
+  if (!req.schema) return body as T;
+  const parsed = req.schema.safeParse(body);
+  if (!parsed.success) {
+    log.error(`paypal ${operation} response did not match schema`, { operation, issues: parsed.error.issues });
+    throw new Error(`PayPal ${operation} returned an unexpected response`);
+  }
+  return parsed.data;
 }

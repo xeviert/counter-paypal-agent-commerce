@@ -141,9 +141,17 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 ### 5.2 Shared schemas (`lib/schemas`)
 
-- [ ] `listing.ts`: title, description, materials, dimensions, care, provenance story, category, weight class; EN + native. `seed.ts` uses it now; the listing builder outputs it in P2, so seeded and generated products share one shape
-- [ ] `mcp.ts`: input and output schemas for every MCP tool
-- [ ] `paypal.ts`: Zod for every PayPal response we read
+- [x] `listing.ts`: title, description, materials, dimensions, care, provenance story, category, weight class; EN + native. `seed.ts` uses it now; the listing builder outputs it in P2, so seeded and generated products share one shape
+- [x] `mcp.ts`: input and output schemas for every MCP tool
+- [x] `paypal.ts`: Zod for every PayPal response we read
+- [x] `common.ts`: shared enums (DB `pgEnum`s read them), country/currency/status-token formats, cents ↔ decimal string
+
+Decided (Oct 27):
+- `listingContent` (stored in `products.listing`): `language`, `en`, `native`, `dimensions`. `listingDraft` adds `category` + `weightClass`, which live in columns only. Localized: `title` (≤127, PayPal `items[].name` cap), `description`, `materials`, `care`, `provenance`. Shared: `dimensions` in cm
+- `native` required unless `language` is `en`. Languages: `en`, `es`, `fil`, `sw`, `hi`
+- MCP money is `{ currency, value: "12.50" }`; local reference adds `approx: true`. MCP takes `buyerCountry` (required on `create_checkout`), never a currency
+- Agents see raw `OrderStatus` plus a `nextStep` sentence. `quantity` 1–10; `search_products` `limit` ≤ 20, no cursor
+- PayPal schemas parse money to cents at the boundary; `paypalRequest` takes an optional `schema`. `create_checkout(offerId)` input lands with negotiation in P2
 
 ### 5.3 PayPal core (`lib/paypal`)
 

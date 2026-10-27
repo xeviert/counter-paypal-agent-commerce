@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildVerifyBody, pickTransmissionHeaders, webhookEnvelope } from "./webhooks";
+import { webhookEnvelope } from "@/lib/schemas/paypal";
+import { buildVerifyBody, pickTransmissionHeaders } from "./webhooks";
 
 // Real sandbox deliveries captured during spike 11 (Oct 27): headers + exact raw body.
 const dir = "test/fixtures/webhooks";

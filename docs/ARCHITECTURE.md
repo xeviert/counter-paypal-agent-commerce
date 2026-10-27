@@ -401,14 +401,14 @@ Negotiation lives in `offers`, not in the order state machine. Transitions are a
 
 | Tool | Purpose |
 |---|---|
-| `search_products` | Query, category, max price, buyer currency → summaries |
-| `get_product` | Full listing, photos, provenance, shipping estimate, prices in buyer currency |
+| `search_products` | Query, category, max USD price, optional buyer country → summaries (USD price, shipping to buyer, approx. local price) |
+| `get_product` | Full listing (EN + native), photos, provenance, shipping to buyer country, USD price + approx. local reference |
 | `ask_question` | Grounded answer from the answerer role |
 | `make_offer` | Returns `accept` / `counter` / `reject` + `offerId` |
 | `create_checkout` | `productId` or `offerId`, quantity, buyer country → approval link, `/o/{statusToken}` URL, total breakdown (item, shipping), expiry |
 | `get_order_status` | `statusToken` → lifecycle state, tracking, release status |
 
-Agents are anonymous. Built on `@modelcontextprotocol/server` v2 with no session state: MCP 2026-07-28 removed `Mcp-Session-Id`, and one handler serves both 2025-era clients (stateless legacy fallback) and 2026-07-28 clients. Each caller gets an `agentId` (hash of client IP + User-Agent); calls are rate-limited per `agentId` and IP and logged with it. Cross-call state uses server-minted handles passed as tool arguments (`offerId`, `statusToken`). Tools return `structuredContent` plus a text summary; errors use `isError` with stable codes (`OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY`, `OFFER_EXPIRED`).
+Agents are anonymous. Built on `@modelcontextprotocol/server` v2 with no session state: MCP 2026-07-28 removed `Mcp-Session-Id`, and one handler serves both 2025-era clients (stateless legacy fallback) and 2026-07-28 clients. Each caller gets an `agentId` (hash of client IP + User-Agent); calls are rate-limited per `agentId` and IP and logged with it. Cross-call state uses server-minted handles passed as tool arguments (`offerId`, `statusToken`). Tools return `structuredContent` plus a text summary; errors use `isError` with `structuredContent: { error: { code, message } }` and stable codes (`PRODUCT_NOT_FOUND`, `PRODUCT_UNAVAILABLE`, `OUT_OF_STOCK`, `INVALID_QUANTITY`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY`, `ORDER_NOT_FOUND`, `OFFER_EXPIRED`, `RATE_LIMITED`, `PAYMENT_PROVIDER_ERROR`). Money in tool output is `{ currency, value: "12.50" }`; cents everywhere else. Schemas: `lib/schemas/mcp.ts`.
 
 ### 7.2 ACP-shaped checkout (`/api/acp/checkout_sessions`)
 

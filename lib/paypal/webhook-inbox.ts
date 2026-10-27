@@ -2,13 +2,8 @@ import { eq } from "drizzle-orm";
 import { getDb, type Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { log } from "@/lib/log";
-import {
-  pickTransmissionHeaders,
-  verifyWebhookSignature,
-  webhookEnvelope,
-  type TransmissionHeaders,
-  type WebhookEnvelope,
-} from "./webhooks";
+import { webhookEnvelope, type WebhookEnvelope } from "@/lib/schemas/paypal";
+import { pickTransmissionHeaders, verifyWebhookSignature, type TransmissionHeaders } from "./webhooks";
 
 export type InboxDeps = {
   db: Db;

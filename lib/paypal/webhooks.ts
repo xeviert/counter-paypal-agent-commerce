@@ -1,5 +1,5 @@
-import { z } from "zod";
 import { getEnv } from "@/lib/env";
+import { verifyWebhookResponse } from "@/lib/schemas/paypal";
 import { paypalRequest } from "./client";
 
 export const TRANSMISSION_HEADERS = [
@@ -33,17 +33,6 @@ export const WEBHOOK_EVENT_TYPES = [
   "MERCHANT.PARTNER-CONSENT.REVOKED",
 ] as const;
 
-export const webhookEnvelope = z.looseObject({
-  id: z.string().min(1),
-  event_type: z.string().min(1),
-  resource_type: z.string().optional(),
-  summary: z.string().optional(),
-  create_time: z.string().optional(),
-  resource: z.looseObject({ id: z.string().optional() }),
-});
-
-export type WebhookEnvelope = z.infer<typeof webhookEnvelope>;
-
 export function pickTransmissionHeaders(headers: Headers): TransmissionHeaders {
   const picked: TransmissionHeaders = {};
   for (const name of TRANSMISSION_HEADERS) {
@@ -74,10 +63,10 @@ export async function verifyWebhookSignature(rawBody: string, headers: Transmiss
   const webhookId = getEnv().PAYPAL_WEBHOOK_ID;
   if (!webhookId) throw new Error("PAYPAL_WEBHOOK_ID is not set");
   if (TRANSMISSION_HEADERS.some((name) => !headers[name])) return false;
-  const result = await paypalRequest<{ verification_status: string }>(
-    "webhooks.verify",
-    "/v1/notifications/verify-webhook-signature",
-    { method: "POST", body: buildVerifyBody(rawBody, headers, webhookId) },
-  );
+  const result = await paypalRequest("webhooks.verify", "/v1/notifications/verify-webhook-signature", {
+    method: "POST",
+    body: buildVerifyBody(rawBody, headers, webhookId),
+    schema: verifyWebhookResponse,
+  });
   return result.verification_status === "SUCCESS";
 }

@@ -15,6 +15,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { CATEGORIES, ORDER_STATUSES, RELEASE_STATUSES, WEIGHT_CLASSES } from "../schemas/common";
+import type { ListingContent } from "../schemas/listing";
 
 const tsvector = customType<{ data: string }>({
   dataType: () => "tsvector",
@@ -39,22 +41,9 @@ const country = (name: string) => char(name, { length: 2 });
 
 // ── Enums ────────────────────────────────────────────────────────────────
 
-// ARCHITECTURE §6.5. Canceled = buyer cancelled on PayPal; Denied = a PENDING capture was denied.
-export const orderStatus = pgEnum("order_status", [
-  "CheckoutCreated",
-  "Approved",
-  "PaidPending",
-  "PaidHeld",
-  "Shipped",
-  "Disputed",
-  "Released",
-  "Refunded",
-  "Expired",
-  "Canceled",
-  "Denied",
-]);
+export const orderStatus = pgEnum("order_status", ORDER_STATUSES);
 
-export const releaseStatus = pgEnum("release_status", ["held", "requested", "released", "failed"]);
+export const releaseStatus = pgEnum("release_status", RELEASE_STATUSES);
 
 export const productStatus = pgEnum("product_status", ["draft", "review", "live", "paused"]);
 
@@ -73,19 +62,9 @@ export const eventSource = pgEnum("event_source", [
   "script",
 ]);
 
-export const weightClass = pgEnum("weight_class", ["small", "medium", "large"]);
+export const weightClass = pgEnum("weight_class", WEIGHT_CLASSES);
 
-export const category = pgEnum("category", [
-  "textiles",
-  "baskets",
-  "jewelry",
-  "ceramics",
-  "woodwork",
-  "home_decor",
-  "accessories",
-  "art",
-  "other",
-]);
+export const category = pgEnum("category", CATEGORIES);
 
 // ── Tables ───────────────────────────────────────────────────────────────
 
@@ -128,8 +107,8 @@ export const products = pgTable(
     status: productStatus("status").notNull().default("draft"),
     category: category("category").notNull(),
     weightClass: weightClass("weight_class").notNull(),
-    /** `{ language, en: {...}, native: {...} }`, validated by lib/schemas/listing.ts. */
-    listing: jsonb("listing").notNull(),
+    /** Validated by `listingContent` in lib/schemas/listing.ts. */
+    listing: jsonb("listing").$type<ListingContent>().notNull(),
     listPrice: money("list_price").notNull(),
     floorPrice: money("floor_price").notNull(),
     maxDiscountBps: integer("max_discount_bps").notNull().default(1500),
