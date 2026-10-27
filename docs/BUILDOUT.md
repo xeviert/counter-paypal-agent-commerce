@@ -92,7 +92,8 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 ### 4.4 Spike 4: MCP endpoint
 
 - [x] `/api/mcp` with one `ping` tool. **Changed Oct 27:** MCP spec 2026-07-28 removed sessions and `Mcp-Session-Id`, and SDK v1 (`@modelcontextprotocol/sdk`) is now maintenance-only. Built on `@modelcontextprotocol/server` v2 `createMcpHandler` with `legacy: "stateless"`: one handler serves 2025-era clients (initialize handshake) and 2026-07-28 clients, no session state. `agentId` = hash of client IP + User-Agent (`lib/mcp/agent.ts`). Tested both eras in-process and against `next start` with MCP Inspector CLI
-- [ ] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). Needs a public URL (deploy or tunnel)
+- [ ] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
+- [ ] API connector: `pnpm spike:mcp https://<public host>` (`scripts/spike-mcp-connector.ts`, needs `ANTHROPIC_API_KEY` in `.env`). Not run yet: no key in `.env`. It also calls out from Anthropic's infrastructure, so run it against Render, not the quick tunnel
 - [ ] On Render: confirm which header carries the real client IP (`lib/mcp/agent.ts` TODO)
 - [ ] Connect ChatGPT developer mode too (~10 min; de-risks P3)
 
@@ -411,7 +412,34 @@ Cut from the top when a phase misses its exit by more than half a day:
 
 ---
 
-## 11. Doc updates owed
+## 11. Notes for later (learned in P0)
+
+**claude.ai custom connector setup** (Settings → Customize → Connectors → Add → Add custom connector):
+- Name + URL, then claude.ai probes the server. On a failed probe, "Continue anyway" opens manual config
+- Authentication: pick **No sign-in** (`/api/mcp` has no OAuth). claude.ai warns that anyone with the URL can use it, which is intended for agent buyers. Other options: "Sign in now" / "Sign in when needed" with Claude's published identity (CIMD, recommended), DCR, or our own OAuth client. Up to 4 custom request headers can be added (e.g. an API key)
+- After adding, the connector page has a **Connect** button; a failure shows a toast with an `ofid_...` support reference
+- A test connector "Counter (dev tunnel)" pointing at the dead tunnel URL is still in the account; edit its URL to the Render one or remove it
+
+**Local tunnel workflow** (for webhooks and connector tests without deploying):
+- `cloudflared tunnel --url http://localhost:3000` prints a random `https://*.trycloudflare.com` URL. It changes every restart, so the PayPal webhook must be repointed each time: `pnpm paypal:webhook <url>` (updates the existing webhook in place, keeps the same `PAYPAL_WEBHOOK_ID`)
+- Start the app with `APP_BASE_URL=<tunnel url>` so return/cancel URLs point at the tunnel
+- Windows: stopping a backgrounded `npm start` can leave the `node` child holding port 3000 (`EADDRINUSE` on restart). Find it with `netstat -ano | grep :3000` and `taskkill //PID <pid> //F`, or run `node node_modules/next/dist/bin/next start` directly
+- `/api/mcp` logs one `mcp request` line per request (method, status, protocol version, User-Agent), which is how we know whether a client reached us at all
+
+**PayPal webhook facts** (from the real sandbox run, fixtures in `test/fixtures/webhooks/`):
+- Deliveries arrive ~1s after the API call. All five event types passed `verify-webhook-signature` with the raw-body splice
+- `GET /v1/notifications/webhooks-event-types` is incomplete: it omits `PAYMENT.REFERENCED-PAYOUT-ITEM.*`, which PayPal still accepts and delivers. `scripts/paypal-webhook.ts` only warns on names missing from that list; `--all` subscribes to `*` for discovery
+- `CHECKOUT.ORDER.COMPLETED` also fires on capture. We don't subscribe to it; `PAYMENT.CAPTURE.COMPLETED` carries the same capture
+- `PAYMENT.CAPTURE.REFUNDED`: `resource.id` is the **refund** id, not the capture id; find the capture through `resource.links` (`rel: up`)
+- `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED`: `resource.reference_id` = capture id, `processing_state.status = SUCCESS`. `payout_amount` is in the **maker's currency** in an unusual shape (`amount` in minor units, `currencyCode`, `exponent`), e.g. 42259 PHP minor units for a USD order. Record it as information only; our USD amounts come from the capture
+- Capture with `DELAYED` + platform fee: `seller_receivable_breakdown` has `gross_amount`, `paypal_fee`, `platform_fees[]` (payee = partner merchant id), `net_amount` in USD, plus `receivable_amount` + `exchange_rate` in the maker's currency. For $10.00 with a $0.50 fee: PayPal fee $0.69, net $8.81, 543.41 PHP
+- The `*` subscription also delivered nothing beyond these five for this flow, so the explicit list in `lib/paypal/webhooks.ts` covers it
+
+**MCP**
+- Spec 2026-07-28 has no sessions; cross-call state must be a server-minted handle in tool arguments (`offerId`, `statusToken`)
+- Without auth, `agentId` is only a hint (IP + User-Agent). Anything that must be bound to a caller (offers) relies on the unguessable handle, not on `agentId`
+
+## 12. Doc updates owed
 
 - [x] ARCHITECTURE: shipping + fee base, buyer address, status token, order create/capture details, MCP session mode + errors, env vars, Render paid plans (Oct 26)
 - [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it), maker auth once decided

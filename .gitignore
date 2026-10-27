@@ -62,3 +62,6 @@ desktop.ini
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local agent tooling (Serena MCP)
+.serena/
