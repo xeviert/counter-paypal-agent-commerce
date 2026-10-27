@@ -109,7 +109,10 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 ### 4.6 Render Workflows check
 
-- [ ] Confirm TypeScript SDK; deploy a no-op workflow
+- [x] Confirm TypeScript SDK: `@renderinc/sdk` 1.4.0 (`task()` from `@renderinc/sdk/workflows`, `ctx.run` for chaining, `createWorkflowsClient().runTask/startTask` to trigger). No-op `ping` + chained `pingTwice` in `workflows/index.ts`, run on the local task server (Oct 27): ping 374ms, pingTwice ~1s, triggered from app code. Workflow service added to `render.yaml` (schema-valid)
+- [ ] Deploy the no-op workflow and time a cold run on Render (local runs say nothing about spin-up; the 60s listing budget depends on it)
+- **Limits that change the plan:** a task run can last at most **24h** (`timeoutSeconds` 30–86400), and there's no sleep, delay or schedule ("Workflows do not yet natively support scheduling task runs"). A 14-day release timer can't live in a workflow. **Decision:** releases and the 3h checkout expiry run from a **Render cron job** that polls `release_due_at` / `expires_at` every minute (see §6.3). Workflows keep the listing pipeline (retries, separate compute, minutes-long work)
+- **Windows:** `render workflows dev` doesn't work natively (CLI hard-codes `/tmp` for a Unix socket; Node on Windows treats socket paths as named pipes, so the SDK hangs). Use `scripts/workflows-check.sh` in a `node:24.22.1-bookworm` container (command in the script header) or WSL
 
 **Gates (decide today):**
 
@@ -118,7 +121,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 | Claude connector can't reach `/api/mcp` | Demo buyer agent = our own script using `@anthropic-ai/sdk` + MCP client SDK against `/api/mcp`. Still agent-driven, less "any client" |
 | Webhooks don't arrive | Return URL captures; a poll job checks `GET /v2/payments/captures/{id}` for `PENDING`/refund states |
 | Webhooks arrive but verification fails | Treat payload as a hint only: re-fetch the order/capture by id from PayPal and act on that response |
-| No TS Workflows SDK | Render cron job polling `release_due_at` and a queue table for listing jobs. Lose Render sponsor angle only (AG Grid is the target anyway) |
+| No TS Workflows SDK (✅ SDK exists; but see the 24h limit in §4.6) | Render cron job polling `release_due_at` and a queue table for listing jobs. Lose Render sponsor angle only (AG Grid is the target anyway) |
 
 ---
 
@@ -165,7 +168,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [ ] `currency.ts` (ARCHITECTURE §4.5), `fx.ts`, `shipping.ts`, `fees.ts` (integer cents)
 - [ ] `stock.ts`: reserve with a single conditional update (`UPDATE ... SET reserved = reserved + n WHERE stock - reserved >= n`) so concurrent checkouts can't oversell
 - [ ] `orders.ts` state machine: one `transition()` that validates the edge and writes an `events` row
-- [ ] Expiry sweep: `CheckoutCreated` older than 3h → `Expired`, release stock. Runs on whichever scheduler the P0 gate picked
+- [ ] Expiry sweep: `CheckoutCreated` older than 3h → `Expired`, release stock. Same cron job as the release scheduler (§6.3)
 - [ ] Unit tests: every allowed and forbidden transition; fee rounding; fee excludes shipping; shipping lookup per region; INR/KES rejected; IN + EUR rejected; stock reservation under concurrency
 
 ### 5.5 MCP tools
@@ -263,7 +266,7 @@ Four days, three tracks. Build in never-cut order so a slip only costs negotiati
   - No in-app refund after `Released` (money is in the maker's balance); maker handles it in PayPal
 - [ ] `lib/paypal/release.ts`: referenced-payouts-items, `PayPal-Request-Id: release:{orderId}`. `release_status = requested` until `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` arrives (confirmed in P0; match on `resource.reference_id` = capture id)
 - [ ] `lib/paypal/refunds.ts`: full + partial with assertion, `PayPal-Request-Id: refund:{orderId}:{n}`; stores refunded amount and returned platform fee
-- [ ] `workflows/release-timer`: start on `Shipped`, cancel on full refund, pause on dispute, resume on resolution; `RELEASE_AFTER_DAYS` in minutes for demo
+- [ ] Release scheduler (**cron job, not a workflow**: workflows cap at 24h): `scripts/cron-sweep.ts` every minute. Sets `release_due_at` on `Shipped`; releases rows with `status = Shipped AND release_due_at <= now() AND release_status = held` (`FOR UPDATE SKIP LOCKED`, idempotent via `release:{orderId}`). A dispute moves the order to `Disputed`, so it drops out of the query (pause); resolution for the maker moves it back with a new due date (resume); a full refund ends it (cancel). `RELEASE_AFTER_DAYS` fractional for the demo (e.g. 0.002 ≈ 3 min)
 - [ ] Webhooks: `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED`, `CUSTOMER.DISPUTE.CREATED`, `MERCHANT.ONBOARDING.COMPLETED`, `MERCHANT.PARTNER-CONSENT.REVOKED`
 - [ ] Consent revoked → unpublish listings, block new checkouts, notify maker
 - [ ] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts`

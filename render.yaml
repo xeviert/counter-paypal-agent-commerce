@@ -43,6 +43,22 @@ services:
         sync: false
       # APP_BASE_URL defaults to RENDER_EXTERNAL_URL (lib/env.ts); set it only for a custom domain.
 
+  # Render Workflows (BUILDOUT §4.6). Tasks live in workflows/index.ts; compute plans are set
+  # per task in code, so there's no plan field here. Not deployed yet.
+  - type: workflow
+    name: counter-workflows
+    runtime: node
+    region: oregon
+    branch: main
+    buildCommand: npm install -g corepack && corepack enable && pnpm install --frozen-lockfile
+    startCommand: node node_modules/tsx/dist/cli.mjs workflows/index.ts
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: counter-db
+          property: connectionString
+
 databases:
   - name: counter-db
     databaseName: counter
