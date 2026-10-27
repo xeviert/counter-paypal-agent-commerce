@@ -7,15 +7,11 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { getEnv } = await import("@/lib/env");
 const { paypalRequest } = await import("@/lib/paypal/client");
+const { authAssertion } = await import("@/lib/paypal/assertion");
 
 const PH_MERCHANT_ID = "MPMWEFYQWQYUA";
 const env = getEnv();
 const run = randomUUID();
-const assertion = (payerId: string) =>
-  `${Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url")}.${Buffer.from(
-    JSON.stringify({ iss: env.PLATFORM_CLIENT_ID, payer_id: payerId }),
-  ).toString("base64url")}.`;
-
 type Link = { rel: string; href: string };
 type Order = { id: string; status: string; links: Link[] };
 type Capture = {
@@ -92,7 +88,7 @@ const refund = await paypalRequest<{ id: string; status: string }>(
   `/v2/payments/captures/${capture.id}/refund`,
   {
     method: "POST",
-    headers: { "PayPal-Request-Id": `spike-refund:${run}:1`, "PayPal-Auth-Assertion": assertion(PH_MERCHANT_ID), Prefer: "return=representation" },
+    headers: { "PayPal-Request-Id": `spike-refund:${run}:1`, "PayPal-Auth-Assertion": authAssertion({ merchantId: PH_MERCHANT_ID }), Prefer: "return=representation" },
     body: { amount: { currency_code: "USD", value: "2.00" }, note_to_payer: "Spike 11 partial refund" },
   },
 );

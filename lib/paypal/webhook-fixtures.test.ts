@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { webhookEnvelope } from "@/lib/schemas/paypal";
-import { buildVerifyBody, pickTransmissionHeaders } from "./webhooks";
+import { buildVerifyBody, parseWebhookResource, pickTransmissionHeaders } from "./webhooks";
 
 // Real sandbox deliveries captured during spike 11 (Oct 27): headers + exact raw body.
 const dir = "test/fixtures/webhooks";
@@ -38,4 +38,22 @@ it("has the release event, which links back to the capture", () => {
   const release = fixtures.find((f) => f.file.startsWith("PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED"));
   const event = JSON.parse(release!.rawBody) as { resource: { reference_id: string; reference_type: string } };
   expect(event.resource).toMatchObject({ reference_type: "TRANSACTION_ID", reference_id: expect.any(String) });
+});
+
+describe("parseWebhookResource", () => {
+  const parse = (eventType: string) =>
+    parseWebhookResource(webhookEnvelope.parse(JSON.parse(fixtures.find((f) => f.file === `${eventType}.json`)!.rawBody)));
+
+  it("types the capture and approved-order resources", () => {
+    const completed = parse("PAYMENT.CAPTURE.COMPLETED");
+    expect(completed.kind === "capture" && completed.capture.seller_receivable_breakdown?.net_amount?.cents).toBe(881);
+    // Resources carry state at delivery time: this APPROVED event arrived after the capture.
+    const approved = parse("CHECKOUT.ORDER.APPROVED");
+    expect(approved.kind === "order" && approved.order.status).toBe("COMPLETED");
+  });
+
+  it("leaves refund-shaped and unhandled resources alone", () => {
+    expect(parse("PAYMENT.CAPTURE.REFUNDED").kind).toBe("unhandled");
+    expect(parse("CHECKOUT.ORDER.COMPLETED").kind).toBe("unhandled");
+  });
 });

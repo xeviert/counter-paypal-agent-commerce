@@ -155,20 +155,21 @@ Decided (Oct 27):
 
 ### 5.3 PayPal core (`lib/paypal`)
 
-- [ ] `token.ts`: client-credentials cache, refresh at 8h or on 401
-- [ ] `assertion.ts`: `PayPal-Auth-Assertion` builder; `payer_id` always from DB
-- [ ] `orders.ts` **create** (`PayPal-Request-Id: create:{orderId}`):
+- [x] Token: client-credentials cache, refresh at 8h or on 401 (in `client.ts` since P0). Added: one shared fetch for concurrent callers, 20s timeout, one retry on network error/5xx for GETs and calls with `PayPal-Request-Id` only, optional Zod `schema`
+- [x] `assertion.ts`: `PayPal-Auth-Assertion` builder; `payer_id` always from DB (takes the seller row, throws if not onboarded)
+- [x] `orders.ts` **create** (`PayPal-Request-Id: create:{orderId}`):
   - `intent: CAPTURE`; `purchase_units[0]`: `reference_id` + `custom_id` = our order id, `payee.merchant_id`, `items[]` (`category: PHYSICAL_GOODS`), `amount.breakdown` (`item_total`, `shipping`)
   - `payment_instruction`: `platform_fees`, `disbursement_mode: DELAYED`
   - `payment_source.paypal.experience_context`: `return_url`, `cancel_url`, `user_action: PAY_NOW`, `shipping_preference: GET_FROM_FILE`, `brand_name: Counter`
   - Approval link = `links[]` entry with `rel: payer-action`
-- [ ] `orders.ts` **capture** (`PayPal-Request-Id: capture:{orderId}`, `Prefer: return=representation`):
+- [x] `orders.ts` **capture** (`PayPal-Request-Id: capture:{orderId}`, `Prefer: return=representation`):
   - `422 ORDER_ALREADY_CAPTURED` → `GET` the order and treat as success (return URL and `CHECKOUT.ORDER.APPROVED` can race)
   - `422 INSTRUMENT_DECLINED` → send the buyer back to the `payer-action` link
   - Store: `capture_id`, capture `status` (+ `status_details.reason` if `PENDING`), `seller_receivable_breakdown` (`paypal_fee`, `platform_fees`, `net_amount`), `purchase_units[0].shipping` (name + address), `payer` (name, email)
-- [ ] `referrals.ts`: partner-referrals + merchant-integrations lookup
-- [ ] `webhooks.ts`: verification from P0 + Zod event schemas
-- [ ] `scripts/onboard.ts <country>`: create referral → print `action_url` → poll merchant-integrations → print `merchant_id`, `payments_receivable`, `primary_email_confirmed`, granted scopes. Onboarding UI waits for P2
+- [x] `referrals.ts`: partner-referrals + merchant-integrations lookup
+- [x] `webhooks.ts`: verification from P0 + `parseWebhookResource` (capture events → `capture`, `CHECKOUT.ORDER.APPROVED` → `order`)
+- [x] Decided (Oct 27): `lib/paypal` takes priced cents + `merchantId` and never reads the DB or prices anything. Payee errors (`PAYEE_NOT_CONSENTED`, `PAYEE_ACCOUNT_*`) → `SellerNotReceivableError` (→ MCP `SELLER_NOT_RECEIVABLE`). Capture returns `captured` or `payer_action`; the buyer goes back to the new `orders.approval_url` column (migration `0001`), which `get_order_status` also returns. Ship-to region check before capture (ARCHITECTURE §4.3)
+- [ ] `scripts/onboard.ts <country>`: create referral → print `action_url` → poll merchant-integrations → print `merchant_id`, `payments_receivable`, `primary_email_confirmed`, granted scopes. Onboarding UI waits for P2. Built + unit-tested Oct 27; not yet run against the sandbox (first real run = MX in §5.7). `--merchant-id` imports an already-linked maker (PH)
 - [ ] `scripts/e2e-purchase.ts`: create → print approval link → capture → assert `DELAYED`, fee, and that DB amounts match `seller_receivable_breakdown`
 
 ### 5.4 Policy + state (`lib/policy`, `lib/db/orders.ts`)
@@ -440,6 +441,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 **PayPal webhook facts** (from the real sandbox run, fixtures in `test/fixtures/webhooks/`):
 - Deliveries arrive ~1s after the API call. All five event types passed `verify-webhook-signature` with the raw-body splice
 - `GET /v1/notifications/webhooks-event-types` is incomplete: it omits `PAYMENT.REFERENCED-PAYOUT-ITEM.*`, which PayPal still accepts and delivers. `scripts/paypal-webhook.ts` only warns on names missing from that list; `--all` subscribes to `*` for discovery
+- Resources carry the state at **delivery** time, not event time: the spike's `CHECKOUT.ORDER.APPROVED` delivery already shows the order `COMPLETED` with its capture, and the `CHECKOUT.ORDER.COMPLETED` delivery shows the capture `PARTIALLY_REFUNDED`. Handlers (§5.6) must branch on the resource's status, not on `event_type` alone, e.g. APPROVED + already captured → record the capture, don't capture again
 - `CHECKOUT.ORDER.COMPLETED` also fires on capture. We don't subscribe to it; `PAYMENT.CAPTURE.COMPLETED` carries the same capture
 - `PAYMENT.CAPTURE.REFUNDED`: `resource.id` is the **refund** id, not the capture id; find the capture through `resource.links` (`rel: up`)
 - `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED`: `resource.reference_id` = capture id, `processing_state.status = SUCCESS`. `payout_amount` is in the **maker's currency** in an unusual shape (`amount` in minor units, `currencyCode`, `exponent`), e.g. 42259 PHP minor units for a USD order. Record it as information only; our USD amounts come from the capture

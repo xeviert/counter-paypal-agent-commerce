@@ -1,5 +1,12 @@
 import { getEnv } from "@/lib/env";
-import { verifyWebhookResponse } from "@/lib/schemas/paypal";
+import {
+  capture,
+  order,
+  verifyWebhookResponse,
+  type Capture,
+  type PayPalOrder,
+  type WebhookEnvelope,
+} from "@/lib/schemas/paypal";
 import { paypalRequest } from "./client";
 
 export const TRANSMISSION_HEADERS = [
@@ -32,6 +39,26 @@ export const WEBHOOK_EVENT_TYPES = [
   "MERCHANT.ONBOARDING.COMPLETED",
   "MERCHANT.PARTNER-CONSENT.REVOKED",
 ] as const;
+
+/** Events whose `resource` is a capture. REFUNDED and REVERSED carry a refund instead (BUILDOUT §11). */
+const CAPTURE_EVENTS = new Set([
+  "PAYMENT.CAPTURE.COMPLETED",
+  "PAYMENT.CAPTURE.PENDING",
+  "PAYMENT.CAPTURE.DENIED",
+  "PAYMENT.CAPTURE.DECLINED",
+]);
+
+export type WebhookResource =
+  | { kind: "capture"; capture: Capture }
+  | { kind: "order"; order: PayPalOrder }
+  | { kind: "unhandled" };
+
+/** Throws if a handled event's resource doesn't match its schema, so the inbox records the error. */
+export function parseWebhookResource(event: WebhookEnvelope): WebhookResource {
+  if (CAPTURE_EVENTS.has(event.event_type)) return { kind: "capture", capture: capture.parse(event.resource) };
+  if (event.event_type === "CHECKOUT.ORDER.APPROVED") return { kind: "order", order: order.parse(event.resource) };
+  return { kind: "unhandled" };
+}
 
 export function pickTransmissionHeaders(headers: Headers): TransmissionHeaders {
   const picked: TransmissionHeaders = {};

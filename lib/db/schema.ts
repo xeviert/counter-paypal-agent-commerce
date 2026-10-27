@@ -193,6 +193,8 @@ export const orders = pgTable(
     statusToken: text("status_token").notNull().unique(),
     // Null until PayPal create returns; the row exists first so `create:{id}` is the request id.
     paypalOrderId: text("paypal_order_id").unique(),
+    /** PayPal `payer-action` link. Reused when capture needs the buyer to approve again. */
+    approvalUrl: text("approval_url"),
     captureId: text("capture_id").unique(),
     sellerId: uuid("seller_id")
       .notNull()

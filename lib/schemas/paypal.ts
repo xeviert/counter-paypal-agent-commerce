@@ -41,6 +41,7 @@ export const CAPTURE_STATUSES = [
   "COMPLETED",
   "PENDING",
   "DECLINED",
+  "DENIED",
   "FAILED",
   "REFUNDED",
   "PARTIALLY_REFUNDED",
@@ -148,6 +149,11 @@ export function firstCapture(o: PayPalOrder): Capture | undefined {
 
 export const partnerReferral = z.looseObject({
   links: z.array(link),
+});
+
+/** `merchant-integrations?tracking_id=` lookup. */
+export const merchantIntegrationRef = z.looseObject({
+  merchant_id: z.string().min(1),
 });
 
 export const merchantIntegration = z.looseObject({

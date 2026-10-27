@@ -1,0 +1,1 @@
+ALTER TABLE "orders" ADD COLUMN "approval_url" text;
