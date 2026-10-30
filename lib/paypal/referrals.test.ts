@@ -67,6 +67,7 @@ describe("referrals", () => {
   });
 
   it("looks the merchant up by tracking id and returns undefined before onboarding", async () => {
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
     const { calls } = mockPayPal((call) =>
       call.path.includes("tracking_id=") && call.path.includes(SELLER_ID)
         ? json(200, { merchant_id: "MPMWEFYQWQYUA", tracking_id: SELLER_ID })
@@ -74,6 +75,8 @@ describe("referrals", () => {
     );
     expect(await findMerchantIdByTrackingId(SELLER_ID)).toBe("MPMWEFYQWQYUA");
     expect(await findMerchantIdByTrackingId("other")).toBeUndefined();
+    // Polled every few seconds while the maker signs up; the expected 404 isn't an error log.
+    expect(errors).not.toHaveBeenCalled();
     expect(calls[0]?.path).toBe(
       `/v1/customer/partners/9MGXZVWN9N9EE/merchant-integrations?tracking_id=${SELLER_ID}`,
     );

@@ -178,7 +178,7 @@ Decided (Oct 27):
 - [x] `stock.ts`: reserve with a single conditional update (`UPDATE ... SET reserved = reserved + n WHERE stock - reserved >= n`) so concurrent checkouts can't oversell. `releaseStock` / `commitStock` throw if the units aren't reserved
 - [x] `lib/db/orders.ts` state machine: one `transition()` that locks the row, validates the edge (`lib/policy/lifecycle.ts`), applies the stock effect and writes an `events` row in one transaction. `openCheckout()` reserves + inserts `CheckoutCreated` + logs `order.created`
 - [x] Expiry sweep: `expireStaleCheckouts()` (`CheckoutCreated` past `expires_at` → `Expired`, release stock, `FOR UPDATE SKIP LOCKED`). `scripts/cron-sweep.ts` (`pnpm cron:sweep`) + `counter-sweep` cron (`* * * * *`) in `render.yaml` (schema-valid). P2 adds releases to the same job
-- [ ] Unit tests written: every allowed and forbidden transition; fee rounding; fee excludes shipping; shipping lookup per region; INR/KES rejected; IN + EUR rejected; stock reservation under concurrency (`lib/policy/*.test.ts`, `lib/db/orders.test.ts`). **Not run yet** (no local Docker on Oct 30); CI runs them on first push
+- [x] Unit tests: every allowed and forbidden transition; fee rounding; fee excludes shipping; shipping lookup per region; INR/KES rejected; IN + EUR rejected; stock reservation under concurrency (`lib/policy/*.test.ts`, `lib/db/orders.test.ts`). Pass against local Postgres (Oct 30, 472/472 suite-wide)
 
 Decided (Oct 30):
 - Shipping is flat **per order**, not per unit (matches `shippingQuote` in `lib/schemas/mcp.ts`). Table values are placeholders until we check real carrier rates
@@ -199,7 +199,7 @@ Decided (Oct 30):
 - [x] Each tool returns `structuredContent` + a short text summary. Errors return `isError` with stable codes: `OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY` (`OFFER_EXPIRED` in P2)
 - [x] Every call logged to `events` with `agentId`
 - [x] Rate limit per `agentId` and per IP (in-memory; single instance)
-- [ ] DB-backed tests (`lib/shop/*.test.ts`, the DB block in `lib/mcp/server.test.ts`) written, not run locally (no Docker); CI runs them
+- [x] DB-backed tests (`lib/shop/*.test.ts`, the DB block in `lib/mcp/server.test.ts`) pass against local Postgres (Oct 30)
 
 Decided (Oct 30):
 - Logic lives in `lib/shop/` (`catalog.ts`, `checkout.ts`, `order-status.ts`, `urls.ts`) so ACP (§7.6) and the `/o` page reuse it; `lib/mcp/tools.ts` only adapts. `buildMcpHandler({ db, limiter })` lets tests inject both
@@ -217,7 +217,7 @@ Decided (Oct 30):
 - [x] `/o/[statusToken]`: random 128-bit token, never the DB id. "I received it" releases funds in P2, so a guessable URL would let anyone trigger a release. Shows status, item, and ship-to city + country only (no full address)
 - [x] `/p/[slug]`: plain product page (JSON-LD in P3)
 - [x] Handlers for `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`
-- [ ] Handler tests replay P0 fixtures: duplicate delivery, `COMPLETED` arriving before the return URL fires, `PENDING` then `COMPLETED` (`lib/shop/payment.test.ts`). Written, not run yet (no local Postgres); CI runs them
+- [x] Handler tests replay P0 fixtures: duplicate delivery, `COMPLETED` arriving before the return URL fires, `PENDING` then `COMPLETED` (`lib/shop/payment.test.ts`). Pass locally (Oct 30). First run caught a bug: an `APPROVED` delivery already showing `COMPLETED` on a `CheckoutCreated` order was skipped as stale; both triggers now step through `Approved` via `recordCompletedOrder()`
 
 Decided (Oct 30):
 - One flow for both capture triggers (`lib/shop/payment.ts`): `settleApprovedOrder()` GETs the PayPal order → already `COMPLETED` → record it, no second capture; ship-to outside the quoted region → `Canceled` (no capture); else `Approved` (locked, `from: CheckoutCreated`, so the sweep can't race it) → capture → `recordCapture()`
@@ -230,7 +230,7 @@ Decided (Oct 30):
 
 ### 5.7 Seed data
 
-- [ ] `scripts/onboard.ts` for **KE, IN, MX** (user approves each in the browser) → store `merchant_id`s. **Blocked on a database** (no local Docker; Render not deployed). Steps once one exists: `pnpm seed` → `pnpm onboard --seller <id>` per maker (ids printed by seed; PH: `--merchant-id MPMWEFYQWQYUA`) → `pnpm seed` again to publish
+- [ ] `scripts/onboard.ts` for **KE, IN, MX** (user approves each in the browser) → store `merchant_id`s. Steps: `pnpm seed` → `pnpm onboard --seller <id>` per maker (ids printed by seed; PH: `--merchant-id MPMWEFYQWQYUA`) → `pnpm seed` again to publish. Oct 30 on local DB: seeded; PH imported (receivable, email confirmed, 9 scopes) → 8 PH products live. MX + KE referral links created, waiting on browser approval. IN has no seed persona
 - [x] `scripts/seed.ts` + `seed/catalog.ts`: 3 personas (Lucía Hernández, Teotitlán del Valle MX, 10 rugs/textiles; Rosa Villanueva, Manila PH, 8 baskets; Wanjiru Kamau, Nairobi KE, 8 beadwork pieces; IN skipped) through `lib/schemas/listing.ts`, with category, weight class, stock, floor at 85%. Not run yet (no database)
 - [ ] Real photos we own or licensed in `seed/photos/<slug>/` (`seed/photos/README.md`); none yet
 - [x] Photo storage + `/api/photos/[id]` route built now (§10 #2); seed photos go through the same resize + EXIF strip as P2 uploads (`lib/photos.ts`, sharp)

@@ -87,6 +87,8 @@ export type PayPalRequest<T> = {
   requestId?: string;
   /** Parses a successful response. Without it the body is cast to `T` unchecked (scripts only). */
   schema?: z.ZodType<T>;
+  /** Error statuses the caller handles (e.g. 404 while polling). Still thrown, but not logged. */
+  expectedStatuses?: readonly number[];
 };
 
 export async function paypalRequest<T>(operation: string, path: string, req: PayPalRequest<T> = {}): Promise<T> {
@@ -134,7 +136,7 @@ export async function paypalRequest<T>(operation: string, path: string, req: Pay
     // Non-JSON error bodies (e.g. gateway HTML) are kept as text.
   }
   if (!response.ok) {
-    log.paypalError(operation, response, body);
+    if (!req.expectedStatuses?.includes(response.status)) log.paypalError(operation, response, body);
     throw new PayPalError(operation, response, body);
   }
   if (!req.schema) return body as T;

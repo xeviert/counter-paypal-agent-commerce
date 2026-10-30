@@ -120,6 +120,21 @@ export async function recordCapture(
   });
 }
 
+/**
+ * PayPal shows the order already captured (the other trigger won, or the resource carries
+ * delivery-time state). Steps through `Approved` so the capture edge is valid, then records it.
+ */
+export async function recordCompletedOrder(
+  db: Tx,
+  orderId: string,
+  capture: Capture,
+  trigger: Trigger,
+  paypalOrder: PayPalOrder,
+): Promise<Order> {
+  await transition(db, orderId, "Approved", { ...trigger, from: ["CheckoutCreated"], patch: { approvedAt: new Date() } });
+  return recordCapture(db, orderId, capture, trigger, paypalOrder);
+}
+
 export type SettleResult =
   | { kind: "settled"; order: Order }
   /** PayPal wants the buyer back on the approval page (declined card, approval incomplete). */
@@ -138,8 +153,7 @@ export async function settleApprovedOrder(db: Tx, order: Order, trigger: Trigger
   const paypalOrder = await getOrder(order.paypalOrderId);
   const existing = firstCapture(paypalOrder);
   if (paypalOrder.status === "COMPLETED" && existing) {
-    await transition(db, order.id, "Approved", { ...trigger, from: ["CheckoutCreated"] });
-    return { kind: "settled", order: await recordCapture(db, order.id, existing, trigger, paypalOrder) };
+    return { kind: "settled", order: await recordCompletedOrder(db, order.id, existing, trigger, paypalOrder) };
   }
   if (paypalOrder.status !== "APPROVED") {
     return { kind: "payer_action", order, approvalUrl: order.approvalUrl };

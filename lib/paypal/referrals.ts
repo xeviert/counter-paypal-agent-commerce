@@ -66,7 +66,7 @@ export async function findMerchantIdByTrackingId(trackingId: string): Promise<st
     const ref = await paypalRequest(
       "merchant-integrations.find",
       `${integrationsPath()}?tracking_id=${encodeURIComponent(trackingId)}`,
-      { schema: merchantIntegrationRef },
+      { schema: merchantIntegrationRef, expectedStatuses: [404] },
     );
     return ref.merchant_id;
   } catch (err) {

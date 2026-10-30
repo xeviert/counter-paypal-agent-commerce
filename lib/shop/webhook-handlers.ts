@@ -3,7 +3,7 @@ import { findOrderByPayPalId } from "@/lib/db/orders";
 import { log } from "@/lib/log";
 import { parseWebhookResource } from "@/lib/paypal/webhooks";
 import { firstCapture, type WebhookEnvelope } from "@/lib/schemas/paypal";
-import { recordCapture, settleApprovedOrder, type Trigger } from "./payment";
+import { recordCapture, recordCompletedOrder, settleApprovedOrder, type Trigger } from "./payment";
 
 const trigger: Trigger = { source: "webhook", actor: "paypal" };
 
@@ -20,7 +20,7 @@ export async function handlePayPalEvent(db: Tx, event: WebhookEnvelope): Promise
     // The resource may already be COMPLETED by delivery time: record that capture, don't capture again.
     const capture = firstCapture(resource.order);
     if (resource.order.status === "COMPLETED" && capture) {
-      await recordCapture(db, order.id, capture, trigger, resource.order);
+      await recordCompletedOrder(db, order.id, capture, trigger, resource.order);
     } else {
       const result = await settleApprovedOrder(db, order, trigger);
       if (result.kind === "payer_action") log.info("webhook: approval incomplete", { order_id: order.id });
