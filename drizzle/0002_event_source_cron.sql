@@ -1,0 +1,1 @@
+ALTER TYPE "public"."event_source" ADD VALUE 'cron';

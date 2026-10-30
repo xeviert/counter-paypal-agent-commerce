@@ -1,6 +1,6 @@
 // Money-flow check for lib/paypal (BUILDOUT §2 rule 4): create → buyer approves → capture → assert.
 // Usage: pnpm e2e:purchase [--merchant-id MPMWEFYQWQYUA] [--buyer-country US]
-// Calls lib/paypal directly with script-computed amounts; switch to create_checkout once lib/policy lands.
+// Calls lib/paypal directly with fixed amounts; switch to create_checkout once the MCP tool lands (5.5).
 // Raw responses are saved to test/fixtures/paypal/ for unit tests.
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -12,6 +12,7 @@ const { PayPalError, paypalRequest } = await import("@/lib/paypal/client");
 const { buildCreateOrderBody, captureDetails, captureOrder, createOrder, shipToCountry } = await import(
   "@/lib/paypal/orders"
 );
+const { platformFeeCents: feeCents } = await import("@/lib/policy/fees");
 const { order: orderSchema } = await import("@/lib/schemas/paypal");
 
 const { values } = parseArgs({
@@ -27,8 +28,7 @@ const unitCents = 1250;
 const quantity = 2;
 const shippingCents = 1800;
 const itemCents = unitCents * quantity;
-// Half-up to the cent; lib/policy/fees.ts will own this.
-const platformFeeCents = Math.floor((itemCents * env.PLATFORM_FEE_BPS + 5_000) / 10_000);
+const platformFeeCents = feeCents(itemCents, env.PLATFORM_FEE_BPS);
 const totalCents = itemCents + shippingCents;
 
 const fixtures: Record<string, unknown> = {};

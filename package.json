@@ -18,6 +18,7 @@
     "paypal:webhook": "tsx scripts/paypal-webhook.ts",
     "onboard": "tsx scripts/onboard.ts",
     "e2e:purchase": "tsx scripts/e2e-purchase.ts",
+    "cron:sweep": "tsx scripts/cron-sweep.ts",
     "spike:webhooks": "tsx scripts/spike-webhooks.ts",
     "spike:mcp": "tsx scripts/spike-mcp-connector.ts",
     "workflows:start": "tsx workflows/index.ts",

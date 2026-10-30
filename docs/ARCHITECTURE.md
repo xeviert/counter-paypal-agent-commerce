@@ -372,15 +372,20 @@ stateDiagram-v2
   CheckoutCreated --> Canceled: buyer cancels on PayPal
   Approved --> PaidHeld: capture COMPLETED
   Approved --> PaidPending: capture PENDING
+  Approved --> Canceled: ship-to outside quoted region
+  Approved --> Denied: capture DECLINED
   PaidPending --> PaidHeld: PAYMENT.CAPTURE.COMPLETED
   PaidPending --> Denied: PAYMENT.CAPTURE.DENIED
   PaidHeld --> Shipped: tracking sent
+  PaidHeld --> Released: buyer confirms receipt
   Shipped --> Released: delivered or timer, no dispute
   PaidHeld --> Refunded
   Shipped --> Refunded
   PaidHeld --> Disputed: dispute webhook
   Shipped --> Disputed: dispute webhook
   Disputed --> Released: resolved for maker
+  Disputed --> PaidHeld: resolved for maker, timer resumes
+  Disputed --> Shipped: resolved for maker, timer resumes
   Disputed --> Refunded: resolved for buyer
   Released --> [*]
   Refunded --> [*]
@@ -391,7 +396,7 @@ stateDiagram-v2
 
 `Expired`, `Canceled` and `Denied` release reserved stock. A partial refund leaves the order in its current state and adds to `refunded_amount`; only a full refund moves it to `Refunded`.
 
-Negotiation lives in `offers`, not in the order state machine. Transitions are applied in one place (`lib/db/orders.ts`) and each one writes an `events` row.
+Negotiation lives in `offers`, not in the order state machine. Edges live in `lib/policy/lifecycle.ts`; transitions are applied in one place (`transition()` in `lib/db/orders.ts`), under a row lock, and each one writes an `events` row in the same transaction. Stock is reserved at checkout, committed on `PaidHeld`, and refunds don't restock.
 
 ---
 

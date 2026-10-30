@@ -60,6 +60,7 @@ export const eventSource = pgEnum("event_source", [
   "copilot",
   "ops",
   "script",
+  "cron",
 ]);
 
 export const weightClass = pgEnum("weight_class", WEIGHT_CLASSES);

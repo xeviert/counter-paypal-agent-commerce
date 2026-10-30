@@ -174,11 +174,20 @@ Decided (Oct 27):
 
 ### 5.4 Policy + state (`lib/policy`, `lib/db/orders.ts`)
 
-- [ ] `currency.ts` (ARCHITECTURE §4.5), `fx.ts`, `shipping.ts`, `fees.ts` (integer cents)
-- [ ] `stock.ts`: reserve with a single conditional update (`UPDATE ... SET reserved = reserved + n WHERE stock - reserved >= n`) so concurrent checkouts can't oversell
-- [ ] `orders.ts` state machine: one `transition()` that validates the edge and writes an `events` row
-- [ ] Expiry sweep: `CheckoutCreated` older than 3h → `Expired`, release stock. Same cron job as the release scheduler (§6.3)
-- [ ] Unit tests: every allowed and forbidden transition; fee rounding; fee excludes shipping; shipping lookup per region; INR/KES rejected; IN + EUR rejected; stock reservation under concurrency
+- [x] `currency.ts` (ARCHITECTURE §4.5), `fx.ts`, `shipping.ts`, `fees.ts` (integer cents), plus `quote.ts`: `quoteOrder()` is the one place order amounts are computed (item, shipping, total, fee); `openCheckout` stores its output
+- [x] `stock.ts`: reserve with a single conditional update (`UPDATE ... SET reserved = reserved + n WHERE stock - reserved >= n`) so concurrent checkouts can't oversell. `releaseStock` / `commitStock` throw if the units aren't reserved
+- [x] `lib/db/orders.ts` state machine: one `transition()` that locks the row, validates the edge (`lib/policy/lifecycle.ts`), applies the stock effect and writes an `events` row in one transaction. `openCheckout()` reserves + inserts `CheckoutCreated` + logs `order.created`
+- [x] Expiry sweep: `expireStaleCheckouts()` (`CheckoutCreated` past `expires_at` → `Expired`, release stock, `FOR UPDATE SKIP LOCKED`). `scripts/cron-sweep.ts` (`pnpm cron:sweep`) + `counter-sweep` cron (`* * * * *`) in `render.yaml` (schema-valid). P2 adds releases to the same job
+- [ ] Unit tests written: every allowed and forbidden transition; fee rounding; fee excludes shipping; shipping lookup per region; INR/KES rejected; IN + EUR rejected; stock reservation under concurrency (`lib/policy/*.test.ts`, `lib/db/orders.test.ts`). **Not run yet** (no local Docker on Oct 30); CI runs them on first push
+
+Decided (Oct 30):
+- Shipping is flat **per order**, not per unit (matches `shippingQuote` in `lib/schemas/mcp.ts`). Table values are placeholders until we check real carrier rates
+- `PolicyError(code)` carries the MCP error code (`UNSUPPORTED_COUNTRY`, `INVALID_QUANTITY`, `OUT_OF_STOCK`) so 5.5 maps it straight to `isError`. Buyer country must be a real ISO region and not sanctioned (CU, IR, KP, SY, RU)
+- Edges beyond the §6.5 diagram: `Approved → Canceled` (ship-to region mismatch), `Approved → Denied` (capture returns `DECLINED`), `PaidHeld → Released` (buyer confirms before tracking), `Disputed → PaidHeld | Shipped` (resolved for maker, timer resumes)
+- Stock follows status: reserved (`CheckoutCreated`, `Approved`, `PaidPending`) → committed on `PaidHeld` (stock − n) or released on `Expired`/`Canceled`/`Denied`. Refunds don't restock
+- `transition()` is a no-op when the order is already in the target state (duplicate webhooks), and takes an optional `from` guard so racing triggers skip quietly instead of throwing
+- The sweep leaves `Approved` alone (a capture may be in flight). 5.6 must move an order to `Approved` (locked, `from: CheckoutCreated`) **before** calling capture, so the sweep can't expire an order we're capturing
+- New `cron` event source (migration `0002`). The sweep reads `DATABASE_URL` only; P2 release adds the PayPal vars (move shared env to an `envVarGroup` then)
 
 ### 5.5 MCP tools
 

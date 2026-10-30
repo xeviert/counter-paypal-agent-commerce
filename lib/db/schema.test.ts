@@ -1,21 +1,8 @@
-import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { testDatabaseUrl, testDb, truncateAll } from "@/test/db";
-import type { ListingContent } from "@/lib/schemas/listing";
+import { orderValues, pgError, seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
 import type { Db } from "./index";
-import { events, offers, orders, products, sellers } from "./schema";
-
-/** Drizzle wraps driver errors; the Postgres message is on `cause`. */
-async function pgError(query: PromiseLike<unknown>): Promise<string> {
-  try {
-    await query;
-  } catch (err) {
-    const cause = (err as { cause?: unknown }).cause;
-    return cause instanceof Error ? cause.message : String(err);
-  }
-  throw new Error("expected query to fail");
-}
+import { events, offers, orders, products } from "./schema";
 
 describe.skipIf(!testDatabaseUrl)("db schema", () => {
   let db: Db;
@@ -32,45 +19,6 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
     await truncateAll(db);
   });
 
-  async function seedProduct(
-    listing: ListingContent = {
-      language: "es",
-      en: { title: "Rug", description: "A rug" },
-      native: { title: "Tapete", description: "Un tapete" },
-    },
-  ) {
-    const [seller] = await db.insert(sellers).values({ name: "Ana", country: "MX", language: "es" }).returning();
-    const [product] = await db
-      .insert(products)
-      .values({
-        sellerId: seller!.id,
-        slug: `p-${randomBytes(4).toString("hex")}`,
-        category: "textiles",
-        weightClass: "medium",
-        listing,
-        listPrice: 15000,
-        floorPrice: 12750,
-        stock: 2,
-      })
-      .returning();
-    return { seller: seller!, product: product! };
-  }
-
-  function orderValues(sellerId: string, productId: string) {
-    return {
-      statusToken: randomBytes(16).toString("base64url"),
-      sellerId,
-      productId,
-      unitAmount: 15000,
-      itemAmount: 15000,
-      shippingAmount: 2500,
-      currency: "USD",
-      platformFee: 750,
-      buyerCountry: "DE",
-      expiresAt: new Date(Date.now() + 3 * 3600_000),
-    };
-  }
-
   it("dedupes webhook events on paypal_event_id", async () => {
     const row = { type: "PAYMENT.CAPTURE.COMPLETED", source: "webhook" as const, paypalEventId: "WH-1", rawBody: "{}" };
     const first = await db.insert(events).values(row).onConflictDoNothing().returning();
@@ -80,21 +28,21 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
   });
 
   it("rejects reserving more than stock", async () => {
-    const { product } = await seedProduct();
+    const { product } = await seedProduct(db);
     expect(
       await pgError(db.update(products).set({ reserved: 3 }).where(sql`id = ${product.id}`)),
     ).toMatch(/products_stock_check/);
   });
 
   it("rejects a floor price above list price", async () => {
-    const { product } = await seedProduct();
+    const { product } = await seedProduct(db);
     expect(
       await pgError(db.update(products).set({ floorPrice: 20000 }).where(sql`id = ${product.id}`)),
     ).toMatch(/products_price_check/);
   });
 
   it("rejects fractional and negative money", async () => {
-    const { seller, product } = await seedProduct();
+    const { seller, product } = await seedProduct(db);
     expect(
       await pgError(db.insert(orders).values({ ...orderValues(seller.id, product.id), itemAmount: 150.5 })),
     ).toMatch(/invalid input syntax for type integer/);
@@ -104,14 +52,14 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
   });
 
   it("rejects a platform fee above the item amount", async () => {
-    const { seller, product } = await seedProduct();
+    const { seller, product } = await seedProduct(db);
     expect(
       await pgError(db.insert(orders).values({ ...orderValues(seller.id, product.id), platformFee: 15001 })),
     ).toMatch(/orders_amounts_check/);
   });
 
   it("enforces unique status_token and paypal_order_id but allows many null paypal_order_ids", async () => {
-    const { seller, product } = await seedProduct();
+    const { seller, product } = await seedProduct(db);
     const a = orderValues(seller.id, product.id);
     await db.insert(orders).values(a);
     await db.insert(orders).values(orderValues(seller.id, product.id));
@@ -125,7 +73,7 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
   });
 
   it("allows one order per offer", async () => {
-    const { seller, product } = await seedProduct();
+    const { seller, product } = await seedProduct(db);
     const [offer] = await db
       .insert(offers)
       .values({
@@ -146,7 +94,7 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
   });
 
   it("rejects an unknown order status", async () => {
-    const { seller, product } = await seedProduct();
+    const { seller, product } = await seedProduct(db);
     const bad = db.execute(
       sql`INSERT INTO orders (status_token, seller_id, product_id, unit_amount, item_amount, shipping_amount, currency, platform_fee, buyer_country, expires_at, status)
             VALUES ('t', ${seller.id}, ${product.id}, 1, 1, 0, 'USD', 0, 'DE', now(), 'Paid')`,
@@ -156,15 +104,19 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
 
   describe("full-text search", () => {
     beforeEach(async () => {
-      await seedProduct({
-        language: "es",
-        en: { title: "Handwoven wool rug", description: "Zapotec pattern, natural dyes", materials: "wool" },
-        native: { title: "Tapete tejido a mano", description: "Diseño zapoteco, tintes naturales", materials: "lana" },
+      await seedProduct(db, {
+        listing: {
+          language: "es",
+          en: { title: "Handwoven wool rug", description: "Zapotec pattern, natural dyes", materials: "wool" },
+          native: { title: "Tapete tejido a mano", description: "Diseño zapoteco, tintes naturales", materials: "lana" },
+        },
       });
-      await seedProduct({
-        language: "fil",
-        en: { title: "Rattan basket", description: "Woven in Manila" },
-        native: { title: "Basket na yari sa rattan", description: "Hinabi sa Maynila" },
+      await seedProduct(db, {
+        listing: {
+          language: "fil",
+          en: { title: "Rattan basket", description: "Woven in Manila" },
+          native: { title: "Basket na yari sa rattan", description: "Hinabi sa Maynila" },
+        },
       });
     });
 
