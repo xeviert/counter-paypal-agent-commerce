@@ -230,10 +230,16 @@ Decided (Oct 30):
 
 ### 5.7 Seed data
 
-- [ ] `scripts/onboard.ts` for **KE, IN, MX** (user approves each in the browser) → store `merchant_id`s
-- [ ] `scripts/seed.ts`: 3 personas (Oaxaca weaver MX, Manila basket maker PH, Nairobi beadwork KE; IN optional) × ~10 products through `lib/schemas/listing.ts`, with category, weight class, real photos we own or licensed
-- [ ] Photo storage + `/api/photos/[id]` route built now (§10 #2); seed photos go through the same resize + EXIF strip as P2 uploads
-- [ ] Re-check reporting + disputes with assertion (ARCHITECTURE §11 #3)
+- [ ] `scripts/onboard.ts` for **KE, IN, MX** (user approves each in the browser) → store `merchant_id`s. **Blocked on a database** (no local Docker; Render not deployed). Steps once one exists: `pnpm seed` → `pnpm onboard --seller <id>` per maker (ids printed by seed; PH: `--merchant-id MPMWEFYQWQYUA`) → `pnpm seed` again to publish
+- [x] `scripts/seed.ts` + `seed/catalog.ts`: 3 personas (Lucía Hernández, Teotitlán del Valle MX, 10 rugs/textiles; Rosa Villanueva, Manila PH, 8 baskets; Wanjiru Kamau, Nairobi KE, 8 beadwork pieces; IN skipped) through `lib/schemas/listing.ts`, with category, weight class, stock, floor at 85%. Not run yet (no database)
+- [ ] Real photos we own or licensed in `seed/photos/<slug>/` (`seed/photos/README.md`); none yet
+- [x] Photo storage + `/api/photos/[id]` route built now (§10 #2); seed photos go through the same resize + EXIF strip as P2 uploads (`lib/photos.ts`, sharp)
+- [x] Re-check reporting + disputes with assertion (ARCHITECTURE §11 #3): ✅ Oct 30, transactions, balances and disputes list all 200 for the PH maker (`pnpm check:assertion`)
+
+Decided (Oct 30):
+- Seed makers have fixed UUIDs, which are also their PayPal `tracking_id`s, so seeding and onboarding can run in either order and re-runs never duplicate. Products publish (`live`) only when the maker is receivable, email-confirmed and consented; otherwise `draft`. Re-seeding updates text and prices, never stock, reservations or PayPal fields
+- Personas are fictional. Spanish, Filipino and Swahili text was written by Claude and needs a native speaker's pass before the video (§6.1 language note)
+- Photo pipeline: sharp `rotate()` (applies EXIF orientation) → fit inside 1280px, no upscaling → WebP q80, no metadata written (EXIF, GPS, XMP gone; tested). 5 MB input cap. `/api/photos/[id]` serves by random UUID with `immutable` caching; photos never change in place
 
 **Exit:** Claude (connector or fallback script) buys from the MX maker. Order reaches `PaidHeld`. DB item, shipping, Counter fee, PayPal fee and net amounts match the capture response. Buyer address stored. Stock decremented. The `PAYMENT.CAPTURE.COMPLETED` webhook is deduped against the return-URL capture.
 

@@ -163,7 +163,7 @@ Post-sale calls use the platform token plus a `PayPal-Auth-Assertion` header:
 base64url({"alg":"none"}) + "." + base64url({"iss": PLATFORM_CLIENT_ID, "payer_id": maker.merchant_id}) + "."
 ```
 
-Proven in sandbox for refunds and v2 tracking. Reporting and disputes returned 403 on Oct 25 despite the grant (likely propagation; re-check).
+Proven in sandbox for refunds and v2 tracking. Reporting (transactions, balances) and disputes returned 403 on Oct 25 despite the grant; all pass with the assertion as of Oct 30 (`pnpm check:assertion`), so it was propagation.
 
 ### 4.3 API map
 
@@ -482,7 +482,7 @@ Env vars: `PAYPAL_ENVIRONMENT=SANDBOX`, `PLATFORM_CLIENT_ID`, `PLATFORM_CLIENT_S
 |---|---|---|
 | 1 | Webhooks to Render (spike 11) | Test with the first deploy using a real order (simulator events can't be signature-verified). Record which events arrive for payee-routed captures and releases |
 | 2 | Claude MCP connector → Counter `/api/mcp` (spike 4) | Test with the first deploy |
-| 3 | Reporting + disputes with assertion (403 Oct 25) | Re-check; until then copilot reads from DB |
+| 3 | ~~Reporting + disputes with assertion (403 Oct 25)~~ | ✅ Oct 30: transactions, balances and disputes list all 200 for the PH maker (`pnpm check:assertion`) |
 | 4 | PayPal max hold before auto-release | Check docs; cap `RELEASE_AFTER_DAYS` under it |
 | 5 | Maker login method | Proposed: email magic link. Demo makers seeded with sessions |
 | 6 | Speech-to-text provider | Browser Web Speech API first; paid STT if quality is poor in Spanish/Tagalog/Swahili |
