@@ -1,22 +1,18 @@
 import { eq } from "drizzle-orm";
-import { getDb, type Db } from "@/lib/db";
+import type { Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { log } from "@/lib/log";
 import { webhookEnvelope, type WebhookEnvelope } from "@/lib/schemas/paypal";
-import { pickTransmissionHeaders, verifyWebhookSignature, type TransmissionHeaders } from "./webhooks";
+import { pickTransmissionHeaders, type TransmissionHeaders } from "./webhooks";
 
 export type InboxDeps = {
   db: Db;
   verify: (rawBody: string, headers: TransmissionHeaders) => Promise<boolean>;
-  handle: (event: WebhookEnvelope) => Promise<void>;
+  /** Returns our order id, if any, to link the stored event to it. */
+  handle: (event: WebhookEnvelope) => Promise<{ orderId?: string } | void>;
 };
 
 export type InboxResult = { status: number; outcome: string };
-
-// P1 replaces this with real handlers (ARCHITECTURE §4.6).
-async function logOnly(event: WebhookEnvelope) {
-  log.info("webhook event", { event_type: event.event_type, event_id: event.id, resource_id: event.resource.id });
-}
 
 /**
  * Store → verify → process. PayPal retries non-2xx responses, so transient
@@ -25,7 +21,7 @@ async function logOnly(event: WebhookEnvelope) {
 export async function receivePayPalWebhook(
   rawBody: string,
   requestHeaders: Headers,
-  deps: InboxDeps = { db: getDb(), verify: verifyWebhookSignature, handle: logOnly },
+  deps: InboxDeps,
 ): Promise<InboxResult> {
   let event: WebhookEnvelope;
   try {
@@ -76,13 +72,17 @@ export async function receivePayPalWebhook(
       .where(eq(events.id, row.id));
   }
 
+  let orderId: string | undefined;
   try {
-    await deps.handle(event);
+    orderId = (await deps.handle(event))?.orderId;
   } catch (err) {
     log.error("webhook handler failed", { event_id: event.id, event_type: event.event_type, err });
     await db.update(events).set({ error: String(err) }).where(eq(events.id, row.id));
     return { status: 500, outcome: "handler-failed" };
   }
-  await db.update(events).set({ processedAt: new Date(), error: null }).where(eq(events.id, row.id));
+  await db
+    .update(events)
+    .set({ processedAt: new Date(), error: null, ...(orderId && { orderId }) })
+    .where(eq(events.id, row.id));
   return { status: 200, outcome: "processed" };
 }

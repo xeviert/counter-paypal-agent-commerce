@@ -71,6 +71,11 @@ export async function openCheckout(db: Tx, input: OpenCheckoutInput): Promise<Or
   });
 }
 
+export async function findOrderByPayPalId(db: Tx, paypalOrderId: string): Promise<Order | undefined> {
+  const [order] = await db.select().from(orders).where(eq(orders.paypalOrderId, paypalOrderId));
+  return order;
+}
+
 /** Records the PayPal order created for a checkout. Not a status change, so no `transition()`. */
 export async function attachPayPalOrder(
   db: Tx,

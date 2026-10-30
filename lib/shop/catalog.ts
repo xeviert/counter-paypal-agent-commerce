@@ -89,14 +89,17 @@ export async function searchProducts(
  * A product an agent may view or buy. Drafts and listings in operator review don't exist to agents;
  * paused and restricted ones exist but can't be bought.
  */
-export async function findSellableProduct(db: Tx, productId: string): Promise<{ product: Product; seller: Seller }> {
+export async function findSellableProduct(
+  db: Tx,
+  by: { id: string } | { slug: string },
+): Promise<{ product: Product; seller: Seller }> {
   const [row] = await db
     .select({ product: products, seller: sellers })
     .from(products)
     .innerJoin(sellers, eq(products.sellerId, sellers.id))
-    .where(eq(products.id, productId));
+    .where("id" in by ? eq(products.id, by.id) : eq(products.slug, by.slug));
   if (!row || row.product.status === "draft" || row.product.status === "review") {
-    throw new PolicyError("PRODUCT_NOT_FOUND", `No product with id ${productId}`);
+    throw new PolicyError("PRODUCT_NOT_FOUND", "No such product");
   }
   if (row.product.status !== "live" || row.product.restrictedFlag) {
     throw new PolicyError("PRODUCT_UNAVAILABLE", "This product isn't for sale right now");
@@ -104,16 +107,28 @@ export async function findSellableProduct(db: Tx, productId: string): Promise<{ 
   return row;
 }
 
-export async function getProduct(
-  db: Tx,
-  input: z.output<typeof getProductInput>,
-): Promise<z.output<typeof getProductOutput>["product"]> {
+export type ProductDetail = z.output<typeof getProductOutput>["product"];
+
+export async function getProduct(db: Tx, input: z.output<typeof getProductInput>): Promise<ProductDetail> {
   assertShippable(input.buyerCountry);
-  const { product, seller } = await findSellableProduct(db, input.productId);
+  return productDetail(db, await findSellableProduct(db, { id: input.productId }), input.buyerCountry);
+}
+
+/** For `/p/[slug]`. Same rules as get_product. */
+export async function getProductBySlug(db: Tx, slug: string) {
+  const found = await findSellableProduct(db, { slug });
+  return { detail: await productDetail(db, found), seller: found.seller };
+}
+
+async function productDetail(
+  db: Tx,
+  { product, seller }: { product: Product; seller: Seller },
+  buyerCountry?: string,
+): Promise<ProductDetail> {
   const ids = (await photoIds(db, [product.id])).get(product.id) ?? [];
   const { listing } = product;
   return {
-    ...toSummary(product, seller, { buyerCountry: input.buyerCountry, photoId: ids[0] }),
+    ...toSummary(product, seller, { buyerCountry, photoId: ids[0] }),
     available: Math.max(0, product.stock - product.reserved),
     language: listing.language,
     en: listing.en,

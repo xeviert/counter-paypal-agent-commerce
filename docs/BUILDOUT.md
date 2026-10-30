@@ -212,12 +212,21 @@ Decided (Oct 30):
 
 ### 5.6 Pages + webhook handlers
 
-- [ ] `/checkout/return`: idempotent capture → redirect to `/o/[statusToken]`
-- [ ] `/checkout/cancel`: release stock, show "you weren't charged"
-- [ ] `/o/[statusToken]`: random 128-bit token, never the DB id. "I received it" releases funds in P2, so a guessable URL would let anyone trigger a release. Shows status, item, and ship-to city + country only (no full address)
-- [ ] `/p/[slug]`: plain product page (JSON-LD in P3)
-- [ ] Handlers for `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`
-- [ ] Handler tests replay P0 fixtures: duplicate delivery, `COMPLETED` arriving before the return URL fires, `PENDING` then `COMPLETED`
+- [x] `/checkout/return`: idempotent capture → redirect to `/o/[statusToken]`
+- [x] `/checkout/cancel`: release stock, show "you weren't charged"
+- [x] `/o/[statusToken]`: random 128-bit token, never the DB id. "I received it" releases funds in P2, so a guessable URL would let anyone trigger a release. Shows status, item, and ship-to city + country only (no full address)
+- [x] `/p/[slug]`: plain product page (JSON-LD in P3)
+- [x] Handlers for `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `PAYMENT.CAPTURE.PENDING`, `PAYMENT.CAPTURE.DENIED`
+- [ ] Handler tests replay P0 fixtures: duplicate delivery, `COMPLETED` arriving before the return URL fires, `PENDING` then `COMPLETED` (`lib/shop/payment.test.ts`). Written, not run yet (no local Postgres); CI runs them
+
+Decided (Oct 30):
+- One flow for both capture triggers (`lib/shop/payment.ts`): `settleApprovedOrder()` GETs the PayPal order → already `COMPLETED` → record it, no second capture; ship-to outside the quoted region → `Canceled` (no capture); else `Approved` (locked, `from: CheckoutCreated`, so the sweep can't race it) → capture → `recordCapture()`
+- `recordCapture()` maps capture status → `PaidHeld` (`COMPLETED`, and refund states since resources show delivery-time state), `PaidPending`, `Denied`. Stale or out-of-order deliveries are skipped, never thrown, so PayPal doesn't retry them forever. Buyer name, email and address are saved whenever an order resource offers them. Amount or fee mismatches vs the quote are logged, not blocking. A capture landing on an order we closed unpaid logs an error (needs a refund by hand)
+- Capture events find our order via `supplementary_data.related_ids.order_id` → `orders.paypal_order_id` (not `custom_id`). Unknown orders (spike runs) are acknowledged with 200
+- Return URL: payer-action issues (`INSTRUMENT_DECLINED` …) redirect straight back to PayPal's approval link; a PayPal outage still lands on `/o` (order stays `Approved`, link shown, the webhook retries). Cancel only cancels a `CheckoutCreated` order
+- `Approved` orders whose buyer never finishes keep their stock reserved (the sweep skips them). Surface them in the `/ops` stale view (P3)
+- The inbox links each processed webhook `events` row to our order (`order_id`). Handlers live in `lib/shop/webhook-handlers.ts`; the route wires them in, so `lib/paypal` doesn't import `lib/shop`
+- `/o` sets `referrer: no-referrer` and `noindex` (the token controls the order). Pages read the DB inside `<Suspense>` (Cache Components): `/o` and `/p` build as partial prerenders. `notFound()` there streams the 404 UI with HTTP 200, which is fine for these pages
 
 ### 5.7 Seed data
 

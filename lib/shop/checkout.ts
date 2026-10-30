@@ -23,7 +23,7 @@ export async function createCheckout(
   input: z.output<typeof createCheckoutInput>,
   caller: { agentId?: string } = {},
 ): Promise<CheckoutResult> {
-  const { product, seller } = await findSellableProduct(db, input.productId);
+  const { product, seller } = await findSellableProduct(db, { id: input.productId });
   if (!seller.merchantId || !seller.paymentsReceivable || seller.consentStatus !== "granted") {
     throw new PolicyError("SELLER_NOT_RECEIVABLE", "This maker can't receive payments right now");
   }

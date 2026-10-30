@@ -288,7 +288,7 @@ export const refunds = pgTable(
   ],
 );
 
-// Append-only audit log. Only verified, processed_at and error are updated (webhook processing).
+// Append-only audit log. Only verified, processed_at, error and order_id are updated (webhook processing).
 export const events = pgTable(
   "events",
   {
