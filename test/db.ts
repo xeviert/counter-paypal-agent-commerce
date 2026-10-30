@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { sql } from "drizzle-orm";
 import { createDb, type Db } from "@/lib/db";
-import { products, sellers } from "@/lib/db/schema";
+import { photos, products, sellers } from "@/lib/db/schema";
 import type { ListingContent } from "@/lib/schemas/listing";
 
 export const testDatabaseUrl = process.env.TEST_DATABASE_URL;
@@ -32,11 +32,28 @@ const defaultListing: ListingContent = {
   native: { title: "Tapete", description: "Un tapete" },
 };
 
-/** An MX seller with one live $150 product. */
-export async function seedProduct(db: Db, opts: { listing?: ListingContent; stock?: number } = {}) {
+type SeedOptions = {
+  listing?: ListingContent;
+  stock?: number;
+  seller?: Partial<typeof sellers.$inferInsert>;
+  product?: Partial<typeof products.$inferInsert>;
+};
+
+/** An onboarded MX seller with one live $150 product. */
+export async function seedProduct(db: Db, opts: SeedOptions = {}) {
   const [seller] = await db
     .insert(sellers)
-    .values({ name: "Ana", country: "MX", language: "es", merchantId: `M${randomBytes(6).toString("hex")}` })
+    .values({
+      name: "Ana",
+      locality: "Teotitlán del Valle",
+      country: "MX",
+      language: "es",
+      merchantId: `M${randomBytes(6).toString("hex").toUpperCase()}`,
+      paymentsReceivable: true,
+      primaryEmailConfirmed: true,
+      consentStatus: "granted",
+      ...opts.seller,
+    })
     .returning();
   const [product] = await db
     .insert(products)
@@ -50,9 +67,27 @@ export async function seedProduct(db: Db, opts: { listing?: ListingContent; stoc
       listPrice: 15000,
       floorPrice: 12750,
       stock: opts.stock ?? 2,
+      publishedAt: new Date(),
+      ...opts.product,
     })
     .returning();
   return { seller: seller!, product: product! };
+}
+
+export async function seedPhoto(db: Db, product: { id: string; sellerId: string }, position = 0) {
+  const [photo] = await db
+    .insert(photos)
+    .values({
+      sellerId: product.sellerId,
+      productId: product.id,
+      position,
+      mime: "image/webp",
+      width: 1,
+      height: 1,
+      bytes: Buffer.from("RIFF"),
+    })
+    .returning({ id: photos.id });
+  return photo!;
 }
 
 export function orderValues(sellerId: string, productId: string) {

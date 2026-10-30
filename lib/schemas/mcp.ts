@@ -27,6 +27,7 @@ export const MCP_ERROR_CODES = [
   "OFFER_EXPIRED",
   "RATE_LIMITED",
   "PAYMENT_PROVIDER_ERROR",
+  "INTERNAL_ERROR",
 ] as const;
 
 export type McpErrorCode = (typeof MCP_ERROR_CODES)[number];

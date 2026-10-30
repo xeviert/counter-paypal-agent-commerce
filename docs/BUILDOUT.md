@@ -191,14 +191,24 @@ Decided (Oct 30):
 
 ### 5.5 MCP tools
 
-- [ ] `search_products`: Postgres full-text (`websearch_to_tsquery`) over EN + native text; filters: category, max price, buyer country. Returns summaries with item price, shipping to buyer, approx local price
-- [ ] `get_product`: full listing, photo URLs, provenance, shipping to buyer country, USD price + approx local reference
-- [ ] `create_checkout(productId, quantity, buyerCountry)`: check maker `payments_receivable`, reserve stock, create PayPal order → return approval link, `/o/{statusToken}` URL, total breakdown, expiry time
-- [ ] `get_order_status(statusToken)`
-- [ ] Tool descriptions written for agents: when to call each tool, that the human must approve on PayPal, that quoted totals are final
-- [ ] Each tool returns `structuredContent` + a short text summary. Errors return `isError` with stable codes: `OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY` (`OFFER_EXPIRED` in P2)
-- [ ] Every call logged to `events` with `agentId`
-- [ ] Rate limit per `agentId` and per IP (in-memory; single instance)
+- [x] `search_products`: Postgres full-text (`websearch_to_tsquery`) over EN + native text; filters: category, max price, buyer country. Returns summaries with item price, shipping to buyer, approx local price
+- [x] `get_product`: full listing, photo URLs, provenance, shipping to buyer country, USD price + approx local reference
+- [x] `create_checkout(productId, quantity, buyerCountry)`: check maker `payments_receivable`, reserve stock, create PayPal order → return approval link, `/o/{statusToken}` URL, total breakdown, expiry time
+- [x] `get_order_status(statusToken)`
+- [x] Tool descriptions written for agents: when to call each tool, that the human must approve on PayPal, that quoted totals are final
+- [x] Each tool returns `structuredContent` + a short text summary. Errors return `isError` with stable codes: `OUT_OF_STOCK`, `SELLER_NOT_RECEIVABLE`, `UNSUPPORTED_COUNTRY` (`OFFER_EXPIRED` in P2)
+- [x] Every call logged to `events` with `agentId`
+- [x] Rate limit per `agentId` and per IP (in-memory; single instance)
+- [ ] DB-backed tests (`lib/shop/*.test.ts`, the DB block in `lib/mcp/server.test.ts`) written, not run locally (no Docker); CI runs them
+
+Decided (Oct 30):
+- Logic lives in `lib/shop/` (`catalog.ts`, `checkout.ts`, `order-status.ts`, `urls.ts`) so ACP (§7.6) and the `/o` page reuse it; `lib/mcp/tools.ts` only adapts. `buildMcpHandler({ db, limiter })` lets tests inject both
+- Agents only see live, unrestricted products. Draft/review → `PRODUCT_NOT_FOUND`; paused/restricted → `PRODUCT_UNAVAILABLE`. Checkout also needs `merchant_id`, `payments_receivable` and `consent_status = granted`
+- PayPal create fails after stock is reserved → order `Canceled` (frees stock, payload `paypal_create_failed`); payee errors → `SELLER_NOT_RECEIVABLE`, anything else → `PAYMENT_PROVIDER_ERROR`
+- New code `INTERNAL_ERROR`: the SDK would otherwise send raw `error.message` to agents
+- `events` row per call: `type: mcp.<tool>`, `actor: agentId`, payload `{ args, outcome, code?, count?, ms, userAgent }`; `statusToken` redacted. Product/order ids set only on success (FKs). Rate-limited calls are a log line only
+- Limits: 120/min per `agentId`, 600/min per IP, `create_checkout` 20 per 10 min per `agentId`. claude.ai connector traffic comes from Anthropic's IPs, so many users can share one `agentId`; revisit on Render once we see real headers (§4.4)
+- `ping` stays for connector debugging. Links point at `/p/{slug}`, `/o/{token}`, `/api/photos/{id}`, which land in 5.6/5.7
 
 ### 5.6 Pages + webhook handlers
 

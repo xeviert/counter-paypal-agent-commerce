@@ -71,6 +71,21 @@ export async function openCheckout(db: Tx, input: OpenCheckoutInput): Promise<Or
   });
 }
 
+/** Records the PayPal order created for a checkout. Not a status change, so no `transition()`. */
+export async function attachPayPalOrder(
+  db: Tx,
+  orderId: string,
+  paypal: { paypalOrderId: string; approvalUrl: string },
+): Promise<Order> {
+  const [order] = await db
+    .update(orders)
+    .set(paypal)
+    .where(and(eq(orders.id, orderId), eq(orders.status, "CheckoutCreated")))
+    .returning();
+  if (!order) throw new Error(`order ${orderId} is no longer awaiting its PayPal order`);
+  return order;
+}
+
 /** Fields a transition may set alongside the status. Amounts and ownership never change after create. */
 export type OrderPatch = Partial<
   Omit<

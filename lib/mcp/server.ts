@@ -1,7 +1,10 @@
 import { McpServer, type McpRequestContext } from "@modelcontextprotocol/server";
 import { z } from "zod";
+import { getDb, type Db } from "@/lib/db";
 import { log } from "@/lib/log";
 import { agentFromRequest } from "./agent";
+import { mcpRateLimiter, type RateLimiter } from "./rate-limit";
+import { registerShopTools } from "./tools";
 
 const pingOutput = z.object({
   ok: z.literal(true),
@@ -11,8 +14,12 @@ const pingOutput = z.object({
   time: z.string(),
 });
 
+export type McpDeps = { db: () => Db; limiter: RateLimiter };
+
+const defaultDeps: McpDeps = { db: getDb, limiter: mcpRateLimiter() };
+
 /** Built fresh for every HTTP request (stateless; see createMcpHandler). */
-export function createMcpServer(ctx: McpRequestContext): McpServer {
+export function createMcpServer(ctx: McpRequestContext, deps: McpDeps = defaultDeps): McpServer {
   const agent = agentFromRequest(ctx.requestInfo);
   const server = new McpServer({ name: "counter", version: "0.1.0" });
 
@@ -38,5 +45,6 @@ export function createMcpServer(ctx: McpRequestContext): McpServer {
     },
   );
 
+  registerShopTools(server, { ...deps, agent });
   return server;
 }
