@@ -44,6 +44,16 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: AI_DAILY_CALL_CAP
+        value: "300"
+      # Listing pipeline runs as the counter-workflows task (BUILDOUT §6.2); inline if it can't start.
+      - key: LISTING_RUNNER
+        value: workflow
+      - key: LISTING_WORKFLOW_SLUG
+        value: counter-workflows/listingPipeline
+      # Render API key for starting workflow runs (Account settings → API keys).
+      - key: RENDER_API_KEY
+        sync: false
       # APP_BASE_URL defaults to RENDER_EXTERNAL_URL (lib/env.ts); set it only for a custom domain.
 
   # Checkout expiry now; the release scheduler joins it in P2 (BUILDOUT §6.3). Workflows can't
@@ -66,8 +76,8 @@ services:
           name: counter-db
           property: connectionString
 
-  # Render Workflows (BUILDOUT §4.6). Tasks live in workflows/index.ts; compute plans are set
-  # per task in code, so there's no plan field here. Not deployed yet.
+  # Render Workflows (BUILDOUT §4.6). Tasks live in workflows/index.ts (listingPipeline, §6.2);
+  # compute plans are set per task in code, so there's no plan field here.
   - type: workflow
     name: counter-workflows
     runtime: node
@@ -81,6 +91,10 @@ services:
         fromDatabase:
           name: counter-db
           property: connectionString
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AI_DAILY_CALL_CAP
+        value: "300"
 
 databases:
   - name: counter-db

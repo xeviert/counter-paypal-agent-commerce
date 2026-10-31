@@ -292,15 +292,18 @@ Four days, three tracks. Build in never-cut order so a slip only costs negotiati
 
 ### 6.2 Listing pipeline
 
-- [ ] `lib/ai/listing.ts`: `claude-sonnet-5-5`; images as base64 + transcript in a tagged block; `messages.parse()` with `lib/schemas/listing.ts`; adaptive thinking at low effort (latency budget). Refusal → "couldn't draft this, edit by hand"
-- [ ] `lib/ai/client.ts`: one Anthropic client shared by every role. Logs model + `usage` (input, output, cache read/write tokens) per call to `events`, so cost per role is queryable. Global daily cap on Claude calls (`AI_DAILY_CALL_CAP`, new env var); over cap, public paths fall back to no-AI answers (negotiation counters at list, answerer says "the maker hasn't said") and the maker app says drafting is paused
-- [ ] Per-maker draft cap (20/day) and at most 2 workflow retries, so a stuck client or retry loop can't drain the key
-- [ ] Schema additions: `price_guidance` (`low`, `high`, `rationale`), `restricted_flag` (wildlife parts, weapons and other PayPal AUP categories) → flagged drafts go to operator review instead of publishing
-- [ ] Price guidance is grounded: the maker's spoken price if the transcript has one, else same-category prices from our catalog passed in context. Shown as a suggestion, never auto-applied
-- [ ] Native-language text stays close to the maker's own words; EN is a translation of it, not a separate generation
-- [ ] `workflows/listing-pipeline`: retries + stage status. If workflow start latency eats the budget, run the Claude call inline (streamed) and keep the workflow for retries only
-- [ ] **60s budget**, measured on a phone over 4G: upload ≤ 10s, STT ≤ 10s, Claude ≤ 30s, review render ≤ 10s. Each stage's duration logged to `events`
-- [ ] `scripts/eval-listing.ts`: 5 photo sets × es/fil/sw transcripts → schema-valid, right category, native text faithful, timings. Re-run after every prompt change
+- [x] `lib/ai/listing.ts`: `claude-sonnet-5-5`, photos as base64 WebP + transcript in a `<maker_transcript>` block, one streamed call with structured output (`betaZodOutputFormat(listingBuilderOutput)`), adaptive thinking at `low` effort, `fallbacks: "default"`. The SDK throws when it can't parse structured output (a refusal has no JSON), so the stop reason is read from the stream events first. Refused or invalid → draft `failed` → "write it yourself" + Try again
+- [x] `lib/ai/client.ts`: one Anthropic client (reads `process.env`, not `getEnv`, so the workflow service can use it). `ai.call` event per call: role, model, ms, stop reason, usage (input, output, cache read/write). `AI_DAILY_CALL_CAP` (default 300) is a count of today's `ai.call` rows; over cap the draft goes `failed`/`capped` and the maker app says drafting is paused
+- [x] Per-maker cap: 20 listing calls per UTC day, retries included (`MAKER_DAILY_DRAFTS`). Workflow task retries at most 2 times
+- [x] Output: category, size class, native + EN text, dimensions (only if said), `spokenPriceUsd`, price guidance, restricted flag. Flat nullable schema for the model (`listingBuilderOutput`); `toDraftResult` re-validates against the stored `draftResult` rules (refine, lengths). Flagged drafts publish to `review`
+- [x] Price guidance grounded in the spoken price and live catalog min/median/max per category (`categoryPrices`); spoken price pre-fills the list price on review (floor follows at 85%), guidance shown as a suggestion with a rationale in the maker's language
+- [x] Native text first in the schema, EN translated from it; the draft moves `writing → translating` when the stream reaches `"en"`
+- [x] Runner (`lib/shop/listing-runner.ts`): `LISTING_RUNNER=workflow` starts the `listingPipeline` Render Workflow task (`workflows/index.ts`, 120s timeout, 2 retries; API errors hand the draft back for the retry); `inline` (default, and the fallback if the workflow can't start) runs it in `after()`. Claiming `transcribing → writing` makes double starts a no-op. Drafts stuck > 3 min fail (`failStalePipelines` in the cron sweep; the page treats them as failed meanwhile)
+- [ ] Deploy with `LISTING_RUNNER=workflow`: set `ANTHROPIC_API_KEY` on `counter-workflows` and `RENDER_API_KEY` on `counter` in the dashboard, then confirm a task run in Render and an `ai.call` row
+- [ ] **60s budget** on a phone over 4G. Server side measured Oct 31 (local, inline, 1 photo): queued 37 ms, writing 2.3 s, translating 1.7 s, **total 4.0 s**; eval run 5-8 s. Per-stage times are in `drafts.timings` and the `ai.call` payload. Phone upload time still to measure
+- [x] `scripts/eval-listing.ts` (`pnpm eval:listing [case]`): fixtures in `test/fixtures/listing-eval/` (rug-es, basket-fil, beadwork-sw, pot-es, trap-es) check category, restricted flag, key terms kept in native text, translating stage, < 30 s, and print cost. One generated test image: ok, 5-8 s, ~$0.0065 per draft
+- [ ] Eval photos: 5 real photos still needed in the fixture folders (see their README). Then run all five and record results here
+- [ ] STT (§10 #3) still waits on the phone test matrix; the pipeline uses the browser transcript
 
 ### 6.3 Post-sale money
 

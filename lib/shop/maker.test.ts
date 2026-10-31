@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
-import { events, orders, photos, products, refunds } from "@/lib/db/schema";
+import { drafts, events, orders, photos, products, refunds } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { reviewInput } from "@/lib/schemas/maker";
 import { orderValues, seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
@@ -137,6 +137,12 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
   });
 
   describe("drafts", () => {
+    /** Capture submitted and the pipeline failed: the maker writes the listing on review. */
+    async function writtenByHand(sellerId: string, draftId: string) {
+      await submitCapture(db, sellerId, draftId, "Tapete");
+      await db.update(drafts).set({ stage: "failed", error: "refused" }).where(eq(drafts.id, draftId));
+    }
+
     it("creates a draft on the first photo, caps at four and reorders", async () => {
       const { seller } = await seedProduct(db);
       const first = await addDraftPhoto(db, seller.id, undefined, await jpeg());
@@ -154,15 +160,15 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
       const { draftId } = await addDraftPhoto(db, seller.id, undefined, await jpeg());
       expect(await errorCode(submitCapture(db, seller.id, draftId, "  "))).toBe("capture.needWords");
       expect(await submitCapture(db, seller.id, draftId, "Tapete de lana")).toMatchObject({
-        stage: "ready",
-        transcript: "Tapete de lana",
+        draft: { stage: "transcribing", transcript: "Tapete de lana" },
+        startPipeline: true,
       });
     });
 
     it("publishes live with photos attached when the maker can be paid", async () => {
       const { seller } = await seedProduct(db);
       const { draftId } = await addDraftPhoto(db, seller.id, undefined, await jpeg());
-      await submitCapture(db, seller.id, draftId, "Tapete");
+      await writtenByHand(seller.id, draftId);
       const published = await publishDraft(db, seller, draftId, review("Wool rug, natural dyes"));
 
       expect(published.status).toBe("live");
@@ -179,7 +185,7 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
     it("keeps the product a draft until PayPal is set up", async () => {
       const { seller } = await seedProduct(db, { seller: { paymentsReceivable: false } });
       const { draftId } = await addDraftPhoto(db, seller.id, undefined, await jpeg());
-      await submitCapture(db, seller.id, draftId, "Tapete");
+      await writtenByHand(seller.id, draftId);
       expect((await publishDraft(db, seller, draftId, review())).status).toBe("draft");
     });
 

@@ -7,6 +7,9 @@ import { translator } from "@/lib/i18n";
 import { canPublish } from "@/lib/policy/seller";
 import { sellerCountry } from "@/lib/schemas/common";
 import { getSellerDraft } from "@/lib/shop/drafts";
+import { isStalePipeline, PIPELINE_STAGES } from "@/lib/shop/listing-pipeline";
+import { Button } from "@/components/ui/button";
+import { retryListing } from "../actions";
 import { Capture } from "../capture";
 import { ReviewForm, type ReviewDefaults } from "../review-form";
 import { StageProgress } from "../stage-progress";
@@ -46,7 +49,9 @@ async function Draft({ params }: { params: PageProps<"/s/drafts/[id]">["params"]
     );
   }
 
-  if (draft.stage !== "ready" && draft.stage !== "failed") {
+  // A run that died mid-way would leave the spinner up forever; the cron sweep fails these too.
+  const stale = isStalePipeline(draft);
+  if (PIPELINE_STAGES.includes(draft.stage) && !stale) {
     return (
       <>
         <h1 className="font-heading text-2xl font-semibold tracking-tight">{t(`stages.${draft.stage}`)}</h1>
@@ -65,6 +70,7 @@ async function Draft({ params }: { params: PageProps<"/s/drafts/[id]">["params"]
         en: generated.listing.en,
         native: generated.listing.native,
         dimensions: generated.listing.dimensions,
+        listPrice: draft.result?.spokenPrice,
         stock: 1,
       }
     : { ...(seller.language === "en" ? { en: spoken } : { native: spoken }), stock: 1 };
@@ -73,7 +79,18 @@ async function Draft({ params }: { params: PageProps<"/s/drafts/[id]">["params"]
     <>
       <header className="flex flex-col gap-2">
         <h1 className="font-heading text-2xl font-semibold tracking-tight">{t("review.title")}</h1>
-        {draft.stage === "failed" && <p className="rounded-lg bg-muted p-3 text-sm">{t("stages.failed")}</p>}
+        {(draft.stage === "failed" || stale) && (
+          <div className="flex flex-col gap-2 rounded-lg bg-muted p-3 text-sm">
+            <p>{draft.error === "capped" ? t("review.aiPaused") : t("stages.failed")}</p>
+            {draft.error !== "capped" && (
+              <form action={retryListing.bind(null, draft.id)}>
+                <Button type="submit" variant="outline">
+                  {t("review.retry")}
+                </Button>
+              </form>
+            )}
+          </div>
+        )}
       </header>
       {photos.length > 0 && (
         <ul className="flex gap-2 overflow-x-auto">

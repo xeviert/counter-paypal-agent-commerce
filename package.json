@@ -21,6 +21,7 @@
     "check:assertion": "tsx scripts/check-assertion.ts",
     "e2e:purchase": "tsx scripts/e2e-purchase.ts",
     "cron:sweep": "tsx scripts/cron-sweep.ts",
+    "eval:listing": "tsx scripts/eval-listing.ts",
     "spike:webhooks": "tsx scripts/spike-webhooks.ts",
     "spike:mcp": "tsx scripts/spike-mcp-connector.ts",
     "workflows:start": "tsx workflows/index.ts",

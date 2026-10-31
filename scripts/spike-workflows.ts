@@ -28,4 +28,3 @@ async function run(name: string, input: unknown[]) {
 }
 
 await run("ping", ["from app code"]);
-await run("pingTwice", []);

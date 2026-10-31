@@ -21,6 +21,12 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   TEST_DATABASE_URL: z.url().optional(),
   ANTHROPIC_API_KEY: later, // P2 listing pipeline
+  // Read from process.env by lib/ai and lib/shop/listing-runner (the workflow service has no PayPal
+  // vars, so it can't use getEnv); listed here so the web service validates them on boot.
+  AI_DAILY_CALL_CAP: z.coerce.number().int().min(0).default(300),
+  LISTING_RUNNER: z.enum(["inline", "workflow"]).default("inline"),
+  LISTING_WORKFLOW_SLUG: later,
+  RENDER_API_KEY: later, // workflow runner only
   // Optional here so scripts and the cron job boot without it; lib/auth/session.ts requires it.
   SESSION_SECRET: required.min(32).optional(),
   /** Shows one-tap sign-in as a seeded demo maker on /s/login. For judges; sandbox only. */

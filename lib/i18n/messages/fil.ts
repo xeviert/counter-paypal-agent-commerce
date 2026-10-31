@@ -112,6 +112,8 @@ export const fil: Messages = {
   },
   review: {
     title: "Suriin ang listing mo",
+    aiPaused: "Naka-pause ang awtomatikong pagsulat ngayong araw. Isulat ang listing mo sa ibaba.",
+    retry: "Subukan ulit",
     native: "Wika mo",
     english: "Ingles",
     englishHint: "Ito ang bersyong binabasa ng mga agent ng buyer.",

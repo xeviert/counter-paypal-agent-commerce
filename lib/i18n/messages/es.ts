@@ -112,6 +112,8 @@ export const es: Messages = {
   },
   review: {
     title: "Revisa tu anuncio",
+    aiPaused: "La redacción automática está en pausa por hoy. Escribe tu anuncio abajo.",
+    retry: "Intentar de nuevo",
     native: "Tu idioma",
     english: "Inglés",
     englishHint: "Los agentes de los compradores leen esta versión.",

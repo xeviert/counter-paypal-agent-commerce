@@ -113,6 +113,8 @@ export const en = {
   },
   review: {
     title: "Review your listing",
+    aiPaused: "Automatic drafting is paused for today. Write your listing below.",
+    retry: "Try again",
     native: "Your language",
     english: "English",
     englishHint: "Buyers' agents read this version.",

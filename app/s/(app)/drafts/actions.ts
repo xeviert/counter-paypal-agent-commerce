@@ -7,12 +7,14 @@ import type { MessageKey } from "@/lib/i18n/core";
 import { log } from "@/lib/log";
 import { MAX_PHOTO_BYTES, UnsupportedPhotoError } from "@/lib/photos";
 import { reviewFieldError, reviewFromForm, reviewInput } from "@/lib/schemas/maker";
+import { startListing } from "@/lib/shop/listing-runner";
 import {
   addDraftPhoto,
   DraftError,
   movePhotoEarlier,
   publishDraft,
   removeDraftPhoto,
+  retryDraft,
   saveVoiceNote,
   submitCapture,
   type DraftPhoto,
@@ -83,10 +85,17 @@ export async function uploadVoice(form: FormData): Promise<Result<{ draftId: str
 export async function finishCapture(draftId: string, transcript: string): Promise<Result<object>> {
   const seller = await requireSeller();
   try {
-    await submitCapture(getDb(), seller.id, draftId, transcript);
+    const { startPipeline } = await submitCapture(getDb(), seller.id, draftId, transcript);
+    if (startPipeline) await startListing(draftId);
   } catch (err) {
     return failure(err, "errors.generic");
   }
+  redirect(`/s/drafts/${draftId}`);
+}
+
+export async function retryListing(draftId: string): Promise<void> {
+  const seller = await requireSeller();
+  if (await retryDraft(getDb(), seller.id, draftId)) await startListing(draftId);
   redirect(`/s/drafts/${draftId}`);
 }
 

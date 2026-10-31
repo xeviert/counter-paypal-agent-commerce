@@ -112,6 +112,8 @@ export const sw: Messages = {
   },
   review: {
     title: "Kagua tangazo lako",
+    aiPaused: "Uandishi wa moja kwa moja umesitishwa kwa leo. Andika tangazo lako hapa chini.",
+    retry: "Jaribu tena",
     native: "Lugha yako",
     english: "Kiingereza",
     englishHint: "Mawakala wa wanunuzi husoma toleo hili.",

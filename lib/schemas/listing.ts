@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { category, language, weightClass } from "./common";
+import { category, language, weightClass, type Language } from "./common";
 
 // Shared by seed data (P1) and the listing builder's structured output (P2).
 // Field names must match the `search` tsvector in lib/db/schema.ts.
@@ -58,7 +58,84 @@ export const draftResult = z.object({
   priceGuidance: priceGuidance.optional(),
   /** Possible PayPal AUP category; publishing sends it to operator review. */
   restricted: z.object({ flag: z.boolean(), reason: text(300).optional() }).optional(),
+  /** USD cents, when the maker said a price in the voice note. Pre-fills the review form. */
+  spokenPrice: z.number().int().positive().optional(),
 });
+
+// ── Listing builder structured output (BUILDOUT §6.2) ───────────────────
+// Structured outputs can't express `.refine`, optional-vs-null or length limits, so the model gets
+// this flat, nullable shape and `toDraftResult` re-validates it against the stored schemas.
+// Field order is generation order: native text first, English translated from it.
+
+const builderText = z.object({
+  title: z.string().describe("At most 120 characters"),
+  description: z.string().describe("2-5 sentences, at most 1500 characters"),
+  materials: z.string().nullable(),
+  care: z.string().nullable(),
+  provenance: z.string().nullable().describe("Who made it, where and how, from the maker's own words"),
+});
+
+export const listingBuilderOutput = z.object({
+  category,
+  weightClass,
+  native: builderText.nullable().describe("In the maker's language, close to their own words. Null when they speak English"),
+  en: builderText.describe("English translation of the native text"),
+  dimensions: z
+    .object({ lengthCm: z.number(), widthCm: z.number(), heightCm: z.number().nullable() })
+    .nullable()
+    .describe("Only if the maker said sizes or they are certain from the photos"),
+  spokenPriceUsd: z.number().nullable().describe("The price the maker asked for, converted to USD; null if not said"),
+  priceGuidance: z.object({ lowUsd: z.number(), highUsd: z.number(), rationale: z.string() }),
+  restricted: z.object({ flag: z.boolean(), reason: z.string().nullable() }),
+});
+
+export type ListingBuilderOutput = z.infer<typeof listingBuilderOutput>;
+
+const dollarsToCents = (usd: number | null | undefined) =>
+  usd !== null && usd !== undefined && Number.isFinite(usd) && usd > 0 ? Math.round(usd * 100) : undefined;
+
+const nonEmpty = (value: string | null) => (value?.trim() ? value.trim() : undefined);
+
+function toListingText(t: z.infer<typeof builderText>) {
+  return {
+    title: t.title.trim(),
+    description: t.description.trim(),
+    ...(nonEmpty(t.materials) && { materials: nonEmpty(t.materials) }),
+    ...(nonEmpty(t.care) && { care: nonEmpty(t.care) }),
+    ...(nonEmpty(t.provenance) && { provenance: nonEmpty(t.provenance) }),
+  };
+}
+
+/** Model output → `draftResult`. Throws a ZodError if the text breaks the stored schema's rules. */
+export function toDraftResult(output: ListingBuilderOutput, language: Language): DraftResult {
+  const low = dollarsToCents(output.priceGuidance.lowUsd);
+  const high = dollarsToCents(output.priceGuidance.highUsd);
+  const d = output.dimensions;
+  return draftResult.parse({
+    draft: {
+      category: output.category,
+      weightClass: output.weightClass,
+      listing: {
+        language,
+        en: toListingText(output.en),
+        ...(language !== "en" && output.native && { native: toListingText(output.native) }),
+        ...(d &&
+          d.lengthCm > 0 &&
+          d.widthCm > 0 && {
+            dimensions: { lengthCm: d.lengthCm, widthCm: d.widthCm, ...(d.heightCm && d.heightCm > 0 && { heightCm: d.heightCm }) },
+          }),
+      },
+    },
+    ...(low &&
+      high &&
+      low <= high && { priceGuidance: { low, high, rationale: output.priceGuidance.rationale.trim().slice(0, 300) || "-" } }),
+    restricted: {
+      flag: output.restricted.flag,
+      ...(nonEmpty(output.restricted.reason) && { reason: nonEmpty(output.restricted.reason)!.slice(0, 300) }),
+    },
+    ...(dollarsToCents(output.spokenPriceUsd) && { spokenPrice: dollarsToCents(output.spokenPriceUsd) }),
+  });
+}
 
 export type ListingText = z.infer<typeof listingText>;
 export type Dimensions = z.infer<typeof dimensions>;

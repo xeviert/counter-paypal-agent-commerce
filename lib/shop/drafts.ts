@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, desc, eq, inArray, isNull, max, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, lt, max, ne, or, sql } from "drizzle-orm";
 import type { Tx } from "@/lib/db";
 import { drafts, events, photos, products, voiceNotes } from "@/lib/db/schema";
 import { processPhoto } from "@/lib/photos";
@@ -7,6 +7,7 @@ import { canPublish } from "@/lib/policy/seller";
 import type { DraftStage } from "@/lib/schemas/common";
 import { uuid } from "@/lib/schemas/common";
 import type { ListingDraft } from "@/lib/schemas/listing";
+import { isStalePipeline, MAKER_DAILY_DRAFTS, makerDraftsToday, PIPELINE_STAGES, STALE_PIPELINE_MS } from "./listing-pipeline";
 
 // Maker listing drafts (BUILDOUT §6.1 capture + review). Every function takes the session seller id
 // and only touches that maker's rows. `products` is written once, on publish.
@@ -17,6 +18,11 @@ export const MAX_TRANSCRIPT = 5000;
 
 /** Stages where the maker may still change photos, voice or text. */
 const EDITABLE: readonly DraftStage[] = ["capturing", "ready", "failed"];
+
+/** Also true for a pipeline run that died: the maker can write the listing or try again. */
+function isEditable(draft: Pick<Draft, "stage" | "updatedAt">): boolean {
+  return EDITABLE.includes(draft.stage) || isStalePipeline(draft);
+}
 
 export type Draft = typeof drafts.$inferSelect;
 export type DraftPhoto = { id: string; position: number };
@@ -49,7 +55,7 @@ async function editableDraft(tx: Tx, sellerId: string, draftId: string | undefin
     return created!;
   }
   const draft = await ownedDraft(tx, sellerId, draftId, true);
-  if (!EDITABLE.includes(draft.stage)) throw new DraftError("errors.notFound");
+  if (!isEditable(draft)) throw new DraftError("errors.notFound");
   return draft;
 }
 
@@ -164,10 +170,17 @@ export async function saveVoiceNote(
 }
 
 /**
- * Capture done. Until the listing pipeline (§6.2) lands, the draft goes straight to `ready` and the
- * review form starts from the transcript.
+ * Capture done → `transcribing`, which the listing pipeline claims (lib/shop/listing-pipeline.ts).
+ * Over the maker's daily draft cap the draft goes straight to `failed` ("capped") and the maker
+ * writes the listing on the review screen. Returns whether the pipeline should be started.
  */
-export async function submitCapture(db: Tx, sellerId: string, draftId: string, transcript: string): Promise<Draft> {
+export async function submitCapture(
+  db: Tx,
+  sellerId: string,
+  draftId: string,
+  transcript: string,
+): Promise<{ draft: Draft; startPipeline: boolean }> {
+  const capped = (await makerDraftsToday(db, sellerId)) >= MAKER_DAILY_DRAFTS;
   return db.transaction(async (tx) => {
     const draft = await editableDraft(tx, sellerId, draftId);
     const text = transcript.trim().slice(0, MAX_TRANSCRIPT);
@@ -175,11 +188,35 @@ export async function submitCapture(db: Tx, sellerId: string, draftId: string, t
     if (!text && !draft.voiceNoteId) throw new DraftError("capture.needWords");
     const [updated] = await tx
       .update(drafts)
-      .set({ transcript: text || null, stage: "ready" })
+      .set({
+        transcript: text || null,
+        result: null,
+        ...(capped ? { stage: "failed", error: "capped" } : { stage: "transcribing", error: null }),
+      })
       .where(eq(drafts.id, draft.id))
       .returning();
-    return updated!;
+    return { draft: updated!, startPipeline: !capped };
   });
+}
+
+/** "Try again" on a failed draft: back into the pipeline unless the maker is over the daily cap. */
+export async function retryDraft(db: Tx, sellerId: string, draftId: string): Promise<boolean> {
+  if ((await makerDraftsToday(db, sellerId)) >= MAKER_DAILY_DRAFTS) return false;
+  const rows = await db
+    .update(drafts)
+    .set({ stage: "transcribing", error: null })
+    .where(
+      and(
+        eq(drafts.id, draftId),
+        eq(drafts.sellerId, sellerId),
+        or(
+          eq(drafts.stage, "failed"),
+          and(inArray(drafts.stage, PIPELINE_STAGES), lt(drafts.updatedAt, new Date(Date.now() - STALE_PIPELINE_MS))),
+        ),
+      ),
+    )
+    .returning({ id: drafts.id });
+  return rows.length === 1;
 }
 
 const SLUG_MAX = 80;
@@ -223,7 +260,7 @@ export async function publishDraft(
 ): Promise<PublishedProduct> {
   return db.transaction(async (tx) => {
     const draft = await ownedDraft(tx, seller.id, draftId, true);
-    if (!EDITABLE.includes(draft.stage)) throw new DraftError("errors.notFound");
+    if (!isEditable(draft)) throw new DraftError("errors.notFound");
     if ((await draftPhotos(tx, draft.id)).length === 0) throw new DraftError("review.needPhoto");
 
     const restricted = draft.result?.restricted?.flag ?? false;
