@@ -6,6 +6,7 @@ import { getDb } from "@/lib/db";
 import { PolicyError } from "@/lib/policy/errors";
 import { statusToken, type Money, type OrderStatus } from "@/lib/schemas/common";
 import { getOrderStatus } from "@/lib/shop/order-status";
+import { ConfirmReceived } from "./confirm-received";
 
 export const metadata: Metadata = {
   title: "Your order · Counter",
@@ -64,6 +65,11 @@ async function OrderStatusView({ params }: { params: PageProps<"/o/[statusToken]
 
       {NOT_CHARGED.has(view.status) && <p className="font-medium">You weren&apos;t charged.</p>}
       <p>{view.nextStep}</p>
+
+      {(view.status === "Shipped" || view.status === "PaidHeld") && view.releaseStatus === "held" && (
+        <ConfirmReceived token={token} />
+      )}
+      {view.releaseStatus === "requested" && <p className="text-sm text-muted-foreground">Paying the maker…</p>}
 
       {view.approvalUrl && (
         <a href={view.approvalUrl} rel="noreferrer" className={buttonVariants({ size: "lg" })}>

@@ -198,6 +198,7 @@ export type WebhookEnvelope = z.infer<typeof webhookEnvelope>;
 export const refund = z.looseObject({
   id: z.string(),
   status: z.string(),
+  links: z.array(link).optional(),
   amount: paypalMoney.optional(),
   seller_payable_breakdown: z
     .looseObject({
@@ -213,3 +214,43 @@ export type Refund = z.infer<typeof refund>;
 
 /** `POST /v2/checkout/orders/{id}/track` returns the order; we only need to know it worked. */
 export const trackResponse = z.looseObject({ id: z.string() });
+
+/**
+ * `POST /v1/payments/referenced-payouts-items` response, and the `PAYMENT.REFERENCED-PAYOUT-ITEM.*`
+ * webhook resource (`reference_id` = capture id). `payout_amount` is in the maker's currency in
+ * PayPal's minor-unit shape; kept as information only.
+ */
+export const referencedPayoutItem = z.looseObject({
+  item_id: z.string().optional(),
+  reference_id: z.string(),
+  reference_type: z.string().optional(),
+  processing_state: z.looseObject({ status: z.string(), reason: z.string().optional() }).optional(),
+  payout_amount: z.looseObject({ amount: z.number(), currencyCode: z.string(), exponent: z.number() }).optional(),
+  payout_transaction_id: z.string().optional(),
+});
+
+export type ReferencedPayoutItem = z.infer<typeof referencedPayoutItem>;
+
+/** Capture id a refund belongs to: its `up` link points at `/v2/payments/captures/{id}`. */
+export function refundCaptureId(r: { links?: Link[] }): string | undefined {
+  return findLink(r.links, "up")?.match(/\/captures\/([^/?]+)/)?.[1];
+}
+
+/** `CUSTOMER.DISPUTE.*` resource. Loose: only the fields that find our order and the outcome. */
+export const dispute = z.looseObject({
+  dispute_id: z.string(),
+  status: z.string().optional(),
+  reason: z.string().optional(),
+  disputed_transactions: z
+    .array(z.looseObject({ seller_transaction_id: z.string().optional() }))
+    .optional(),
+  dispute_outcome: z.looseObject({ outcome_code: z.string().optional() }).optional(),
+});
+
+export type Dispute = z.infer<typeof dispute>;
+
+/** `MERCHANT.ONBOARDING.COMPLETED` / `MERCHANT.PARTNER-CONSENT.REVOKED` resource. */
+export const merchantEvent = z.looseObject({
+  merchant_id: z.string().optional(),
+  tracking_id: z.string().optional(),
+});

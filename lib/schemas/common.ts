@@ -58,6 +58,9 @@ export const NOTIFICATION_KINDS = [
   "dispute_opened",
   "funds_released",
   "consent_revoked",
+  "ship_reminder",
+  "refunded",
+  "dispute_resolved",
 ] as const;
 
 export type Category = (typeof CATEGORIES)[number];

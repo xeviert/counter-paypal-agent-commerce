@@ -1,5 +1,11 @@
 import { formatCents } from "@/lib/schemas/common";
-import { refund as refundSchema, trackResponse, type Refund } from "@/lib/schemas/paypal";
+import {
+  referencedPayoutItem,
+  refund as refundSchema,
+  trackResponse,
+  type ReferencedPayoutItem,
+  type Refund,
+} from "@/lib/schemas/paypal";
 import { authAssertion } from "./assertion";
 import { paypalRequest } from "./client";
 
@@ -69,4 +75,18 @@ export async function refundCapture(maker: Maker, input: RefundInput): Promise<R
 /** Platform fee PayPal returned with this refund (proportional, e.g. $0.10 of a $2.00 refund). */
 export function platformFeeReturned(r: Refund): number {
   return (r.seller_payable_breakdown?.platform_fees ?? []).reduce((sum, fee) => sum + fee.amount.cents, 0);
+}
+
+/**
+ * Releases a DELAYED capture to the maker (referenced payouts). Platform token, no assertion: the
+ * platform holds the funds. `release:{orderId}` makes a retry replay PayPal's first answer.
+ */
+export async function releaseFunds(input: { orderId: string; captureId: string }): Promise<ReferencedPayoutItem> {
+  return paypalRequest("referenced-payouts.release", "/v1/payments/referenced-payouts-items", {
+    method: "POST",
+    requestId: `release:${input.orderId}`,
+    headers: { Prefer: "return=representation" },
+    body: { reference_id: input.captureId, reference_type: "TRANSACTION_ID" },
+    schema: referencedPayoutItem,
+  });
 }

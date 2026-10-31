@@ -56,16 +56,16 @@ services:
         sync: false
       # APP_BASE_URL defaults to RENDER_EXTERNAL_URL (lib/env.ts); set it only for a custom domain.
 
-  # Checkout expiry now; the release scheduler joins it in P2 (BUILDOUT §6.3). Workflows can't
-  # schedule or run past 24h, so timers live here. Release needs the PayPal vars too: move the
-  # shared ones to an envVarGroup then.
+  # Every minute (BUILDOUT §6.3): checkout expiry, dead listing drafts, releases that are due, stuck
+  # release retries, ship reminders. Workflows can't schedule or run past 24h, so timers live here.
+  # Releases call PayPal, so this needs the PayPal vars too. Secrets are entered once in the
+  # dashboard (same values as the web service).
   - type: cron
     name: counter-sweep
     runtime: node
     region: oregon
     plan: 0.5c-512mb
-    # Every 15 min until P2 releases need minute precision (checkouts expire after 3h).
-    schedule: "*/15 * * * *"
+    schedule: "* * * * *"
     branch: main
     buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile
     startCommand: node node_modules/tsx/dist/cli.mjs scripts/cron-sweep.ts
@@ -75,6 +75,21 @@ services:
         fromDatabase:
           name: counter-db
           property: connectionString
+      # Cron jobs don't get RENDER_EXTERNAL_URL.
+      - key: APP_BASE_URL
+        value: https://counter-2cdt.onrender.com
+      - key: PAYPAL_ENVIRONMENT
+        value: SANDBOX
+      - key: PLATFORM_MERCHANT_ID
+        value: 9MGXZVWN9N9EE
+      - key: PLATFORM_FEE_BPS
+        value: "500"
+      - key: RELEASE_AFTER_DAYS
+        value: "14"
+      - key: PLATFORM_CLIENT_ID
+        sync: false
+      - key: PLATFORM_CLIENT_SECRET
+        sync: false
 
   # Render Workflows (BUILDOUT §4.6). Tasks live in workflows/index.ts (listingPipeline, §6.2);
   # compute plans are set per task in code, so there's no plan field here.

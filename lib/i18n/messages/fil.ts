@@ -248,5 +248,10 @@ export const fil: Messages = {
     dispute_opened: "{product}: nagbukas ng dispute ang buyer. Naka-hold ang pera mo.",
     funds_released: "Nasa PayPal account mo na ang {amount} para sa {product}.",
     consent_revoked: "Hindi maabot ng Counter ang PayPal mo. Nakatago ang mga produkto mo hanggang ikonekta mo ulit.",
+    ship_reminder: "Nabayaran ang {product} {days} araw na ang nakalipas. Ilagay ang tracking para mai-release ng PayPal ang pera mo.",
+    refunded: "{product}: na-refund sa buyer ang {amount} sa PayPal.",
+    dispute_resolved: "{product}: sarado na ang dispute. {outcome}",
+    outcomeMaker: "Napagpasyahan ito pabor sa iyo; mare-release ang pera mo gaya ng dati.",
+    outcomeBuyer: "Napagpasyahan ito pabor sa buyer, na na-refund na.",
   },
 };

@@ -1,8 +1,9 @@
-import { and, asc, desc, eq, inArray, lte, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 import type { z } from "zod";
 import type { Tx } from "@/lib/db";
 import { photos, products, sellers } from "@/lib/db/schema";
 import { PolicyError } from "@/lib/policy/errors";
+import { canReceive } from "@/lib/policy/seller";
 import { approxLocal } from "@/lib/policy/fx";
 import { isShippableCountry, shippingQuote } from "@/lib/policy/shipping";
 import { sellerCountry, toMoney } from "@/lib/schemas/common";
@@ -68,6 +69,10 @@ export async function searchProducts(
   const filters: (SQL | undefined)[] = [
     eq(products.status, "live"),
     eq(products.restrictedFlag, false),
+    // Makers PayPal can't pay right now (revoked consent, receiving off) drop out until they reconnect.
+    isNotNull(sellers.merchantId),
+    eq(sellers.paymentsReceivable, true),
+    eq(sellers.consentStatus, "granted"),
     sql`${products.search} @@ ${query}`,
     input.category && eq(products.category, input.category),
     input.maxPrice !== undefined ? lte(products.listPrice, Math.round(input.maxPrice * 100)) : undefined,
@@ -87,7 +92,7 @@ export async function searchProducts(
 
 /**
  * A product an agent may view or buy. Drafts and listings in operator review don't exist to agents;
- * paused and restricted ones exist but can't be bought.
+ * paused and restricted ones exist but can't be bought, nor can anything from a maker PayPal can't pay.
  */
 export async function findSellableProduct(
   db: Tx,
@@ -103,6 +108,9 @@ export async function findSellableProduct(
   }
   if (row.product.status !== "live" || row.product.restrictedFlag) {
     throw new PolicyError("PRODUCT_UNAVAILABLE", "This product isn't for sale right now");
+  }
+  if (!canReceive(row.seller)) {
+    throw new PolicyError("SELLER_NOT_RECEIVABLE", "This maker can't receive payments right now");
   }
   return row;
 }

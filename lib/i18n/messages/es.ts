@@ -248,5 +248,10 @@ export const es: Messages = {
     dispute_opened: "{product}: el comprador abrió una disputa. Tu dinero está retenido.",
     funds_released: "{amount} de {product} ya está en tu cuenta de PayPal.",
     consent_revoked: "Counter no puede acceder a tu PayPal. Tus productos están ocultos hasta que lo conectes otra vez.",
+    ship_reminder: "{product} se pagó hace {days} días. Agrega la guía para que PayPal libere tu dinero.",
+    refunded: "{product}: se reembolsaron {amount} al comprador por PayPal.",
+    dispute_resolved: "{product}: la disputa se cerró. {outcome}",
+    outcomeMaker: "Se resolvió a tu favor; tu dinero se liberará como siempre.",
+    outcomeBuyer: "Se resolvió a favor del comprador, que recibió su reembolso.",
   },
 };

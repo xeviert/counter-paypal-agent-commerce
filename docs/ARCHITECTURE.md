@@ -360,7 +360,7 @@ sequenceDiagram
   end
 ```
 
-`RELEASE_AFTER_DAYS` defaults to 14 (set to minutes for the demo). Open: PayPal's maximum hold before auto-release.
+`RELEASE_AFTER_DAYS` defaults to 14 (minutes for the demo). The timer is the every-minute cron sweep, not a workflow (workflows cap at 24h). PayPal pays a DELAYED capture out by itself after 28 days, so the due date is capped at capture + 26 days, and anything still held then is released whether shipped or not. A paid order with no tracking after 5 days reminds the maker once; nothing is refunded automatically. Releases go `held → requested → released | failed`; a dispute pauses the timer (the order leaves `PaidHeld`/`Shipped`) and a maker win resumes it with a new due date. Only a human on `/o/[statusToken]` can confirm receipt.
 
 ### 6.5 Order lifecycle
 
@@ -486,7 +486,7 @@ Env vars: `PAYPAL_ENVIRONMENT=SANDBOX`, `PLATFORM_CLIENT_ID`, `PLATFORM_CLIENT_S
 | 1 | Webhooks to Render (spike 11) | Test with the first deploy using a real order (simulator events can't be signature-verified). Record which events arrive for payee-routed captures and releases |
 | 2 | Claude MCP connector → Counter `/api/mcp` (spike 4) | Test with the first deploy |
 | 3 | ~~Reporting + disputes with assertion (403 Oct 25)~~ | ✅ Oct 30: transactions, balances and disputes list all 200 for the PH maker (`pnpm check:assertion`) |
-| 4 | PayPal max hold before auto-release | Check docs; cap `RELEASE_AFTER_DAYS` under it |
+| 4 | PayPal max hold before auto-release | ✅ 28 days (PayPal delayed disbursement docs). Due dates capped at capture + 26 days |
 | 5 | Maker login method | ✅ Decided Oct 31: email + password (scrypt) and a stateless HMAC-signed cookie (`SESSION_SECRET`, 30 days, `SameSite=Lax` so PayPal's onboarding redirect keeps it). Seeded makers have no email and sign in from a demo picker when `DEMO_LOGIN` is on |
 | 6 | Speech-to-text provider | Browser Web Speech API first; paid STT if quality is poor in Spanish/Tagalog/Swahili |
 | 7 | KE, IN, MX makers not yet onboarded | Run Connect PayPal for each before seeding |

@@ -1,10 +1,18 @@
 import { getEnv } from "@/lib/env";
+import type { z } from "zod";
 import {
   capture,
+  dispute,
+  merchantEvent,
   order,
+  referencedPayoutItem,
+  refund,
   verifyWebhookResponse,
   type Capture,
+  type Dispute,
   type PayPalOrder,
+  type ReferencedPayoutItem,
+  type Refund,
   type WebhookEnvelope,
 } from "@/lib/schemas/paypal";
 import { paypalRequest } from "./client";
@@ -51,12 +59,32 @@ const CAPTURE_EVENTS = new Set([
 export type WebhookResource =
   | { kind: "capture"; capture: Capture }
   | { kind: "order"; order: PayPalOrder }
+  /** REFUNDED (from Counter, the maker's PayPal, or a lost dispute) and REVERSED (chargeback). */
+  | { kind: "refund"; refund: Refund }
+  | { kind: "payout"; payout: ReferencedPayoutItem }
+  | { kind: "dispute"; stage: "created" | "updated" | "resolved"; dispute: Dispute }
+  | { kind: "merchant"; stage: "onboarded" | "consent_revoked"; merchant: z.infer<typeof merchantEvent> }
   | { kind: "unhandled" };
 
 /** Throws if a handled event's resource doesn't match its schema, so the inbox records the error. */
 export function parseWebhookResource(event: WebhookEnvelope): WebhookResource {
-  if (CAPTURE_EVENTS.has(event.event_type)) return { kind: "capture", capture: capture.parse(event.resource) };
-  if (event.event_type === "CHECKOUT.ORDER.APPROVED") return { kind: "order", order: order.parse(event.resource) };
+  const type = event.event_type;
+  if (CAPTURE_EVENTS.has(type)) return { kind: "capture", capture: capture.parse(event.resource) };
+  if (type === "CHECKOUT.ORDER.APPROVED") return { kind: "order", order: order.parse(event.resource) };
+  if (type === "PAYMENT.CAPTURE.REFUNDED" || type === "PAYMENT.CAPTURE.REVERSED") {
+    return { kind: "refund", refund: refund.parse(event.resource) };
+  }
+  if (type.startsWith("PAYMENT.REFERENCED-PAYOUT-ITEM.")) {
+    return { kind: "payout", payout: referencedPayoutItem.parse(event.resource) };
+  }
+  if (type.startsWith("CUSTOMER.DISPUTE.")) {
+    const stage = type.endsWith(".CREATED") ? "created" : type.endsWith(".RESOLVED") ? "resolved" : "updated";
+    return { kind: "dispute", stage, dispute: dispute.parse(event.resource) };
+  }
+  if (type === "MERCHANT.ONBOARDING.COMPLETED") return { kind: "merchant", stage: "onboarded", merchant: merchantEvent.parse(event.resource) };
+  if (type === "MERCHANT.PARTNER-CONSENT.REVOKED") {
+    return { kind: "merchant", stage: "consent_revoked", merchant: merchantEvent.parse(event.resource) };
+  }
   return { kind: "unhandled" };
 }
 

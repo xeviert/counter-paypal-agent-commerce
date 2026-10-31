@@ -20,6 +20,8 @@
     "seed": "tsx scripts/seed.ts",
     "check:assertion": "tsx scripts/check-assertion.ts",
     "e2e:purchase": "tsx scripts/e2e-purchase.ts",
+    "e2e:release": "tsx scripts/e2e-release.ts",
+    "e2e:refund": "tsx scripts/e2e-refund.ts",
     "cron:sweep": "tsx scripts/cron-sweep.ts",
     "eval:listing": "tsx scripts/eval-listing.ts",
     "spike:webhooks": "tsx scripts/spike-webhooks.ts",

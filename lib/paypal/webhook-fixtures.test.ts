@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { webhookEnvelope } from "@/lib/schemas/paypal";
+import { refundCaptureId, webhookEnvelope } from "@/lib/schemas/paypal";
 import { buildVerifyBody, parseWebhookResource, pickTransmissionHeaders } from "./webhooks";
 
 // Real sandbox deliveries captured during spike 11 (Oct 27): headers + exact raw body.
@@ -52,8 +52,21 @@ describe("parseWebhookResource", () => {
     expect(approved.kind === "order" && approved.order.status).toBe("COMPLETED");
   });
 
-  it("leaves refund-shaped and unhandled resources alone", () => {
-    expect(parse("PAYMENT.CAPTURE.REFUNDED").kind).toBe("unhandled");
+  it("parses refunds and payouts, and finds the refunded capture through its up link", () => {
+    const refunded = parse("PAYMENT.CAPTURE.REFUNDED");
+    expect(refunded.kind).toBe("refund");
+    if (refunded.kind === "refund") {
+      expect(refundCaptureId(refunded.refund)).toBe("2DH54088UW786173Y");
+      expect(refunded.refund.amount?.cents).toBe(200);
+    }
+    const payout = parse("PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED");
+    expect(payout).toMatchObject({
+      kind: "payout",
+      payout: { reference_id: "2DH54088UW786173Y", processing_state: { status: "SUCCESS" } },
+    });
+  });
+
+  it("leaves unsubscribed events alone", () => {
     expect(parse("CHECKOUT.ORDER.COMPLETED").kind).toBe("unhandled");
   });
 });

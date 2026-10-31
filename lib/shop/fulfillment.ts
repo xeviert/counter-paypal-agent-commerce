@@ -1,11 +1,12 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { Tx } from "@/lib/db";
-import { transition, type Order } from "@/lib/db/orders";
+import { transition, type EventSource, type Order } from "@/lib/db/orders";
 import { events, orders, refunds } from "@/lib/db/schema";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { PayPalError } from "@/lib/paypal/client";
 import { addTracker, platformFeeReturned, refundCapture } from "@/lib/paypal/post-sale";
+import type { Refund } from "@/lib/schemas/paypal";
 import { isKnownCarrier, OTHER_CARRIER } from "@/lib/policy/carriers";
 import { releaseDueAt } from "@/lib/policy/release";
 import { sellerCountry, type OrderStatus } from "@/lib/schemas/common";
@@ -78,7 +79,7 @@ export async function addTracking(db: Tx, maker: Maker, orderId: string, input: 
       carrierNameOther: input.carrier === OTHER_CARRIER ? carrierNameOther : null,
       trackingNumber,
       shippedAt,
-      releaseDueAt: releaseDueAt(shippedAt, getEnv().RELEASE_AFTER_DAYS),
+      releaseDueAt: releaseDueAt(shippedAt, getEnv().RELEASE_AFTER_DAYS, order.capturedAt),
     },
     payload: { carrier: input.carrier },
   });
@@ -86,7 +87,7 @@ export async function addTracking(db: Tx, maker: Maker, orderId: string, input: 
 }
 
 /** Statuses where money is still held at PayPal and the maker may refund from Counter. */
-const REFUNDABLE: readonly OrderStatus[] = ["PaidHeld", "Shipped", "Disputed"];
+export const REFUNDABLE: readonly OrderStatus[] = ["PaidHeld", "Shipped", "Disputed"];
 
 export function refundableCents(order: Pick<Order, "itemAmount" | "shippingAmount" | "refundedAmount">): number {
   return order.itemAmount + order.shippingAmount - order.refundedAmount;
@@ -157,37 +158,59 @@ export async function refundOrder(
     throw err;
   }
 
-  const feeReturned = platformFeeReturned(refund);
-  const updated = await db.transaction(async (tx) => {
-    const [settled] = await tx
-      .update(refunds)
-      .set({ status: refund.status, paypalRefundId: refund.id, platformFeeReturned: feeReturned })
-      .where(and(eq(refunds.id, row.id), eq(refunds.status, "pending")))
-      .returning();
-    const [current] = await tx.select().from(orders).where(eq(orders.id, order.id)).for("update");
-    if (!settled) return current!;
-    const [bumped] = await tx
-      .update(orders)
-      .set({
-        refundedAmount: sql`${orders.refundedAmount} + ${row.amount}`,
-        platformFeeRefunded: sql`least(${orders.platformFeeRefunded} + ${feeReturned}, ${orders.platformFee})`,
-      })
-      .where(eq(orders.id, order.id))
-      .returning();
-    await tx.insert(events).values({
-      type: "order.refunded",
-      source: "web",
-      actor: maker.id,
-      orderId: order.id,
-      sellerId: order.sellerId,
-      productId: order.productId,
-      payload: { n: row.n, cents: row.amount, refundId: refund.id, status: refund.status, platformFeeReturned: feeReturned },
-    });
-    if (refundableCents(bumped!) === 0) {
-      return (await transition(tx, order.id, "Refunded", { source: "web", actor: maker.id, from: REFUNDABLE })).order;
-    }
-    return bumped!;
-  });
+  const updated = await settleRefund(db, row.id, refund, { source: "web", actor: maker.id });
   if (refund.status !== "COMPLETED") log.warn("refund not completed yet", { order_id: order.id, status: refund.status });
   return { refundedCents: row.amount, order: updated };
+}
+
+export type RefundTrigger = { source: EventSource; actor: string };
+
+/**
+ * Books a PayPal refund against its `refunds` row: totals, audit event, and `Refunded` once nothing
+ * is left. Our own refund call and the PAYMENT.CAPTURE.REFUNDED webhook both land here; whichever
+ * settles the pending row first books it, the other is a no-op.
+ */
+export async function settleRefund(db: Tx, refundRowId: string, refund: Refund, trigger: RefundTrigger): Promise<Order> {
+  const feeReturned = platformFeeReturned(refund);
+  return db.transaction(async (tx) => {
+    const [row] = await tx
+      .update(refunds)
+      .set({ status: refund.status, paypalRefundId: refund.id, platformFeeReturned: feeReturned })
+      .where(and(eq(refunds.id, refundRowId), eq(refunds.status, "pending")))
+      .returning();
+    const [lookup] = await tx.select({ orderId: refunds.orderId }).from(refunds).where(eq(refunds.id, refundRowId));
+    const [current] = await tx.select().from(orders).where(eq(orders.id, lookup!.orderId)).for("update");
+    if (!row) return current!;
+    return bookRefund(tx, current!, { n: row.n, cents: row.amount, feeReturned, refund }, trigger);
+  });
+}
+
+/** Adds a settled refund to the order. Call inside a transaction holding the order row lock. */
+export async function bookRefund(
+  tx: Tx,
+  order: Order,
+  r: { n: number; cents: number; feeReturned: number; refund: Refund },
+  trigger: RefundTrigger,
+): Promise<Order> {
+  const [bumped] = await tx
+    .update(orders)
+    .set({
+      refundedAmount: sql`least(${orders.refundedAmount} + ${r.cents}, ${orders.itemAmount} + ${orders.shippingAmount})`,
+      platformFeeRefunded: sql`least(${orders.platformFeeRefunded} + ${r.feeReturned}, ${orders.platformFee})`,
+    })
+    .where(eq(orders.id, order.id))
+    .returning();
+  await tx.insert(events).values({
+    type: "order.refunded",
+    source: trigger.source,
+    actor: trigger.actor,
+    orderId: order.id,
+    sellerId: order.sellerId,
+    productId: order.productId,
+    payload: { n: r.n, cents: r.cents, refundId: r.refund.id, status: r.refund.status, platformFeeReturned: r.feeReturned },
+  });
+  if (refundableCents(bumped!) === 0) {
+    return (await transition(tx, order.id, "Refunded", { ...trigger, from: REFUNDABLE })).order;
+  }
+  return bumped!;
 }

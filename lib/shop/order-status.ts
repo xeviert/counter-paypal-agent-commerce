@@ -12,7 +12,7 @@ export type OrderStatusView = z.output<typeof getOrderStatusOutput>;
 
 type StatusFields = Pick<
   Order,
-  "status" | "expiresAt" | "captureStatusReason" | "carrier" | "carrierNameOther" | "trackingNumber"
+  "status" | "expiresAt" | "captureStatusReason" | "carrier" | "carrierNameOther" | "trackingNumber" | "releaseDueAt"
 >;
 
 /** One plain sentence for agents and the `/o` page. */
@@ -30,7 +30,8 @@ export function nextStep(order: StatusFields, now = new Date()): string {
       return "Paid. PayPal holds the funds while the maker prepares the shipment.";
     case "Shipped": {
       const carrier = order.carrierNameOther ?? order.carrier;
-      return `Shipped${carrier ? ` with ${carrier}` : ""}. The buyer confirms receipt on the status page once it arrives.`;
+      const auto = order.releaseDueAt ? ` If they don't, the maker is paid automatically on ${order.releaseDueAt.toISOString().slice(0, 10)}.` : "";
+      return `Shipped${carrier ? ` with ${carrier}` : ""}. When it arrives, the buyer taps "I received it" on the status page, which pays the maker.${auto}`;
     }
     case "Disputed":
       return "A dispute is open on PayPal. Follow it in the buyer's PayPal account.";

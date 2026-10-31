@@ -249,6 +249,11 @@ export const en = {
     dispute_opened: "{product}: the buyer opened a dispute. Your money is on hold.",
     funds_released: "{amount} for {product} is now in your PayPal account.",
     consent_revoked: "Counter can't reach your PayPal account. Your listings are hidden until you connect again.",
+    ship_reminder: "{product} was paid {days} days ago. Add tracking so PayPal can release your money.",
+    refunded: "{product}: {amount} was refunded to the buyer through PayPal.",
+    dispute_resolved: "{product}: the dispute is closed. {outcome}",
+    outcomeMaker: "It was resolved in your favor; your money will be released as usual.",
+    outcomeBuyer: "It was resolved for the buyer, who was refunded.",
   },
 } as const;
 

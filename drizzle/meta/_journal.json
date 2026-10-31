@@ -29,6 +29,13 @@
       "when": 1793464864871,
       "tag": "0003_maker_app",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793483041813,
+      "tag": "0004_post_sale",
+      "breakpoints": true
     }
   ]
 }

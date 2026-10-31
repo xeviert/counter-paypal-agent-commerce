@@ -104,7 +104,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [x] Verification call: build the `verify-webhook-signature` body as a string with the raw payload spliced in as `webhook_event`. Re-serialized JSON can fail verification. Headers to forward: `paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`
 - [x] Test with a **real** sandbox order (create → approve → capture). Simulator events can't be signature-verified. `pnpm spike:webhooks`: PH maker payee, $0.50 fee, `DELAYED`, $2 partial refund with assertion, release. **All 5 deliveries passed signature verification** (Oct 27)
 - [x] Record which events actually arrive for payee-routed captures and for a referenced-payout release. Arrived within ~30s, subscribed with `*`: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` (resource `reference_id` = capture id). The payout events are missing from PayPal's `webhooks-event-types` list but PayPal accepts them in an explicit subscription. No poll fallback needed
-- [ ] Re-confirm the release event arrives under the explicit list (not just `*`) on the next `e2e-release.ts` run
+- [ ] Re-confirm the release event arrives under the explicit list (not just `*`) on the next `e2e-release.ts` run (§6.3 checklist)
 - [x] Save real payloads to `test/fixtures/webhooks/` for P1 handler tests
 
 ### 4.6 Render Workflows check
@@ -307,20 +307,24 @@ Four days, three tracks. Build in never-cut order so a slip only costs negotiati
 
 ### 6.3 Post-sale money
 
-- [ ] `lib/paypal/tracking.ts`: v2 `orders/{id}/track` + assertion; body `capture_id`, `tracking_number`, `carrier` (+ `carrier_name_other`), `notify_payer: true`; `PayPal-Request-Id: track:{orderId}`
-- [ ] `lib/policy/release.ts` rules (unit-tested):
-  - Buyer taps "I received it" → release now
-  - `Shipped` + `RELEASE_AFTER_DAYS` + no open dispute → release
-  - `PaidHeld` with no tracking after N days → notify maker, flag in `/ops`. No auto-refund
-  - After a partial refund, the remainder releases on the normal schedule
-  - No in-app refund after `Released` (money is in the maker's balance); maker handles it in PayPal
-- [ ] `lib/paypal/release.ts`: referenced-payouts-items, `PayPal-Request-Id: release:{orderId}`. `release_status = requested` until `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` arrives (confirmed in P0; match on `resource.reference_id` = capture id)
-- [ ] `lib/paypal/refunds.ts`: full + partial with assertion, `PayPal-Request-Id: refund:{orderId}:{n}`; stores refunded amount and returned platform fee
-- [ ] Release scheduler (**cron job, not a workflow**: workflows cap at 24h): `scripts/cron-sweep.ts`, back to every minute (`* * * * *`). Sets `release_due_at` on `Shipped`; releases rows with `status = Shipped AND release_due_at <= now() AND release_status = held` (`FOR UPDATE SKIP LOCKED`, idempotent via `release:{orderId}`). A dispute moves the order to `Disputed`, so it drops out of the query (pause); resolution for the maker moves it back with a new due date (resume); a full refund ends it (cancel). `RELEASE_AFTER_DAYS` fractional for the demo (e.g. 0.002 ≈ 3 min)
-- [ ] Webhooks: `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED`, `CUSTOMER.DISPUTE.CREATED`, `MERCHANT.ONBOARDING.COMPLETED`, `MERCHANT.PARTNER-CONSENT.REVOKED`
-- [ ] Consent revoked → unpublish listings, block new checkouts, notify maker
-- [ ] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts`
-- [ ] Look up PayPal's max hold before auto-release; cap `RELEASE_AFTER_DAYS` (ARCHITECTURE §11 #4)
+PayPal pays a DELAYED capture to the seller by itself after **28 days** ([Delay disbursement](https://developer.paypal.com/platforms/checkout/delayed-disbursement)), so Counter releases by capture + 26 days at the latest (`MAX_HOLD_DAYS`).
+
+- [x] Tracking: `addTracker` in `lib/paypal/post-sale.ts` (v2 `orders/{id}/track` + assertion, `track:{orderId}`, `notify_payer`), from the maker app (§6.1). `PaidHeld → Shipped` sets `release_due_at` = the earlier of shipped + `RELEASE_AFTER_DAYS` and captured + 26 days
+- [x] `lib/policy/release.ts` rules (unit-tested): `releaseDueAt` with the 26-day cap, `canRelease` (PaidHeld/Shipped, held, capture, not fully refunded), `isReleaseDue`, `needsShipReminder` (5 days). Partial refunds leave the remainder on the normal schedule; no in-app refund after release
+- [x] Release: `releaseFunds` (referenced-payouts-items, platform token, `release:{orderId}`) + `lib/shop/release.ts` `releaseOrder`: `held → requested` under a row lock before PayPal is called (two triggers release once), `SUCCESS` → `Released` + `funds_released` notification, PayPal 4xx → `failed`, 5xx/network → stays `requested` and the sweep retries after 5 min with the same request id, `PENDING` waits for the webhook
+- [x] Refunds: `refundCapture` (assertion, `refund:{orderId}:{n}`) from §6.1; bookkeeping shared as `settleRefund` / `bookRefund` (`lib/shop/fulfillment.ts`)
+- [x] Sweep (`lib/shop/sweep.ts`, `scripts/cron-sweep.ts`, cron `* * * * *`): expire checkouts, fail dead listing drafts, release due orders (shipped past due, or anything held 26 days), retry stuck releases, remind makers who haven't shipped after 5 days (once). Disputed orders drop out of the query (pause). The cron now loads the full env: its PayPal vars are set on the cron service itself (`render.yaml`), not an env group, so the web service's existing secrets aren't touched by a Blueprint sync
+- [x] Webhooks (`lib/shop/post-sale-events.ts`, `lib/shop/webhook-handlers.ts`):
+  - `PAYMENT.CAPTURE.REFUNDED` / `REVERSED`: refund → capture via the `up` link. Our pending refund of the same amount is settled once (whichever of the call and the webhook comes first); any other refund (maker's PayPal dashboard, dispute, chargeback) is booked as a new `refunds` row and the maker is notified
+  - `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` / `FAILED`: matched on `reference_id` = capture id → `Released` / `failed`
+  - `CUSTOMER.DISPUTE.CREATED` → `Disputed` (timer paused) + notify; `RESOLVED`: buyer wins (`RESOLVED_BUYER_FAVOUR`, `ACCEPTED`) → `Refunded`, otherwise back to `Shipped` (new due date) or `PaidHeld` + notify. Payload shape is from PayPal's API reference, not yet from a real delivery
+  - `MERCHANT.ONBOARDING.COMPLETED` → `syncOnboarding`; `MERCHANT.PARTNER-CONSENT.REVOKED` → seller `revoked` + notify
+- [x] Consent revoked or not receivable: the maker's listings drop out of `search_products`; `get_product` / `create_checkout` return `SELLER_NOT_RECEIVABLE`; `/p/[slug]` says not for sale. Reconnecting restores them (no per-product pause)
+- [x] Buyer "I received it" on `/o/[statusToken]` (confirm dialog) → `buyer_confirmed_at` + release now. No MCP tool for it: agents can't release a maker's money
+- [x] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts` (`pnpm e2e:release`, `pnpm e2e:refund`; MX maker by default, shared `scripts/lib/e2e.ts`)
+- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm)
+- [ ] Capture real `CUSTOMER.DISPUTE.*` and `MERCHANT.PARTNER-CONSENT.REVOKED` deliveries into `test/fixtures/webhooks/` (open a dispute as the sandbox buyer; revoke from a sandbox business account)
+- [ ] On Render: set `PLATFORM_CLIENT_ID` / `PLATFORM_CLIENT_SECRET` on `counter-sweep` (same values as `counter`); `RELEASE_AFTER_DAYS=0.002` only while filming the timer beat
 
 ### 6.4 Negotiation
 

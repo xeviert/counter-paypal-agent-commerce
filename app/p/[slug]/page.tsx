@@ -33,7 +33,7 @@ async function Product({ params }: { params: PageProps<"/p/[slug]">["params"] })
     found = await getProductBySlug(getDb(), slug);
   } catch (err) {
     if (err instanceof PolicyError && err.code === "PRODUCT_NOT_FOUND") notFound();
-    if (err instanceof PolicyError && err.code === "PRODUCT_UNAVAILABLE") {
+    if (err instanceof PolicyError && (err.code === "PRODUCT_UNAVAILABLE" || err.code === "SELLER_NOT_RECEIVABLE")) {
       return <p>This piece isn&apos;t for sale right now.</p>;
     }
     throw err;

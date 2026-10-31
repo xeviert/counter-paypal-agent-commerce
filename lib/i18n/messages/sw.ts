@@ -248,5 +248,10 @@ export const sw: Messages = {
     dispute_opened: "{product}: mnunuzi amefungua mgogoro. Pesa zako zimeshikiliwa.",
     funds_released: "{amount} za {product} sasa ziko kwenye akaunti yako ya PayPal.",
     consent_revoked: "Counter haiwezi kufikia PayPal yako. Bidhaa zako zimefichwa hadi uunganishe tena.",
+    ship_reminder: "{product} ililipwa siku {days} zilizopita. Weka namba ya ufuatiliaji ili PayPal iachilie pesa zako.",
+    refunded: "{product}: {amount} zimerejeshwa kwa mnunuzi kupitia PayPal.",
+    dispute_resolved: "{product}: mgogoro umefungwa. {outcome}",
+    outcomeMaker: "Umeamuliwa kwa faida yako; pesa zako zitaachiliwa kama kawaida.",
+    outcomeBuyer: "Umeamuliwa kwa faida ya mnunuzi, aliyerejeshewa pesa.",
   },
 };
