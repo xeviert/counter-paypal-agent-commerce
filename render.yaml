@@ -51,7 +51,8 @@ services:
     runtime: node
     region: oregon
     plan: 0.5c-512mb
-    schedule: "* * * * *"
+    # Every 15 min until P2 releases need minute precision (checkouts expire after 3h).
+    schedule: "*/15 * * * *"
     branch: main
     buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile
     startCommand: node node_modules/tsx/dist/cli.mjs scripts/cron-sweep.ts

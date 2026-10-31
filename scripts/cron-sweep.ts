@@ -1,4 +1,4 @@
-// Render cron job, every minute (BUILDOUT §6.3): expires stale checkouts. P2 adds the release scheduler.
+// Render cron job, every 15 min (every minute once releases land) (BUILDOUT §6.3): expires stale checkouts. P2 adds the release scheduler.
 // Usage: pnpm cron:sweep
 import { existsSync } from "node:fs";
 if (existsSync(".env")) process.loadEnvFile(".env");
