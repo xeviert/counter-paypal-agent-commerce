@@ -231,7 +231,7 @@ Decided (Oct 30):
 ### 5.7 Seed data
 
 - [x] `scripts/onboard.ts` for **KE, MX** (user approves each in the browser; **IN dropped Oct 31**, no persona) → store `merchant_id`s. Steps: `pnpm seed` → `pnpm onboard --seller <id>` per maker (ids printed by seed; PH: `--merchant-id MPMWEFYQWQYUA`) → `pnpm seed` again to publish. Oct 31 on local DB: all three linked, receivable, email confirmed, 9 scopes each: MX `2Y6DQGZ4HV2DE`, PH `MPMWEFYQWQYUA` (imported), KE `RWTZ65SJSKYB4` → 26 products live. Another DB (Render) picks them up with `pnpm onboard --seller <id>`, no browser (lookup by `tracking_id`).
-- [x] `scripts/seed.ts` + `seed/catalog.ts`: 3 personas (Lucía Hernández, Teotitlán del Valle MX, 10 rugs/textiles; Rosa Villanueva, Manila PH, 8 baskets; Wanjiru Kamau, Nairobi KE, 8 beadwork pieces; IN skipped) through `lib/schemas/listing.ts`, with category, weight class, stock, floor at 85%. Not run yet (no database)
+- [x] `scripts/seed.ts` + `seed/catalog.ts`: 3 personas (Lucía Hernández, Teotitlán del Valle MX, 14 rugs/textiles (4 added Oct 31: sarape, hallway runner, dye sampler, coin purse); Rosa Villanueva, Manila PH, 8 baskets; Wanjiru Kamau, Nairobi KE, 8 beadwork pieces; IN dropped) through `lib/schemas/listing.ts`, with category, weight class, stock, floor at 85%. Run Oct 31 on local DB: 30 live
 - [ ] Real photos we own or licensed in `seed/photos/<slug>/` (`seed/photos/README.md`); none yet
 - [x] Photo storage + `/api/photos/[id]` route built now (§10 #2); seed photos go through the same resize + EXIF strip as P2 uploads (`lib/photos.ts`, sharp)
 - [x] Re-check reporting + disputes with assertion (ARCHITECTURE §11 #3): ✅ Oct 30, transactions, balances and disputes list all 200 for the PH maker (`pnpm check:assertion`)
