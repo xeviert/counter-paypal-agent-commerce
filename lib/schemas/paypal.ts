@@ -191,3 +191,25 @@ export const webhookEnvelope = z.looseObject({
 });
 
 export type WebhookEnvelope = z.infer<typeof webhookEnvelope>;
+
+// ── Post-sale (with PayPal-Auth-Assertion) ───────────────────────────────
+
+/** `POST /v2/payments/captures/{id}/refund` with `Prefer: return=representation`. */
+export const refund = z.looseObject({
+  id: z.string(),
+  status: z.string(),
+  amount: paypalMoney.optional(),
+  seller_payable_breakdown: z
+    .looseObject({
+      paypal_fee: paypalMoney.optional(),
+      platform_fees: z.array(z.looseObject({ amount: paypalMoney })).optional(),
+      net_amount: paypalMoney.optional(),
+      total_refunded_amount: paypalMoney.optional(),
+    })
+    .optional(),
+});
+
+export type Refund = z.infer<typeof refund>;
+
+/** `POST /v2/checkout/orders/{id}/track` returns the order; we only need to know it worked. */
+export const trackResponse = z.looseObject({ id: z.string() });

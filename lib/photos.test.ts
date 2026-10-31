@@ -1,6 +1,6 @@
 import sharp from "sharp";
 import { describe, expect, it } from "vitest";
-import { MAX_PHOTO_BYTES, processPhoto } from "./photos";
+import { MAX_PHOTO_BYTES, processPhoto, UnsupportedPhotoError } from "./photos";
 
 /** A JPEG with GPS EXIF and a 90° orientation flag, the way a phone camera writes it. */
 async function phoneJpeg(width: number, height: number) {
@@ -44,5 +44,12 @@ describe("processPhoto", () => {
   it("rejects files over 5 MB and non-images", async () => {
     await expect(processPhoto(Buffer.alloc(MAX_PHOTO_BYTES + 1))).rejects.toThrow(/over 5 MB/);
     await expect(processPhoto(Buffer.from("not an image"))).rejects.toThrow();
+  });
+
+  it("only accepts JPEG, PNG and WebP", async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"/>');
+    await expect(processPhoto(svg)).rejects.toBeInstanceOf(UnsupportedPhotoError);
+    const gif = await sharp({ create: { width: 4, height: 4, channels: 3, background: "#000" } }).gif().toBuffer();
+    await expect(processPhoto(gif)).rejects.toThrow(/unsupported photo format: gif/);
   });
 });

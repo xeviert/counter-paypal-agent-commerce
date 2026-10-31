@@ -21,7 +21,10 @@ const envSchema = z.object({
   DATABASE_URL: z.url(),
   TEST_DATABASE_URL: z.url().optional(),
   ANTHROPIC_API_KEY: later, // P2 listing pipeline
-  SESSION_SECRET: required.min(32).optional(), // P2 maker sessions
+  // Optional here so scripts and the cron job boot without it; lib/auth/session.ts requires it.
+  SESSION_SECRET: required.min(32).optional(),
+  /** Shows one-tap sign-in as a seeded demo maker on /s/login. For judges; sandbox only. */
+  DEMO_LOGIN: z.stringbool().default(false),
 });
 
 export type Env = z.infer<typeof envSchema>;

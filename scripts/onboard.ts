@@ -10,11 +10,10 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 const { eq } = await import("drizzle-orm");
 const { getEnv } = await import("@/lib/env");
 const { getDb } = await import("@/lib/db");
-const { events, sellers } = await import("@/lib/db/schema");
+const { sellers } = await import("@/lib/db/schema");
 const { language, sellerCountry } = await import("@/lib/schemas/common");
-const { createReferral, findMerchantIdByTrackingId, getMerchantIntegration, onboardingStatus } = await import(
-  "@/lib/paypal/referrals"
-);
+const { createReferral, findMerchantIdByTrackingId } = await import("@/lib/paypal/referrals");
+const { syncOnboarding } = await import("@/lib/shop/onboarding");
 
 const POLL_MS = 5_000;
 const TIMEOUT_MS = 15 * 60_000;
@@ -79,25 +78,8 @@ try {
     merchantId = await waitForMerchantId(seller.id);
   }
 
-  const status = onboardingStatus(await getMerchantIntegration(merchantId));
-  await db
-    .update(sellers)
-    .set({
-      merchantId: status.merchantId,
-      paymentsReceivable: status.paymentsReceivable,
-      primaryEmailConfirmed: status.primaryEmailConfirmed,
-      grantedScopes: status.grantedScopes,
-      consentStatus: "granted",
-      onboardedAt: seller.onboardedAt ?? new Date(),
-    })
-    .where(eq(sellers.id, seller.id));
-  await db.insert(events).values({
-    type: "seller.onboarded",
-    source: "script",
-    actor: "system",
-    sellerId: seller.id,
-    payload: status,
-  });
+  const status = await syncOnboarding(db, seller, { source: "script", merchantId });
+  if (!status) throw new Error("unreachable: the merchant id is known");
 
   console.log(`\nseller ${seller.id} (${seller.name}, ${seller.country})`);
   console.log(`merchant_id              ${status.merchantId}`);

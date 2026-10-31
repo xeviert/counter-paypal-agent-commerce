@@ -31,6 +31,9 @@ services:
         value: "14"
       - key: SESSION_SECRET
         generateValue: true
+      # One-tap demo maker sign-in on /s/login for judges (BUILDOUT §10 #1).
+      - key: DEMO_LOGIN
+        value: "true"
       # Prompted once when the Blueprint is created.
       - key: PLATFORM_CLIENT_ID
         sync: false

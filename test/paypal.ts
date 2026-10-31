@@ -8,6 +8,7 @@ export function stubPayPalEnv(): void {
   vi.stubEnv("PLATFORM_CLIENT_SECRET", "test-client-secret");
   vi.stubEnv("PLATFORM_MERCHANT_ID", "9MGXZVWN9N9EE");
   vi.stubEnv("DATABASE_URL", "postgres://counter:counter@localhost:5433/counter");
+  vi.stubEnv("SESSION_SECRET", "test-session-secret-at-least-32-characters");
 }
 
 export type Call = { method: string; path: string; headers: Headers; body: unknown };

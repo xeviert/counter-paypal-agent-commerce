@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
 import { attachPayPalOrder, openCheckout, transition } from "@/lib/db/orders";
-import { events, orders, products } from "@/lib/db/schema";
+import { events, notifications, orders, products } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { receivePayPalWebhook } from "@/lib/paypal/webhook-inbox";
 import type { OrderQuote } from "@/lib/policy/quote";
@@ -249,6 +249,14 @@ describe.skipIf(!testDatabaseUrl)("payment flow", () => {
       expect(await inbox(captureEvent("PENDING", "WH-PENDING-LATE"))).toMatchObject({ status: 200 });
       expect(await current(order.id)).toMatchObject({ status: "PaidHeld", captureStatus: "COMPLETED" });
       expect(await stock(product.id)).toEqual({ stock: 1, reserved: 0 });
+
+      // One inbox entry per real change: the late PENDING delivery adds nothing.
+      const inboxRows = await db.select().from(notifications).orderBy(asc(notifications.createdAt));
+      expect(inboxRows.map((n) => [n.kind, n.orderId])).toEqual([
+        ["capture_pending", order.id],
+        ["paid", order.id],
+      ]);
+      expect(inboxRows[0]!.params).toMatchObject({ reason: "PENDING_REVIEW", currency: "USD", product: "Tapete" });
     });
 
     it("denies a pending capture and frees its stock", async () => {

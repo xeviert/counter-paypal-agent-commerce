@@ -12,10 +12,14 @@ export type Agent = {
 // "<client-supplied...>, <client>, <Cloudflare edge>" and Cloudflare sets True-Client-IP to <client>.
 // So the rightmost hop is the edge, shared by many callers; the one before it is the client.
 // A single entry (local, no proxy) is used as-is.
-export function agentFromRequest(request: Request | undefined): Agent {
-  const hops = request?.headers.get("x-forwarded-for")?.split(",").map((hop) => hop.trim()) ?? [];
+export function clientIp(headers: Headers | undefined): string {
+  const hops = headers?.get("x-forwarded-for")?.split(",").map((hop) => hop.trim()) ?? [];
   const forwarded = hops.length > 1 ? hops.at(-2) : hops[0];
-  const ip = request?.headers.get("true-client-ip")?.trim() || forwarded || "unknown";
+  return headers?.get("true-client-ip")?.trim() || forwarded || "unknown";
+}
+
+export function agentFromRequest(request: Request | undefined): Agent {
+  const ip = clientIp(request?.headers);
   const userAgent = request?.headers.get("user-agent") ?? "unknown";
   const digest = createHash("sha256").update(`${ip}|${userAgent}`).digest("base64url");
   return { agentId: `agt_${digest.slice(0, 16)}`, ip, userAgent };

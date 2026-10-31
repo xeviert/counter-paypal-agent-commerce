@@ -18,6 +18,7 @@ const { eq, sql } = await import("drizzle-orm");
 const { getDb } = await import("@/lib/db");
 const { events, photos, products, sellers } = await import("@/lib/db/schema");
 const { savePhoto } = await import("@/lib/photos");
+const { canPublish } = await import("@/lib/policy/seller");
 const { PERSONAS, floorFor } = await import("@/seed/catalog");
 
 const PHOTO_DIR = "seed/photos";
@@ -63,8 +64,7 @@ try {
         set: { name: persona.name, language: persona.language, locality: persona.locality },
       });
     const [seller] = await db.select().from(sellers).where(eq(sellers.id, persona.id));
-    const publishable =
-      seller!.paymentsReceivable && seller!.primaryEmailConfirmed && seller!.consentStatus === "granted";
+    const publishable = canPublish(seller!);
     const counts = { live: 0, draft: 0, photos: 0 };
 
     for (const p of persona.products) {

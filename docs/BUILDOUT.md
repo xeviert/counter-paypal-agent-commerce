@@ -261,32 +261,34 @@ Four days, three tracks. Build in never-cut order so a slip only costs negotiati
 ### 6.1 Maker app (`/s/*`)
 
 **Auth + scoping**
-- [ ] Auth per §10 #1. Seeded demo makers get one-tap sessions regardless
-- [ ] `requireSeller()` helper: every `/s/*` query and server action takes `seller_id` from the session, never from input. Test: maker A requesting maker B's order gets 404
+- [x] Auth per §10 #1: email + password sign-up/sign-in (`lib/auth/`), plus one-tap demo makers on `/s/login` when `DEMO_LOGIN=true` (makers with no email). Sign-up 5 per 10 min and sign-in 10/min per IP
+- [x] `requireSeller()` (`lib/auth/seller.ts`): every `/s/*` query and server action takes `seller_id` from the session, never from input. `proxy.ts` only redirects cookie-less requests. Test: maker A gets not-found for maker B's order, draft, tracking and refund (`lib/shop/maker.test.ts`)
 
 **Onboarding**
-- [ ] Sign-up (name, country, language) → Connect PayPal (`referrals.ts`) → `/s/onboarding/return`
-- [ ] Return URL params (`merchantIdInPayPal`, `permissionsGranted`, `consentStatus`) are hints only; confirm via merchant-integrations before saving
-- [ ] Publishing blocked until `payments_receivable` and `primary_email_confirmed`; screen says what's missing in the maker's language
+- [x] Sign-up (name, email, password, country, language) → `/s/onboarding` → Connect PayPal (`referrals.ts`) → `/s/onboarding/return`
+- [x] Return URL params are ignored; `syncOnboarding()` (`lib/shop/onboarding.ts`, shared with `scripts/onboard.ts`) asks merchant-integrations by `tracking_id`. "Check again" button for when PayPal is slow
+- [x] Publishing blocked until receivable, email confirmed and consent granted (`lib/policy/seller.ts` `publishBlockers`, also used by seed and checkout); each missing step explained in the maker's language. Listings published before that stay `draft` and get a Publish button once the maker can be paid
+- [ ] Run once against the sandbox with a fresh maker through `/s/onboarding` (needs a new sandbox business account)
 
 **Language**
-- [ ] Whole maker UI localized: `en`, `es`, `fil`, `sw` (`next-intl`). Claude drafts the string catalogs once; a native speaker checks them if we can find one. Notifications use the same catalogs
+- [x] Whole maker UI localized: `en`, `es`, `fil`, `sw`. Own typed catalogs in `lib/i18n/messages/` instead of `next-intl`: no locale routing needed, the locale comes from `sellers.language`, and a missing key fails typecheck and `lib/i18n/i18n.test.ts`. Notifications store a kind + params and render from the same catalogs. Claude drafted es/fil/sw; **needs a native speaker's pass**
 
 **Capture**
-- [ ] Photos: 2–4 via `<input type="file" accept="image/*" capture>`; resized client-side to 1280px WebP; **EXIF stripped** (GPS reveals the maker's home); 5 MB cap; stored per §10 #2
-- [ ] Voice: always record with `MediaRecorder` and upload the audio. Live transcript from Web Speech API where available (`lang` from maker profile: `es-MX`, `fil-PH`, `sw-KE`). Web Speech can't transcribe a recorded file and isn't in every browser, so the saved audio is what a paid STT fallback re-transcribes
-- [ ] Real-phone test matrix by **Oct 31**: iOS Safari + Android Chrome × es/fil/sw, in browser and installed-PWA mode (mic permissions differ). Then decide STT (§10 #3)
+- [x] Photos: up to 4, one per server action; resized on the phone to 1280px **JPEG** (iOS Safari can't encode WebP; the canvas also turns HEIC into JPEG and drops EXIF), then `processPhoto` makes WebP and strips metadata again. Server accepts JPEG/PNG/WebP only. Server action body limit raised to 6 MB. The first upload creates the draft
+- [x] Voice: `MediaRecorder` audio always uploaded (`voice_notes`, mime as recorded), live Web Speech transcript where available (`es-MX`, `fil-PH`, `sw-KE`), editable transcript box, 3 min cap (`components/maker/use-voice.ts`)
+- [ ] Real-phone test matrix: iOS Safari + Android Chrome × es/fil/sw, in browser and installed-PWA mode. Check whether MediaRecorder and Web Speech can share the mic on iOS. Then decide STT (§10 #3)
 
 **Review + publish**
-- [ ] Review screen: EN + native text side by side, photo reorder, list price, floor, max discount, stock → publish. Defaults: floor 85% of list, max discount 15%
-- [ ] Draft progress shown by stage (transcribing → writing → translating), never a bare spinner. The video can't show waits
+- [x] Review screen: native + EN text, category, size class, dimensions, list price (with approx local), floor, stock → publish. One floor field instead of floor + max discount (same limit); `max_discount_bps` is derived. Floor defaults to 85% of list until edited. Photo reorder lives on the capture screen. Until §6.2 lands the maker writes the text; their transcript starts the native description
+- [x] Draft progress by stage (`stage-progress.tsx`, polls `drafts.stage`); §6.2 drives the stages
+- [x] `/s/listings`: drafts to finish, products with status, stock edit (never below reserved), pause / show again
 
 **Orders**
-- [ ] Orders list + detail: buyer name, full shipping address, items, net after fees, held/released status, release ETA
-- [ ] Add tracking: carrier picker filtered by maker country (PayPal carrier enum; `OTHER` + `carrier_name_other` for local carriers), tracking number
-- [ ] Refund button (full or partial, with reason) behind a confirm step. The P3 copilot reuses this same server action
-- [ ] `notifications` table + in-app inbox, in the maker's language: paid, capture pending (with reason), dispute opened, funds released, consent revoked
-- [ ] PWA manifest + installable; designed at 390px first
+- [x] Orders list + detail (paid orders only): buyer name + email, full shipping address, item, fees, refunds, net (estimate before capture), release status/ETA
+- [x] Add tracking: carriers per maker country from PayPal's carrier list (checked Oct 31: MX Correos/Estafeta/Paquetexpress/Redpack, PH PHLPost/J&T/2GO/JAM/SPX, KE Posta Kenya, plus DHL/FedEx/UPS) or `OTHER` + name. v2 `track` with assertion, `track:{orderId}`; `PaidHeld → Shipped` sets `release_due_at` (`lib/shop/fulfillment.ts`). Not yet run against the sandbox
+- [x] Refund (full or partial, with reason) behind a confirm dialog. A pending `refunds` row is written before the PayPal call so a retry replays `refund:{orderId}:{n}`; a 4xx marks it failed. Full refund → `Refunded`. Refused after release. Same server action for the P3 copilot. Not yet run against the sandbox
+- [x] `notifications` + `/s/inbox` with unread badge. `recordCapture` writes paid / capture pending; the other kinds have strings and wait for the §6.3 webhooks
+- [x] PWA manifest (`start_url: /s`) + icons; every screen built at 390px
 
 ### 6.2 Listing pipeline
 
@@ -454,7 +456,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 
 | # | Decision | By | Recommendation |
 |---|---|---|---|
-| 1 | Maker login | Oct 30 | Email magic link if a sender is set up in < 1h; else a demo-maker picker plus simple email/password. Judges only need the seeded makers |
+| 1 | Maker login ✅ decided | Oct 31 | Demo-maker picker (`DEMO_LOGIN`) + email/password, HMAC-signed cookie. No magic link (no email sender) |
 | 2 | Photo storage ✅ decided | Oct 27 | Resized WebP in a Postgres `photos` table, served from `/api/photos/[id]` with long cache headers. ~30 products fits easily; no extra vendor. Add to ARCHITECTURE §8 |
 | 3 | STT provider | Oct 31 | Web Speech API unless Tagalog/Swahili accuracy blocks the < 60s listing |
 | 4 | Maker notifications | Oct 30 | In-app inbox first; web push only if time in P4 |
@@ -496,9 +498,9 @@ Cut from the top when a phase misses its exit by more than half a day:
 ## 12. Doc updates owed
 
 - [x] ARCHITECTURE: shipping + fee base, buyer address, status token, order create/capture details, MCP session mode + errors, env vars, Render paid plans (Oct 26)
-- [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it), maker auth once decided
+- [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it). Maker auth ✅ Oct 31 (§11 #5)
 - [x] ARCHITECTURE §8: `photos`, `refunds`; `offers` agent binding + `used_at`; `products` `price_guidance`, `restricted_flag`, auto-negotiate toggle (Oct 27)
-- [ ] ARCHITECTURE §8: `notifications` (P2), `copilot_messages` + `copilot_actions` (P3)
+- [ ] ARCHITECTURE §8: `copilot_messages` + `copilot_actions` (P3). `notifications`, `drafts`, `voice_notes` and seller login fields ✅ Oct 31
 - [ ] ARCHITECTURE §5–6: release rules from §6.3 (buyer confirm, stale `PaidHeld`, no refund after release), floor-leak check, i18n (`en`/`es`/`fil`/`sw`), `OPS_PASSWORD` + `AI_DAILY_CALL_CAP` in §10 env list
 - [ ] Planning doc §10: replace with a pointer to this file (also resolves ARCHITECTURE §11 #8: copilot uses REST tools with assertion, not PayPal MCP)
 - [ ] Planning doc §12: tick eligibility, personas, cited stats as they close

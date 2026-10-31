@@ -40,10 +40,32 @@ export const ORDER_STATUSES = [
 
 export const RELEASE_STATUSES = ["held", "requested", "released", "failed"] as const;
 
+/** Listing pipeline progress (BUILDOUT §6.2), shown to the maker stage by stage. */
+export const DRAFT_STAGES = [
+  "capturing",
+  "transcribing",
+  "writing",
+  "translating",
+  "ready",
+  "failed",
+  "published",
+] as const;
+
+/** Maker inbox entries. Text lives in the i18n catalogs under `notifications.<kind>`. */
+export const NOTIFICATION_KINDS = [
+  "paid",
+  "capture_pending",
+  "dispute_opened",
+  "funds_released",
+  "consent_revoked",
+] as const;
+
 export type Category = (typeof CATEGORIES)[number];
 export type WeightClass = (typeof WEIGHT_CLASSES)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 export type ReleaseStatus = (typeof RELEASE_STATUSES)[number];
+export type DraftStage = (typeof DRAFT_STAGES)[number];
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 export type Language = (typeof LANGUAGES)[number];
 export type SellerCountry = (typeof SELLER_COUNTRIES)[number];
 export type ShippingRegion = (typeof SHIPPING_REGIONS)[number];

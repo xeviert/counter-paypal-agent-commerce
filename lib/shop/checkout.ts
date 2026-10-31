@@ -6,6 +6,7 @@ import { log } from "@/lib/log";
 import { PayPalError } from "@/lib/paypal/client";
 import { createOrder, SellerNotReceivableError } from "@/lib/paypal/orders";
 import { PolicyError } from "@/lib/policy/errors";
+import { canReceive } from "@/lib/policy/seller";
 import { quoteOrder } from "@/lib/policy/quote";
 import { sellerCountry, toMoney } from "@/lib/schemas/common";
 import type { createCheckoutInput, createCheckoutOutput } from "@/lib/schemas/mcp";
@@ -24,7 +25,7 @@ export async function createCheckout(
   caller: { agentId?: string } = {},
 ): Promise<CheckoutResult> {
   const { product, seller } = await findSellableProduct(db, { id: input.productId });
-  if (!seller.merchantId || !seller.paymentsReceivable || seller.consentStatus !== "granted") {
+  if (!canReceive(seller)) {
     throw new PolicyError("SELLER_NOT_RECEIVABLE", "This maker can't receive payments right now");
   }
   const quote = quoteOrder({

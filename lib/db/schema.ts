@@ -15,8 +15,15 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { CATEGORIES, ORDER_STATUSES, RELEASE_STATUSES, WEIGHT_CLASSES } from "../schemas/common";
-import type { ListingContent } from "../schemas/listing";
+import {
+  CATEGORIES,
+  DRAFT_STAGES,
+  NOTIFICATION_KINDS,
+  ORDER_STATUSES,
+  RELEASE_STATUSES,
+  WEIGHT_CLASSES,
+} from "../schemas/common";
+import type { DraftResult, ListingContent } from "../schemas/listing";
 
 const tsvector = customType<{ data: string }>({
   dataType: () => "tsvector",
@@ -67,6 +74,10 @@ export const weightClass = pgEnum("weight_class", WEIGHT_CLASSES);
 
 export const category = pgEnum("category", CATEGORIES);
 
+export const draftStage = pgEnum("draft_stage", DRAFT_STAGES);
+
+export const notificationKind = pgEnum("notification_kind", NOTIFICATION_KINDS);
+
 // ── Tables ───────────────────────────────────────────────────────────────
 
 export const sellers = pgTable("sellers", {
@@ -76,6 +87,9 @@ export const sellers = pgTable("sellers", {
   locality: text("locality"),
   country: country("country").notNull(),
   language: text("language").notNull(),
+  // Null for seeded demo makers, who sign in with the demo picker.
+  email: text("email").unique(),
+  passwordHash: text("password_hash"),
   merchantId: text("merchant_id").unique(),
   paymentsReceivable: boolean("payments_receivable").notNull().default(false),
   primaryEmailConfirmed: boolean("primary_email_confirmed").notNull().default(false),
@@ -134,6 +148,42 @@ export const products = pgTable(
   ],
 );
 
+export const voiceNotes = pgTable("voice_notes", {
+  id: id(),
+  sellerId: uuid("seller_id")
+    .notNull()
+    .references(() => sellers.id),
+  /** As recorded: `audio/mp4` on iOS, `audio/webm` on Chrome. */
+  mime: text("mime").notNull(),
+  durationMs: integer("duration_ms"),
+  bytes: bytea("bytes").notNull(),
+  createdAt: createdAt(),
+});
+
+/** A listing in progress. `products` is written only on publish, so its NOT NULL columns hold. */
+export const drafts = pgTable(
+  "drafts",
+  {
+    id: id(),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellers.id),
+    stage: draftStage("stage").notNull().default("capturing"),
+    voiceNoteId: uuid("voice_note_id").references(() => voiceNotes.id),
+    /** Browser live transcript, or the STT result once the pipeline runs. */
+    transcript: text("transcript"),
+    /** Listing builder output (`listingDraft` + price guidance), edited by the maker on review. */
+    result: jsonb("result").$type<DraftResult>(),
+    error: text("error"),
+    /** Milliseconds per pipeline stage (BUILDOUT §6.2 60s budget). */
+    timings: jsonb("timings").$type<Record<string, number>>(),
+    productId: uuid("product_id").references(() => products.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("drafts_seller_idx").on(t.sellerId, t.createdAt)],
+);
+
 export const photos = pgTable(
   "photos",
   {
@@ -143,6 +193,7 @@ export const photos = pgTable(
       .references(() => sellers.id),
     // Null while the maker is still drafting the listing.
     productId: uuid("product_id").references(() => products.id, { onDelete: "cascade" }),
+    draftId: uuid("draft_id").references(() => drafts.id, { onDelete: "set null" }),
     position: integer("position").notNull().default(0),
     mime: text("mime").notNull(),
     width: integer("width").notNull(),
@@ -150,7 +201,7 @@ export const photos = pgTable(
     bytes: bytea("bytes").notNull(),
     createdAt: createdAt(),
   },
-  (t) => [index("photos_product_idx").on(t.productId, t.position)],
+  (t) => [index("photos_product_idx").on(t.productId, t.position), index("photos_draft_idx").on(t.draftId)],
 );
 
 export const offers = pgTable(
@@ -286,6 +337,23 @@ export const refunds = pgTable(
     uniqueIndex("refunds_order_n_idx").on(t.orderId, t.n),
     check("refunds_amount_check", sql`${t.amount} > 0 AND ${t.platformFeeReturned} >= 0`),
   ],
+);
+
+/** Stores a message key + params, rendered in the maker's language when shown. */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: id(),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellers.id),
+    kind: notificationKind("kind").notNull(),
+    params: jsonb("params").$type<Record<string, string | number>>().notNull().default({}),
+    orderId: uuid("order_id").references(() => orders.id),
+    readAt: ts("read_at"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("notifications_seller_idx").on(t.sellerId, t.createdAt)],
 );
 
 // Append-only audit log. Only verified, processed_at, error and order_id are updated (webhook processing).

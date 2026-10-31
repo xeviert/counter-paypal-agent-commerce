@@ -1,13 +1,15 @@
 import { eq } from "drizzle-orm";
 import type { Tx } from "@/lib/db";
 import { transition, type EventSource, type Order, type OrderPatch } from "@/lib/db/orders";
-import { orders, sellers } from "@/lib/db/schema";
+import { orders, products, sellers } from "@/lib/db/schema";
 import { log } from "@/lib/log";
 import { captureDetails, captureOrder, getOrder, shipToCountry } from "@/lib/paypal/orders";
 import { stockState } from "@/lib/policy/lifecycle";
 import { sameShippingRegion } from "@/lib/policy/shipping";
 import { sellerCountry, type OrderStatus } from "@/lib/schemas/common";
 import { firstCapture, type Capture, type PayPalOrder } from "@/lib/schemas/paypal";
+import { notify } from "./notifications";
+import { makerNet, makerTitle } from "./seller-orders";
 
 // Approval → capture → paid, for both triggers: the return URL and the CHECKOUT.ORDER.APPROVED
 // webhook. Either can run first, both can run at once, and PayPal resources carry their state at
@@ -110,14 +112,28 @@ export async function recordCapture(
       .update(orders)
       .set({ ...captureFields(capture), ...buyer })
       .where(eq(orders.id, orderId));
-    const { order } = await transition(tx, orderId, target, {
+    const { order, changed } = await transition(tx, orderId, target, {
       ...trigger,
       from,
       patch: current.capturedAt ? {} : { capturedAt: new Date() },
       payload: { captureId: capture.id, captureStatus: capture.status, ...(mismatch && { amountMismatch: mismatch }) },
     });
+    if (changed) await notifyMakerOfCapture(tx, order);
     return order;
   });
+}
+
+/** Paid → "ship it"; pending → "don't ship yet". Params render in the maker's language later. */
+async function notifyMakerOfCapture(tx: Tx, order: Order) {
+  if (order.status !== "PaidHeld" && order.status !== "PaidPending") return;
+  const [product] = await tx.select({ listing: products.listing }).from(products).where(eq(products.id, order.productId));
+  const params = {
+    product: product ? makerTitle(product.listing) : "",
+    amountCents: makerNet(order).cents,
+    currency: order.currency,
+  };
+  if (order.status === "PaidHeld") await notify(tx, order.sellerId, "paid", params, order.id);
+  else await notify(tx, order.sellerId, "capture_pending", { ...params, reason: order.captureStatusReason ?? "" }, order.id);
 }
 
 /**

@@ -45,6 +45,24 @@ export const listingDraft = z.object({
   listing: listingContent,
 });
 
+/** Suggested list price range in USD cents. Shown to the maker, never applied for them. */
+export const priceGuidance = z.object({
+  low: z.number().int().positive(),
+  high: z.number().int().positive(),
+  rationale: text(300),
+});
+
+/** Stored in `drafts.result`: what the listing builder produced, before the maker reviews it. */
+export const draftResult = z.object({
+  draft: listingDraft,
+  priceGuidance: priceGuidance.optional(),
+  /** Possible PayPal AUP category; publishing sends it to operator review. */
+  restricted: z.object({ flag: z.boolean(), reason: text(300).optional() }).optional(),
+});
+
 export type ListingText = z.infer<typeof listingText>;
+export type Dimensions = z.infer<typeof dimensions>;
 export type ListingContent = z.infer<typeof listingContent>;
 export type ListingDraft = z.infer<typeof listingDraft>;
+export type PriceGuidance = z.infer<typeof priceGuidance>;
+export type DraftResult = z.infer<typeof draftResult>;
