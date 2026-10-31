@@ -94,8 +94,8 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [x] `/api/mcp` with one `ping` tool. **Changed Oct 27:** MCP spec 2026-07-28 removed sessions and `Mcp-Session-Id`, and SDK v1 (`@modelcontextprotocol/sdk`) is now maintenance-only. Built on `@modelcontextprotocol/server` v2 `createMcpHandler` with `legacy: "stateless"`: one handler serves 2025-era clients (initialize handshake) and 2026-07-28 clients, no session state. `agentId` = hash of client IP + User-Agent (`lib/mcp/agent.ts`). Tested both eras in-process and against `next start` with MCP Inspector CLI
 - [x] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). ✅ Oct 31 on Render: claude.ai connector "Counter" called `ping` (each tool call asks the user for approval by default). Earlier: **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
 - [x] API connector: `pnpm spike:mcp https://counter-2cdt.onrender.com` ✅ Oct 31: Claude called `ping` through `mcp_servers` (User-Agent `Claude-User`, protocol `2026-07-28`, ~4.2k input tokens)
-- [ ] On Render: confirm which header carries the real client IP (`lib/mcp/agent.ts` TODO)
-- [ ] Connect ChatGPT developer mode too (~10 min; de-risks P3)
+- [ ] On Render: confirm which header carries the real client IP (`lib/mcp/agent.ts` TODO). Oct 31: the `mcp request` log line now carries `ip`, `agentId`, raw `forwardedFor` and `trueClientIp` (kept for debugging during judging). Next: call `/api/mcp` from a known IP, compare, fix `agentFromRequest` if the rightmost hop isn't the client
+- [ ] ~~Connect ChatGPT developer mode too~~ **Skipped Oct 31.** Before starting P3, ask the user whether to do it (§7.7 ChatGPT purchase is cut item #2)
 
 ### 4.5 Spike 11: webhooks
 
@@ -391,7 +391,7 @@ Anything unfinished by Nov 5 EOD drops in §9 order.
 
 ### 7.7 ChatGPT + accessibility beat
 
-- [ ] ChatGPT developer mode: full purchase (search → offer → checkout → approve), recorded for the video
+- [ ] ChatGPT developer mode: full purchase (search → offer → checkout → approve), recorded for the video. **Ask the user first:** connector setup was skipped in P0 (§4.4); they may cut this
 - [ ] Voice-only purchase: first check whether Claude's mobile voice mode can use the custom connector. If not, fallback is a small `/voice` page (Web Speech in, `speechSynthesis` out) driving the demo buyer agent
 - [ ] Our pages (`/p/[slug]`, `/o/[statusToken]`) pass VoiceOver/TalkBack + axe. PayPal's approval page is outside our control; the README says so
 
@@ -477,7 +477,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 - `cloudflared tunnel --url http://localhost:3000` prints a random `https://*.trycloudflare.com` URL. It changes every restart, so the PayPal webhook must be repointed each time: `pnpm paypal:webhook <url>` (updates the existing webhook in place, keeps the same `PAYPAL_WEBHOOK_ID`)
 - Start the app with `APP_BASE_URL=<tunnel url>` so return/cancel URLs point at the tunnel
 - Windows: stopping a backgrounded `npm start` can leave the `node` child holding port 3000 (`EADDRINUSE` on restart). Find it with `netstat -ano | grep :3000` and `taskkill //PID <pid> //F`, or run `node node_modules/next/dist/bin/next start` directly
-- `/api/mcp` logs one `mcp request` line per request (method, status, protocol version, User-Agent), which is how we know whether a client reached us at all
+- `/api/mcp` logs one `mcp request` line per request (method, status, protocol version, User-Agent, ip, agentId, raw `X-Forwarded-For`, `True-Client-IP`), which is how we know whether a client reached us at all
 
 **PayPal webhook facts** (from the real sandbox run, fixtures in `test/fixtures/webhooks/`):
 - Deliveries arrive ~1s after the API call. All five event types passed `verify-webhook-signature` with the raw-body splice
