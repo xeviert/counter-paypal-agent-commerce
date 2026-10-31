@@ -1,6 +1,6 @@
 # Counter: Buildout Plan
 
-> Status: **active** · Last updated: 2026-10-26 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
+> Status: **active** · Last updated: 2026-10-31 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
 > What to build: [ARCHITECTURE.md](ARCHITECTURE.md). Why and sandbox evidence: [info-and-planning.md](info-and-planning.md).
 > This doc replaces planning doc §10 as the schedule. Tick boxes here as work lands.
 
@@ -66,7 +66,7 @@ gantt
 
 ### 4.1 Repo + app
 
-- [ ] `git init`, MIT `LICENSE` ✅ · push to a private GitHub repo (public at submit) ⏳ repo not created yet
+- [x] `git init`, MIT `LICENSE` · pushed to private repo `xeviert/counter-paypal-agent-commerce` (Oct 31; public at submit)
 - [x] Next.js App Router + TS + Tailwind + shadcn/ui; pnpm; Node pinned (`engines` + `.nvmrc`); ESLint; Vitest
 - [x] GitHub Actions: typecheck + lint + Vitest on every push
 - [x] `lib/env.ts`: Zod-parsed env, fails fast on boot. Adds two vars missing from ARCHITECTURE §10: `APP_BASE_URL` (return/cancel URLs, webhook URL, links returned to agents) and `SESSION_SECRET` (maker sessions, P2). `.env.example` lists names only
@@ -85,7 +85,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 ### 4.3 Render
 
-- [x] `render.yaml` blueprint: web service + Postgres (+ workflows once confirmed). Doubles as reproducible setup for judges. Validated against Render's schema; **not applied yet** (connect repo → New → Blueprint)
+- [x] `render.yaml` blueprint: web service + Postgres (+ workflows once confirmed). Doubles as reproducible setup for judges. Validated against Render's schema. **Applied Oct 31** (Blueprint `counter`); web service live, migrations ran in pre-deploy. Build commands call `corepack pnpm` directly: `npm install -g corepack` fails with `EROFS` (Render's `/usr/lib/node_modules` is read-only), and Node 24 ships corepack anyway
 - [x] **Paid web instance + paid Postgres from day one** (`0.5c-512mb` web, `0.1c-256mb` Postgres 17, Oregon) (the $50 credits cover it). Free Postgres expires after 30 days, which is before judging ends Dec 15. Free web services sleep after 15 min idle, so agent MCP calls and PayPal webhooks hit cold starts
 - [x] Pre-deploy command runs migrations (`node scripts/migrate.ts`, drizzle-orm migrator, no drizzle-kit at runtime); health check at `/api/health` (pings DB, 503 when down); auto-deploy from `main` only after CI passes (`autoDeployTrigger: checksPass`)
 
