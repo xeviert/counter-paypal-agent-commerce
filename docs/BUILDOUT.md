@@ -93,13 +93,13 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 
 - [x] `/api/mcp` with one `ping` tool. **Changed Oct 27:** MCP spec 2026-07-28 removed sessions and `Mcp-Session-Id`, and SDK v1 (`@modelcontextprotocol/sdk`) is now maintenance-only. Built on `@modelcontextprotocol/server` v2 `createMcpHandler` with `legacy: "stateless"`: one handler serves 2025-era clients (initialize handshake) and 2026-07-28 clients, no session state. `agentId` = hash of client IP + User-Agent (`lib/mcp/agent.ts`). Tested both eras in-process and against `next start` with MCP Inspector CLI
 - [ ] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
-- [ ] API connector: `pnpm spike:mcp https://<public host>` (`scripts/spike-mcp-connector.ts`, needs `ANTHROPIC_API_KEY` in `.env`). Not run yet: no key in `.env`. It also calls out from Anthropic's infrastructure, so run it against Render, not the quick tunnel
+- [x] API connector: `pnpm spike:mcp https://counter-2cdt.onrender.com` ✅ Oct 31: Claude called `ping` through `mcp_servers` (User-Agent `Claude-User`, protocol `2026-07-28`, ~4.2k input tokens)
 - [ ] On Render: confirm which header carries the real client IP (`lib/mcp/agent.ts` TODO)
 - [ ] Connect ChatGPT developer mode too (~10 min; de-risks P3)
 
 ### 4.5 Spike 11: webhooks
 
-- [x] Create the webhook on the Platform app subscribed to every ARCHITECTURE §4.6 event; save its id as `PAYPAL_WEBHOOK_ID`. `pnpm paypal:webhook <public URL>` creates or repoints it (sandbox id `4XM06760VD720062T`, currently pointing at a Cloudflare quick tunnel; repoint to Render on deploy)
+- [x] Create the webhook on the Platform app subscribed to every ARCHITECTURE §4.6 event; save its id as `PAYPAL_WEBHOOK_ID`. `pnpm paypal:webhook <public URL>` creates or repoints it (sandbox id `4XM06760VD720062T`, repointed to `https://counter-2cdt.onrender.com/api/webhooks/paypal` Oct 31; `PAYPAL_WEBHOOK_ID` set on Render)
 - [x] `/api/webhooks/paypal`: read body as text → insert into `events` (dedupe on PayPal event `id`) → verify → mark verified → process
 - [x] Verification call: build the `verify-webhook-signature` body as a string with the raw payload spliced in as `webhook_event`. Re-serialized JSON can fail verification. Headers to forward: `paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`
 - [x] Test with a **real** sandbox order (create → approve → capture). Simulator events can't be signature-verified. `pnpm spike:webhooks`: PH maker payee, $0.50 fee, `DELAYED`, $2 partial refund with assertion, release. **All 5 deliveries passed signature verification** (Oct 27)
