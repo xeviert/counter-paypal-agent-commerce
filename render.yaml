@@ -11,7 +11,7 @@ services:
     # cold starts) and free Postgres expires after 30 days, before judging ends Dec 15.
     plan: 0.5c-512mb
     branch: main
-    buildCommand: npm install -g corepack && corepack enable && pnpm install --frozen-lockfile && pnpm build
+    buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile && corepack pnpm build
     preDeployCommand: node scripts/migrate.ts
     startCommand: npm start
     healthCheckPath: /api/health
@@ -53,7 +53,7 @@ services:
     plan: 0.5c-512mb
     schedule: "* * * * *"
     branch: main
-    buildCommand: npm install -g corepack && corepack enable && pnpm install --frozen-lockfile
+    buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile
     startCommand: node node_modules/tsx/dist/cli.mjs scripts/cron-sweep.ts
     autoDeployTrigger: checksPass
     envVars:
@@ -69,7 +69,7 @@ services:
     runtime: node
     region: oregon
     branch: main
-    buildCommand: npm install -g corepack && corepack enable && pnpm install --frozen-lockfile
+    buildCommand: COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack pnpm install --frozen-lockfile
     startCommand: node node_modules/tsx/dist/cli.mjs workflows/index.ts
     autoDeployTrigger: checksPass
     envVars:
