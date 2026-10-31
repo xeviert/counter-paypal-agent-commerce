@@ -92,7 +92,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 ### 4.4 Spike 4: MCP endpoint
 
 - [x] `/api/mcp` with one `ping` tool. **Changed Oct 27:** MCP spec 2026-07-28 removed sessions and `Mcp-Session-Id`, and SDK v1 (`@modelcontextprotocol/sdk`) is now maintenance-only. Built on `@modelcontextprotocol/server` v2 `createMcpHandler` with `legacy: "stateless"`: one handler serves 2025-era clients (initialize handshake) and 2026-07-28 clients, no session state. `agentId` = hash of client IP + User-Agent (`lib/mcp/agent.ts`). Tested both eras in-process and against `next start` with MCP Inspector CLI
-- [ ] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
+- [x] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). ✅ Oct 31 on Render: claude.ai connector "Counter" called `ping` (each tool call asks the user for approval by default). Earlier: **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
 - [x] API connector: `pnpm spike:mcp https://counter-2cdt.onrender.com` ✅ Oct 31: Claude called `ping` through `mcp_servers` (User-Agent `Claude-User`, protocol `2026-07-28`, ~4.2k input tokens)
 - [ ] On Render: confirm which header carries the real client IP (`lib/mcp/agent.ts` TODO)
 - [ ] Connect ChatGPT developer mode too (~10 min; de-risks P3)
@@ -471,7 +471,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 - Name + URL, then claude.ai probes the server. On a failed probe, "Continue anyway" opens manual config
 - Authentication: pick **No sign-in** (`/api/mcp` has no OAuth). claude.ai warns that anyone with the URL can use it, which is intended for agent buyers. Other options: "Sign in now" / "Sign in when needed" with Claude's published identity (CIMD, recommended), DCR, or our own OAuth client. Up to 4 custom request headers can be added (e.g. an API key)
 - After adding, the connector page has a **Connect** button; a failure shows a toast with an `ofid_...` support reference
-- A test connector "Counter (dev tunnel)" pointing at the dead tunnel URL is still in the account; edit its URL to the Render one or remove it
+- A connector's URL can't be edited; delete it and add a new one. "Counter (dev tunnel)" (dead tunnel URL) replaced Oct 31 by "Counter" → `https://counter-2cdt.onrender.com/api/mcp`
 
 **Local tunnel workflow** (for webhooks and connector tests without deploying):
 - `cloudflared tunnel --url http://localhost:3000` prints a random `https://*.trycloudflare.com` URL. It changes every restart, so the PayPal webhook must be repointed each time: `pnpm paypal:webhook <url>` (updates the existing webhook in place, keeps the same `PAYPAL_WEBHOOK_ID`)
