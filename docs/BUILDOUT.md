@@ -95,7 +95,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [x] Tool call succeeds from a claude.ai custom connector and from the API `mcp_servers` connector (beta `mcp-client-2025-11-20`). ✅ Oct 31 on Render: claude.ai connector "Counter" called `ping` (each tool call asks the user for approval by default). Earlier: **Tunnel attempt Oct 27 failed before reaching us:** claude.ai said "Couldn't reach" a `*.trycloudflare.com` URL three times (support ref `ofid_bac1dd625d2da692`) while the same URL served curl, MCP Inspector and PayPal webhooks, and no request appeared in the tunnel or app logs. Retest on the Render URL; if a tunnel is needed, try ngrok or a named Cloudflare tunnel on our own domain
 - [x] API connector: `pnpm spike:mcp https://counter-2cdt.onrender.com` ✅ Oct 31: Claude called `ping` through `mcp_servers` (User-Agent `Claude-User`, protocol `2026-07-28`, ~4.2k input tokens)
 - [x] On Render: confirm which header carries the real client IP. ✅ Oct 31: Render is behind Cloudflare. `X-Forwarded-For` = `<client>, <Cloudflare edge>`, so the old rightmost-hop rule keyed every caller to a shared edge IP. `agentFromRequest` now uses `True-Client-IP`, else the second-to-last hop (`lib/mcp/agent.test.ts`). The `mcp request` log line keeps `ip`, `agentId`, raw `forwardedFor` and `trueClientIp` for debugging during judging
-- [ ] ~~Connect ChatGPT developer mode too~~ **Skipped Oct 31.** Before starting P3, ask the user whether to do it (§7.7 ChatGPT purchase is cut item #2)
+- [x] ~~Connect ChatGPT developer mode too~~ **Skipped Oct 31, cut Nov 1** (user decision; §7.7, cut item #2)
 
 ### 4.5 Spike 11: webhooks
 
@@ -367,11 +367,26 @@ Decided (Nov 1):
 
 | Day | Focus |
 |---|---|
+| Nov 2 | Day 0: P2 exit run (§6 "P2 exit status"), AG Studio trial signup; P3 groundwork (gaps 2–5 below) |
 | Nov 3 | §7.1 seller copilot, §7.2 answerer |
 | Nov 4 | §7.3 AG Studio dashboard (sponsor target; whole day) |
-| Nov 5 | §7.4 operator console, §7.5 discovery, §7.6 ACP, §7.7 ChatGPT + accessibility |
+| Nov 5 | §7.5 discovery → §7.4 operator console → §7.7 voice + accessibility → §7.6 ACP (cheapest first, highest cut item last) |
 
 Anything unfinished by Nov 5 EOD drops in §9 order.
+
+Decided (Nov 1, P3 planning):
+- **ChatGPT purchase cut.** The claude.ai connector + voice beat carry "any agent"
+- **AG Studio trial not started.** The user signs up Nov 2; the §7.3 spike opens Nov 4. If the Studio Agent Framework can't attach our agent, keep a static Studio dashboard (cut #5)
+- **Day 0 (Nov 2) is the P2 exit run** before any P3 feature code
+- Every new Claude role gets an eval on Opus **and** Sonnet before picking a model, and no structured output asks for "reasoning" (§6.4 refusal lesson)
+
+Gaps found while planning (fix in the step that needs them):
+1. The maker cookie has `path: "/s"` (`lib/auth/session.ts`), so `/api/s/analytics/*` would never see a session. Maker APIs live under `app/s/api/...`
+2. `addTracking` / `refundOrder` hard-code `source: "web"`, `createCheckout` hard-codes `"mcp"`: add a `source` param (copilot, acp)
+3. No order-ref → order lookup (`orderRef` = first 8 hex of the id): add a seller-scoped `findSellerOrderByRef`
+4. No period sales query; the payout sentence lives in the order page. Add `salesSummary(period)` and a shared `payoutStatus(order)`
+5. `mcp.search_products` events have no product or seller ref, so the funnel's search step can't be scoped per maker. Log result `productIds` in the payload
+6. No tables yet: `0005_copilot` (`copilot_messages`, `copilot_actions`), `0006_acp` (`acp_sessions`, `idempotency_keys`). `OPS_PASSWORD` not in env/`render.yaml` yet
 
 ### 7.1 Seller copilot
 
@@ -395,7 +410,7 @@ Anything unfinished by Nov 5 EOD drops in §9 order.
 
 - [ ] **Spike Nov 1 (2h, during P2):** boilerplate running inside Next.js (client-only, `dynamic(..., { ssr: false })`) on our API data; confirm how the Studio Agent Framework connects a custom agent
 - [ ] **Trial timing:** the trial is 45 days. Starting it Nov 1 covers judging through ~Dec 16. Don't start earlier unless we confirm the deployed demo keeps working after expiry
-- [ ] Data: `/api/s/analytics/*`, scoped by `requireSeller()`, from `orders` + P1 `events`: net earnings by currency, held vs released over time, agent funnel (search → view → offer → checkout → paid), top products, buyer countries
+- [ ] Data: `/s/api/analytics/*` (not `/api/s/`: cookie path), scoped by `requireSeller()`, from `orders` + P1 `events`: net earnings by currency, held vs released over time, agent funnel (search → view → offer → checkout → paid), top products, buyer countries
 - [ ] Custom widgets + Counter theme. Laid out for tablet/desktop; the phone app shows a summary and links to it
 - [ ] Studio Agent Framework: the seller copilot gets a tool that asks Studio's agent to build or change a widget ("show sales by country this month"). This is the beat AG Grid judges look for
 - [ ] README section on AG Studio usage (sponsor prizes require real use)
@@ -421,7 +436,7 @@ Anything unfinished by Nov 5 EOD drops in §9 order.
 
 ### 7.7 ChatGPT + accessibility beat
 
-- [ ] ChatGPT developer mode: full purchase (search → offer → checkout → approve), recorded for the video. **Ask the user first:** connector setup was skipped in P0 (§4.4); they may cut this
+- [x] ~~ChatGPT developer mode: full purchase~~ **Cut Nov 1** (user decision)
 - [ ] Voice-only purchase: first check whether Claude's mobile voice mode can use the custom connector. If not, fallback is a small `/voice` page (Web Speech in, `speechSynthesis` out) driving the demo buyer agent
 - [ ] Our pages (`/p/[slug]`, `/o/[statusToken]`) pass VoiceOver/TalkBack + axe. PayPal's approval page is outside our control; the README says so
 
