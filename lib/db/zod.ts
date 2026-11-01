@@ -4,7 +4,6 @@ import {
   consentStatus,
   eventSource,
   events,
-  offerDecision,
   offers,
   orders,
   photos,
@@ -16,6 +15,7 @@ import {
 
 export {
   CATEGORIES,
+  OFFER_DECISIONS,
   ORDER_STATUSES,
   RELEASE_STATUSES,
   WEIGHT_CLASSES,
@@ -26,7 +26,6 @@ export {
 
 export const PRODUCT_STATUSES = productStatus.enumValues;
 export const CONSENT_STATUSES = consentStatus.enumValues;
-export const OFFER_DECISIONS = offerDecision.enumValues;
 export const EVENT_SOURCES = eventSource.enumValues;
 
 export const sellerSelect = createSelectSchema(sellers);

@@ -62,4 +62,9 @@ describe("limitsFor", () => {
     expect(limiter.check(limitsFor("create_checkout", agent)).ok).toBe(false);
     expect(limiter.check(limitsFor("search_products", agent)).ok).toBe(true);
   });
+
+  it("adds per-agent limits for offers and questions", () => {
+    expect(limitsFor("make_offer", agent).map((l) => l.key)).toContain("offer:agt_a");
+    expect(limitsFor("ask_question", agent).map((l) => l.key)).toContain("question:agt_a");
+  });
 });

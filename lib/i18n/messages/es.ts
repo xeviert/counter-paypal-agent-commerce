@@ -181,6 +181,10 @@ export const es: Messages = {
     },
     drafts: "Sin terminar",
     continueDraft: "Continuar",
+    negotiateOn: "Los agentes pueden regatear hasta tu precio mínimo.",
+    negotiateOff: "Precio fijo: los agentes pagan el precio de lista.",
+    negotiateEnable: "Aceptar ofertas",
+    negotiateDisable: "Precio fijo",
   },
   orders: {
     title: "Pedidos",

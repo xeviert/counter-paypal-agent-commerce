@@ -49,14 +49,24 @@ export const LIMITS = {
   // Loose on purpose: every claude.ai connector user arrives from Anthropic's egress IPs.
   ip: { max: 600, windowMs: 60_000 },
   checkout: { max: 20, windowMs: 10 * 60_000 },
+  // Each offer can be a Claude call; lib/shop/offers.ts also caps offers per product.
+  offer: { max: 10, windowMs: 10 * 60_000 },
+  question: { max: 30, windowMs: 3600_000 },
 } as const;
+
+const TOOL_LIMITS: Record<string, keyof typeof LIMITS> = {
+  create_checkout: "checkout",
+  make_offer: "offer",
+  ask_question: "question",
+};
 
 export function limitsFor(tool: string, agent: Pick<Agent, "agentId" | "ip">): Limit[] {
   const limits: Limit[] = [
     { key: `agent:${agent.agentId}`, ...LIMITS.agent },
     { key: `ip:${agent.ip}`, ...LIMITS.ip },
   ];
-  if (tool === "create_checkout") limits.push({ key: `checkout:${agent.agentId}`, ...LIMITS.checkout });
+  const extra = TOOL_LIMITS[tool];
+  if (extra) limits.push({ key: `${extra}:${agent.agentId}`, ...LIMITS[extra] });
   return limits;
 }
 

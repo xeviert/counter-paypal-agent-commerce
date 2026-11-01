@@ -11,25 +11,31 @@ import { quoteOrder } from "@/lib/policy/quote";
 import { sellerCountry, toMoney } from "@/lib/schemas/common";
 import type { createCheckoutInput, createCheckoutOutput } from "@/lib/schemas/mcp";
 import { findSellableProduct } from "./catalog";
+import { findCheckoutOffer } from "./offers";
 import { statusUrl } from "./urls";
 
 export type CheckoutResult = { output: z.output<typeof createCheckoutOutput>; order: Order };
 
 /**
- * Reserve stock → `CheckoutCreated` row → PayPal order. Amounts come from the product row and
- * lib/policy only; the agent picks product, quantity and destination (ARCHITECTURE §5.2).
+ * Reserve stock → `CheckoutCreated` row → PayPal order. Amounts come from the product row or an
+ * accepted offer, and lib/policy only; the agent picks product, quantity and destination (ARCHITECTURE §5.2).
  */
 export async function createCheckout(
   db: Tx,
   input: z.output<typeof createCheckoutInput>,
   caller: { agentId?: string } = {},
 ): Promise<CheckoutResult> {
-  const { product, seller } = await findSellableProduct(db, { id: input.productId });
+  const offer = input.offerId
+    ? await findCheckoutOffer(db, input.offerId, { productId: input.productId, agentId: caller.agentId })
+    : undefined;
+  const productId = offer?.productId ?? input.productId;
+  if (!productId) throw new PolicyError("PRODUCT_NOT_FOUND", "Pass productId, or offerId from make_offer");
+  const { product, seller } = await findSellableProduct(db, { id: productId });
   if (!canReceive(seller)) {
     throw new PolicyError("SELLER_NOT_RECEIVABLE", "This maker can't receive payments right now");
   }
   const quote = quoteOrder({
-    unitCents: product.listPrice,
+    unitCents: offer?.agreedAmount ?? product.listPrice,
     quantity: input.quantity,
     currency: product.currency,
     sellerCountry: sellerCountry.parse(seller.country),
@@ -37,7 +43,7 @@ export async function createCheckout(
     weightClass: product.weightClass,
     feeBps: getEnv().PLATFORM_FEE_BPS,
   });
-  const opened = await openCheckout(db, { product, quote, source: "mcp", agentId: caller.agentId });
+  const opened = await openCheckout(db, { product, quote, source: "mcp", agentId: caller.agentId, offerId: offer?.id });
 
   let paypal: { paypalOrderId: string; approvalUrl: string };
   try {

@@ -35,6 +35,7 @@ function toSummary(
     ...(local && { approxLocalPrice: { ...toMoney(local.cents, local.currency), approx: true as const } }),
     ...(shipping && { shipping: { region: shipping.region, amount: toMoney(shipping.cents, "USD") } }),
     inStock: product.stock - product.reserved > 0,
+    negotiable: product.autoNegotiate,
     maker: { name: seller.name, country, ...(seller.locality && { locality: seller.locality }) },
     url: productUrl(product.slug),
     ...(opts.photoId && { photoUrl: photoUrl(opts.photoId) }),

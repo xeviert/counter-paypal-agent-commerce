@@ -19,6 +19,7 @@ export async function listSellerProducts(db: Tx, sellerId: string) {
       currency: products.currency,
       stock: products.stock,
       reserved: products.reserved,
+      autoNegotiate: products.autoNegotiate,
     })
     .from(products)
     .where(eq(products.sellerId, sellerId))
@@ -57,6 +58,26 @@ export async function setProductStatus(db: Tx, seller: Seller, productId: string
     sellerId: seller.id,
     productId,
     payload: { to },
+  });
+  return true;
+}
+
+/** Off: make_offer counters at list price without asking Claude (BUILDOUT §6.4). */
+export async function setAutoNegotiate(db: Tx, sellerId: string, productId: string, on: boolean): Promise<boolean> {
+  if (!uuid.safeParse(productId).success) return false;
+  const [row] = await db
+    .update(products)
+    .set({ autoNegotiate: on })
+    .where(and(eq(products.id, productId), eq(products.sellerId, sellerId)))
+    .returning({ id: products.id });
+  if (!row) return false;
+  await db.insert(events).values({
+    type: on ? "product.negotiation_on" : "product.negotiation_off",
+    source: "web",
+    actor: sellerId,
+    sellerId,
+    productId,
+    payload: { autoNegotiate: on },
   });
   return true;
 }

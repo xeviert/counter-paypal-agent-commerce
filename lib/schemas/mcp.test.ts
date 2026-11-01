@@ -76,6 +76,7 @@ describe("MCP schemas", () => {
         approxLocalPrice: { currency: "MXN", value: "2950.00", approx: true },
         shipping: { region: "eu", amount: usd("25.00") },
         inStock: true,
+        negotiable: true,
         maker: { name: "Ana", country: "MX", locality: "Oaxaca" },
         url: "https://counter.example/p/handwoven-rug",
         available: 2,

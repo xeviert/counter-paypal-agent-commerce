@@ -7,12 +7,16 @@ import { SellerNotReceivableError } from "@/lib/paypal/orders";
 import { PolicyError } from "@/lib/policy/errors";
 import type { Money } from "@/lib/schemas/common";
 import {
+  askQuestionInput,
+  askQuestionOutput,
   createCheckoutInput,
   createCheckoutOutput,
   getOrderStatusInput,
   getOrderStatusOutput,
   getProductInput,
   getProductOutput,
+  makeOfferInput,
+  makeOfferOutput,
   searchProductsInput,
   searchProductsOutput,
   type McpError,
@@ -20,7 +24,9 @@ import {
 } from "@/lib/schemas/mcp";
 import { getProduct, searchProducts } from "@/lib/shop/catalog";
 import { createCheckout } from "@/lib/shop/checkout";
+import { makeOffer } from "@/lib/shop/offers";
 import { getOrderStatus } from "@/lib/shop/order-status";
+import { askQuestion } from "@/lib/shop/questions";
 import type { Agent } from "./agent";
 import { limitsFor, type RateLimiter } from "./rate-limit";
 
@@ -37,6 +43,8 @@ type ToolSuccess = {
   /** Rows that exist, for the `events` foreign keys. */
   refs?: { productId?: string; orderId?: string };
   count?: number;
+  /** Extra fields for the `events` payload, e.g. how an offer was clamped (the injection demo beat). */
+  audit?: Record<string, unknown>;
 };
 
 const fmt = (m: Money) => `${m.value} ${m.currency}`;
@@ -58,9 +66,11 @@ export function toMcpError(err: unknown): { code: McpErrorCode; message: string 
   return { code: "INTERNAL_ERROR", message: "Something went wrong on Counter's side. Try again shortly" };
 }
 
-// The status token authorizes releasing funds (ARCHITECTURE §5.6), so it stays out of the audit log.
+// Bearer handles stay out of the audit log: the status token authorizes releasing funds (ARCHITECTURE
+// §5.6), the offer id buys at the agreed price.
+const SECRET_ARGS = ["statusToken", "offerId"];
 const redact = (args: Record<string, unknown>) =>
-  "statusToken" in args ? { ...args, statusToken: "[redacted]" } : args;
+  Object.fromEntries(Object.entries(args).map(([k, v]) => [k, SECRET_ARGS.includes(k) ? "[redacted]" : v]));
 
 async function runTool(
   name: string,
@@ -104,6 +114,7 @@ async function runTool(
         outcome: code ? "error" : "ok",
         ...(code && { code }),
         ...(success?.count !== undefined && { count: success.count }),
+        ...(success?.audit && { audit: success.audit }),
         ms,
         userAgent: agent.userAgent,
       },
@@ -169,12 +180,57 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   );
 
   server.registerTool(
+    "ask_question",
+    {
+      title: "Ask about a product",
+      description:
+        "Ask a question about one product (size, materials, care, who made it, shipping, stock). " +
+        "Answers come only from the maker's listing; answered is false when the listing doesn't say.",
+      inputSchema: askQuestionInput,
+      outputSchema: askQuestionOutput,
+      annotations: { readOnlyHint: true, openWorldHint: false },
+    },
+    (args) =>
+      runTool("ask_question", args, deps, async () => {
+        const { productId, ...output } = await askQuestion(deps.db(), args);
+        return { output, text: output.answer, refs: { productId } };
+      }),
+  );
+
+  server.registerTool(
+    "make_offer",
+    {
+      title: "Make a price offer",
+      description:
+        "Offer the maker a price per item (USD, shipping not included) when get_product shows negotiable. " +
+        "The maker's side answers accept, counter or reject with a message. Both accept and counter come with a " +
+        "binding price: to buy at it, call create_checkout with the returned offerId (single use, expires in 30 " +
+        "minutes). Up to 3 offers per product per day; later offers see your earlier ones. Offers reserve no stock.",
+      inputSchema: makeOfferInput,
+      outputSchema: makeOfferOutput,
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+    },
+    (args) =>
+      runTool("make_offer", args, deps, async () => {
+        const { output, audit, productId } = await makeOffer(deps.db(), args, { agentId: deps.agent.agentId });
+        const price = output.price ? ` at ${fmt(output.price)} per item` : "";
+        return {
+          output,
+          text: `${output.decision}${price}: "${output.message}" ${output.nextStep}`,
+          refs: { productId },
+          audit,
+        };
+      }),
+  );
+
+  server.registerTool(
     "create_checkout",
     {
       title: "Create a PayPal checkout",
       description:
-        "Creates a PayPal checkout for a product at its listed price plus flat shipping to buyerCountry. " +
-        "The totals returned are final: price comes from the listing, never from arguments. " +
+        "Creates a PayPal checkout plus flat shipping to buyerCountry: pass productId to buy at the listed price, " +
+        "or offerId from make_offer to buy at the agreed price. " +
+        "The totals returned are final: prices come from the listing or the offer, never from arguments. " +
         "The human buyer must open approvalUrl and approve the payment on PayPal themselves; nothing is " +
         "charged before that, and the link expires at expiresAt. The shipping address is picked on PayPal " +
         "and must be in buyerCountry's shipping region. Keep statusToken private and use it with get_order_status.",

@@ -9,7 +9,7 @@ import { formatMoney, translator } from "@/lib/i18n";
 import { canPublish } from "@/lib/policy/seller";
 import { listOpenDrafts } from "@/lib/shop/drafts";
 import { listSellerProducts } from "@/lib/shop/seller-products";
-import { changeStatus, changeStock } from "./actions";
+import { changeNegotiation, changeStatus, changeStock } from "./actions";
 
 export default function ListingsPage() {
   return (
@@ -88,6 +88,16 @@ async function Listings() {
                   )}
                 </div>
               </div>
+              <form action={changeNegotiation} className="flex items-center gap-2">
+                <input type="hidden" name="productId" value={p.id} />
+                <input type="hidden" name="to" value={p.autoNegotiate ? "off" : "on"} />
+                <p className="flex-1 text-xs text-muted-foreground">
+                  {t(p.autoNegotiate ? "listings.negotiateOn" : "listings.negotiateOff")}
+                </p>
+                <Button type="submit" variant="outline" size="lg">
+                  {t(p.autoNegotiate ? "listings.negotiateDisable" : "listings.negotiateEnable")}
+                </Button>
+              </form>
               {p.reserved > 0 && <p className="text-xs text-muted-foreground">{t("listings.reserved", { count: p.reserved })}</p>}
             </li>
           ))}

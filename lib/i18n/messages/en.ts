@@ -182,6 +182,10 @@ export const en = {
     },
     drafts: "Unfinished",
     continueDraft: "Continue",
+    negotiateOn: "Agents can bargain down to your floor.",
+    negotiateOff: "Fixed price: agents pay the list price.",
+    negotiateEnable: "Allow offers",
+    negotiateDisable: "Fixed price",
   },
   orders: {
     title: "Orders",

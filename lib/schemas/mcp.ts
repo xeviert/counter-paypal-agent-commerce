@@ -4,6 +4,7 @@ import {
   countryCode,
   language,
   money,
+  offerDecision,
   orderStatus,
   releaseStatus,
   sellerCountry,
@@ -24,7 +25,10 @@ export const MCP_ERROR_CODES = [
   "SELLER_NOT_RECEIVABLE",
   "UNSUPPORTED_COUNTRY",
   "ORDER_NOT_FOUND",
+  "OFFER_NOT_FOUND",
   "OFFER_EXPIRED",
+  "OFFER_REJECTED",
+  "OFFER_LIMIT",
   "RATE_LIMITED",
   "PAYMENT_PROVIDER_ERROR",
   "INTERNAL_ERROR",
@@ -45,6 +49,8 @@ export type McpError = z.infer<typeof mcpError>;
 // ── Shared pieces ────────────────────────────────────────────────────────
 
 const productId = uuid.describe("Product id from search_products or get_product");
+
+const offerId = uuid.describe("Offer id from make_offer");
 
 const buyerCountry = countryCode.describe(
   "Country the order ships to, ISO 3166-1 alpha-2 uppercase (e.g. US, DE). Determines shipping cost",
@@ -76,6 +82,7 @@ export const productSummary = z.object({
   approxLocalPrice: approxMoney.optional().describe("Price in the maker's currency, for reference"),
   shipping: shippingQuote.optional().describe("Present when buyerCountry was given"),
   inStock: z.boolean(),
+  negotiable: z.boolean().describe("The maker takes offers through make_offer"),
   maker,
   url: z.url().describe("Product page for the human buyer"),
   photoUrl: z.url().optional(),
@@ -115,10 +122,44 @@ export const getProductOutput = z.object({
   }),
 });
 
+// ── make_offer ───────────────────────────────────────────────────────────
+
+export const makeOfferInput = z.object({
+  productId,
+  price: z.number().min(0.01).max(1_000_000).describe("Your offer per item in USD, shipping not included"),
+  message: z.string().trim().max(500).optional().describe("Optional note to the maker"),
+});
+
+export const makeOfferOutput = z.object({
+  offerId: offerId.describe("Pass to create_checkout to buy at price. Single use; nothing is reserved until then"),
+  decision: offerDecision.describe("accept: your price stands. counter: the maker's price is in price. reject: nothing agreed"),
+  offered: money.describe("Your offer per item"),
+  price: money.optional().describe("Per-item price create_checkout(offerId) charges. Absent on reject"),
+  message: z.string().describe("The maker's reply"),
+  expiresAt: z.iso.datetime().describe("The offer can't be used after this"),
+  offersLeft: z.int().min(0).describe("Offers you can still make on this product in the next 24 hours"),
+  nextStep: z.string().describe("What to do next, in plain words"),
+});
+
+// ── ask_question ─────────────────────────────────────────────────────────
+
+export const askQuestionInput = z.object({
+  productId,
+  question: z.string().trim().min(1).max(500).describe("The buyer's question about this product"),
+  buyerCountry: buyerCountry.optional().describe("For shipping questions"),
+});
+
+export const askQuestionOutput = z.object({
+  answer: z.string(),
+  answered: z.boolean().describe("False when the listing doesn't say"),
+});
+
 // ── create_checkout ──────────────────────────────────────────────────────
 
+// Exactly one of productId and offerId; checked in lib/shop/checkout.ts (no refinements here, see top).
 export const createCheckoutInput = z.object({
-  productId,
+  productId: productId.optional().describe("Buy at the list price. Omit when passing offerId"),
+  offerId: offerId.optional().describe("Buy at the price agreed in make_offer"),
   quantity: z.int().min(1).max(10).default(1),
   buyerCountry,
 });

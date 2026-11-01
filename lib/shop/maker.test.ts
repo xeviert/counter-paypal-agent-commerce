@@ -18,7 +18,7 @@ import {
 import { addTracking, FulfillmentError, refundOrder } from "./fulfillment";
 import { markAllRead, notify, unreadCount } from "./notifications";
 import { getSellerOrder, listSellerOrders, sellerSummary } from "./seller-orders";
-import { setProductStatus, setProductStock } from "./seller-products";
+import { setAutoNegotiate, setProductStatus, setProductStock } from "./seller-products";
 import { authenticate, createSellerAccount, isDemoSeller, listDemoSellers } from "./sellers";
 
 const jpeg = () => sharp({ create: { width: 20, height: 10, channels: 3, background: "#a33" } }).jpeg().toBuffer();
@@ -208,6 +208,17 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
 
       const { seller: other } = await seedProduct(db);
       expect(await setProductStatus(db, other, product.id, "pause")).toBe(false);
+    });
+
+    it("turns negotiation off and on, only for the maker's own products", async () => {
+      const { seller, product } = await seedProduct(db);
+      const { seller: other } = await seedProduct(db);
+      const autoNegotiate = async () => (await db.select().from(products).where(eq(products.id, product.id)))[0]!.autoNegotiate;
+      expect(await setAutoNegotiate(db, other.id, product.id, false)).toBe(false);
+      expect(await autoNegotiate()).toBe(true);
+      expect(await setAutoNegotiate(db, seller.id, product.id, false)).toBe(true);
+      expect(await autoNegotiate()).toBe(false);
+      expect(await setAutoNegotiate(db, seller.id, "not-a-uuid", true)).toBe(false);
     });
   });
 

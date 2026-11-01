@@ -181,6 +181,10 @@ export const fil: Messages = {
     },
     drafts: "Hindi pa tapos",
     continueDraft: "Ituloy",
+    negotiateOn: "Puwedeng tumawad ang mga agent hanggang sa pinakamababang presyo mo.",
+    negotiateOff: "Fixed na presyo: babayaran ng mga agent ang nakalistang presyo.",
+    negotiateEnable: "Tumanggap ng alok",
+    negotiateDisable: "Fixed na presyo",
   },
   orders: {
     title: "Mga order",

@@ -19,6 +19,7 @@ import {
   CATEGORIES,
   DRAFT_STAGES,
   NOTIFICATION_KINDS,
+  OFFER_DECISIONS,
   ORDER_STATUSES,
   RELEASE_STATUSES,
   WEIGHT_CLASSES,
@@ -56,7 +57,7 @@ export const productStatus = pgEnum("product_status", ["draft", "review", "live"
 
 export const consentStatus = pgEnum("consent_status", ["pending", "granted", "revoked"]);
 
-export const offerDecision = pgEnum("offer_decision", ["accept", "counter", "reject"]);
+export const offerDecision = pgEnum("offer_decision", OFFER_DECISIONS);
 
 export const eventSource = pgEnum("event_source", [
   "webhook",

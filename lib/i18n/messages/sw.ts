@@ -181,6 +181,10 @@ export const sw: Messages = {
     },
     drafts: "Hazijakamilika",
     continueDraft: "Endelea",
+    negotiateOn: "Mawakala wanaweza kupatana hadi bei yako ya chini.",
+    negotiateOff: "Bei maalum: mawakala hulipa bei iliyoorodheshwa.",
+    negotiateEnable: "Pokea ofa",
+    negotiateDisable: "Bei maalum",
   },
   orders: {
     title: "Oda",

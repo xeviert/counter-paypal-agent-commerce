@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { and, asc, eq, lte } from "drizzle-orm";
+import { and, asc, eq, gt, isNotNull, isNull, lte } from "drizzle-orm";
 import { PolicyError } from "@/lib/policy/errors";
 import { canTransition, CHECKOUT_TTL_MS, InvalidTransitionError, stockEffect } from "@/lib/policy/lifecycle";
 import type { OrderQuote } from "@/lib/policy/quote";
 import { commitStock, releaseStock, reserveStock } from "@/lib/policy/stock";
 import type { OrderStatus } from "@/lib/schemas/common";
 import type { Tx } from "./index";
-import { events, eventSource, orders } from "./schema";
+import { events, eventSource, offers, orders } from "./schema";
 
 // The only writer of `orders.status` (ARCHITECTURE §6.5). Every change writes an `events` row
 // in the same transaction, so the audit log can't miss or invent a transition.
@@ -36,6 +36,22 @@ export async function openCheckout(db: Tx, input: OpenCheckoutInput): Promise<Or
   const { product, quote } = input;
   const now = input.now ?? new Date();
   return db.transaction(async (tx) => {
+    // Single use: claimed in the same transaction, so a failed reservation leaves the offer usable.
+    if (input.offerId) {
+      const claimed = await tx
+        .update(offers)
+        .set({ usedAt: now })
+        .where(
+          and(
+            eq(offers.id, input.offerId),
+            isNull(offers.usedAt),
+            gt(offers.expiresAt, now),
+            isNotNull(offers.agreedAmount),
+          ),
+        )
+        .returning({ id: offers.id });
+      if (claimed.length === 0) throw new PolicyError("OFFER_EXPIRED", "This offer has expired or was already used");
+    }
     if (!(await reserveStock(tx, product.id, quote.quantity))) {
       throw new PolicyError("OUT_OF_STOCK", `Fewer than ${quote.quantity} left in stock`);
     }

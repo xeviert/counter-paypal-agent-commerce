@@ -9,16 +9,19 @@ export type FakeReply =
   | { kind: "api_error" };
 
 /**
- * Stands in for `client.beta.messages.stream()`: emits the stream events the listing builder
- * listens to, then resolves `finalMessage()` the way the SDK does. Never touches the network.
+ * Stands in for `client.beta.messages.stream()`: emits the stream events the listing builder and
+ * negotiator listen to, then resolves `finalMessage()` the way the SDK does. Never touches the network.
+ * Pass several replies to answer successive calls in order (the last one repeats).
  */
-export function fakeAnthropic(reply: FakeReply) {
+export function fakeAnthropic(script: FakeReply | FakeReply[], model = "claude-sonnet-5-5") {
+  const replies = Array.isArray(script) ? script : [script];
   const requests: Record<string, unknown>[] = [];
   const client = {
     beta: {
       messages: {
         stream(params: Record<string, unknown>) {
           requests.push(params);
+          const reply = replies[Math.min(requests.length - 1, replies.length - 1)]!;
           const handlers: Record<string, Handler[]> = {};
           const emit = (event: string, ...args: unknown[]) =>
             handlers[event]?.forEach((h) => (h as (...a: unknown[]) => void)(...args));
@@ -28,7 +31,7 @@ export function fakeAnthropic(reply: FakeReply) {
               return this;
             },
             async finalMessage() {
-              emit("streamEvent", { type: "message_start", message: { model: "claude-sonnet-5-5" } });
+              emit("streamEvent", { type: "message_start", message: { model } });
               if (reply.kind === "api_error") throw new Anthropic.APIConnectionError({ message: "socket hang up" });
               if (reply.kind === "refusal") {
                 emit("streamEvent", { type: "message_delta", delta: { stop_reason: "refusal" } });
@@ -40,13 +43,14 @@ export function fakeAnthropic(reply: FakeReply) {
                 throw new Anthropic.AnthropicError("Failed to parse structured output: bad");
               }
               const json = JSON.stringify(reply.output);
-              const half = json.indexOf('"en"');
+              // Split where the listing builder's English half starts, if there is one.
+              const half = Math.max(json.indexOf('"en"'), 0);
               emit("text", json.slice(0, half), json.slice(0, half));
               emit("text", json.slice(half), json);
               const stopReason = reply.stopReason ?? "end_turn";
               emit("streamEvent", { type: "message_delta", delta: { stop_reason: stopReason } });
               return {
-                model: "claude-sonnet-5-5",
+                model,
                 stop_reason: stopReason,
                 usage: { input_tokens: 4200, output_tokens: 600, cache_read_input_tokens: 900, cache_creation_input_tokens: 0 },
                 content: [{ type: "text", text: json }],

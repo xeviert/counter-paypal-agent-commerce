@@ -1,13 +1,14 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
-import { orders, products } from "@/lib/db/schema";
+import { offers, orders, products } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { PolicyError } from "@/lib/policy/errors";
 import { createCheckoutInput, createCheckoutOutput } from "@/lib/schemas/mcp";
 import { seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
 import { json, mockPayPal, paypalIssue, stubPayPalEnv } from "@/test/paypal";
 import { createCheckout } from "./checkout";
+import { OFFER_TTL_MS } from "./offers";
 
 const PAYPAL_ID = "7FP370406R848663Y";
 
@@ -128,5 +129,79 @@ describe.skipIf(!testDatabaseUrl)("createCheckout", () => {
     const { product } = await seedProduct(db);
     mockPayPal(created);
     expect(await policyCode(checkout(product.id, { buyerCountry: "IR" }))).toBe("UNSUPPORTED_COUNTRY");
+  });
+
+  describe("with an offer", () => {
+    const seedOffer = async (productId: string, values: Partial<typeof offers.$inferInsert> = {}) =>
+      (
+        await db
+          .insert(offers)
+          .values({
+            productId,
+            agentId: "agt_test",
+            offeredAmount: 12000,
+            counterAmount: 13500,
+            agreedAmount: 13500,
+            currency: "USD",
+            decision: "counter",
+            expiresAt: new Date(Date.now() + OFFER_TTL_MS),
+            ...values,
+          })
+          .returning()
+      )[0]!;
+
+    const offerCheckout = (offerId: string, extra: Record<string, unknown> = {}) =>
+      createCheckout(db, createCheckoutInput.parse({ offerId, buyerCountry: "US", quantity: 2, ...extra }), {
+        agentId: "agt_test",
+      });
+
+    it("charges the agreed price per item and uses the offer once", async () => {
+      const { product } = await seedProduct(db, { stock: 4 });
+      const offer = await seedOffer(product.id);
+      const { calls } = mockPayPal(created);
+      const { output, order } = await offerCheckout(offer.id);
+
+      expect(output).toMatchObject({
+        unitPrice: { value: "135.00" },
+        totals: { item: { value: "270.00" }, shipping: { value: "22.00" }, total: { value: "292.00" } },
+      });
+      expect(order).toMatchObject({ offerId: offer.id, unitAmount: 13500, platformFee: 1350 });
+      const unit = (calls.find((c) => c.path === "/v2/checkout/orders")!.body as { purchase_units: { amount: unknown }[] })
+        .purchase_units[0]!;
+      expect(unit.amount).toMatchObject({ value: "292.00" });
+      expect((await db.select().from(offers).where(eq(offers.id, offer.id)))[0]!.usedAt).not.toBeNull();
+
+      expect(await policyCode(offerCheckout(offer.id))).toBe("OFFER_EXPIRED");
+      expect(await db.select().from(orders)).toHaveLength(1);
+    });
+
+    it("leaves the offer usable when stock runs out", async () => {
+      const { product } = await seedProduct(db, { stock: 1 });
+      const offer = await seedOffer(product.id);
+      mockPayPal(created);
+      expect(await policyCode(offerCheckout(offer.id))).toBe("OUT_OF_STOCK");
+      expect((await db.select().from(offers).where(eq(offers.id, offer.id)))[0]!.usedAt).toBeNull();
+      await expect(offerCheckout(offer.id, { quantity: 1 })).resolves.toBeDefined();
+    });
+
+    it("refuses rejected, expired and mismatched offers", async () => {
+      const { product } = await seedProduct(db);
+      const other = (await seedProduct(db)).product;
+      mockPayPal(created);
+      const rejected = await seedOffer(product.id, { decision: "reject", counterAmount: null, agreedAmount: null });
+      const expired = await seedOffer(product.id, { expiresAt: new Date(Date.now() - 1000) });
+      const fine = await seedOffer(product.id);
+      expect(await policyCode(offerCheckout(rejected.id))).toBe("OFFER_REJECTED");
+      expect(await policyCode(offerCheckout(expired.id))).toBe("OFFER_EXPIRED");
+      expect(await policyCode(offerCheckout(fine.id, { productId: other.id }))).toBe("OFFER_NOT_FOUND");
+      expect(await policyCode(offerCheckout(crypto.randomUUID()))).toBe("OFFER_NOT_FOUND");
+      expect(await db.select().from(orders)).toHaveLength(0);
+    });
+
+    it("needs a product or an offer", async () => {
+      expect(
+        await policyCode(createCheckout(db, createCheckoutInput.parse({ buyerCountry: "US" }), { agentId: "agt_test" })),
+      ).toBe("PRODUCT_NOT_FOUND");
+    });
   });
 });

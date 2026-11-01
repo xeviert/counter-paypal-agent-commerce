@@ -63,6 +63,9 @@ export const NOTIFICATION_KINDS = [
   "dispute_resolved",
 ] as const;
 
+/** A negotiation outcome (ARCHITECTURE §5.2). Lives in `offers`, never in the order state machine. */
+export const OFFER_DECISIONS = ["accept", "counter", "reject"] as const;
+
 export type Category = (typeof CATEGORIES)[number];
 export type WeightClass = (typeof WEIGHT_CLASSES)[number];
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
@@ -72,6 +75,7 @@ export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
 export type Language = (typeof LANGUAGES)[number];
 export type SellerCountry = (typeof SELLER_COUNTRIES)[number];
 export type ShippingRegion = (typeof SHIPPING_REGIONS)[number];
+export type OfferDecision = (typeof OFFER_DECISIONS)[number];
 
 export const category = z.enum(CATEGORIES);
 export const weightClass = z.enum(WEIGHT_CLASSES);
@@ -80,6 +84,7 @@ export const sellerCountry = z.enum(SELLER_COUNTRIES);
 export const shippingRegion = z.enum(SHIPPING_REGIONS);
 export const orderStatus = z.enum(ORDER_STATUSES);
 export const releaseStatus = z.enum(RELEASE_STATUSES);
+export const offerDecision = z.enum(OFFER_DECISIONS);
 
 /** ISO 3166-1 alpha-2, uppercase. Whether we ship there is a policy question, not a schema one. */
 export const countryCode = z.string().regex(/^[A-Z]{2}$/, "expected an uppercase ISO 3166-1 alpha-2 code");
