@@ -8,11 +8,11 @@ import { AddPhotoTiles } from "./photo-inputs";
 describe("AddPhotoTiles", () => {
   it("offers the back camera and the gallery", () => {
     const html = renderToStaticMarkup(
-      createElement(I18nProvider, {
-        locale: "en",
-        messages: en,
-        children: createElement(AddPhotoTiles, { onFiles: () => {} }),
-      }),
+      createElement(
+        I18nProvider,
+        { locale: "en", messages: en } as Parameters<typeof I18nProvider>[0],
+        createElement(AddPhotoTiles, { onFiles: () => {} }),
+      ),
     );
     const inputs = html.match(/<input[^>]*>/g) ?? [];
     expect(inputs).toHaveLength(2);

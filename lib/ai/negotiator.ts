@@ -3,6 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { formatCents, type Category, type OfferDecision } from "@/lib/schemas/common";
 import { negotiatorOutput, toNegotiatorResult, type NegotiatorOutput, type NegotiatorResult } from "@/lib/schemas/negotiation";
 import { anthropic } from "./client";
+import { wrapUntrusted } from "./untrusted";
 
 // Negotiator (BUILDOUT §6.4, ARCHITECTURE §5.1): answers a buyer agent's offer for the maker. It has
 // no tools and only proposes; `lib/policy/clamp.ts` decides the price, so an injection can at worst
@@ -54,9 +55,6 @@ export type NegotiatorOutcome =
 
 const usd = (cents: number) => `$${formatCents(cents)}`;
 
-// A closing tag inside the agent's text must not end the untrusted block early.
-const untrusted = (text: string) => text.replace(/<\/?\s*agent_message\s*>/gi, "");
-
 function priorLine(o: PriorOffer): string {
   const answer = o.decision === "reject" ? "rejected" : o.decision === "accept" ? "accepted" : `countered at ${usd(o.agreedCents ?? 0)}`;
   return `- offered ${usd(o.offeredCents)}, ${answer}`;
@@ -71,7 +69,7 @@ export function buildUserText(input: NegotiationInput): string {
     `Lowest price the maker accepts (secret): ${usd(input.floorCents)} per item`,
     `Earlier offers from this agent on this item:\n${input.priorOffers.map(priorLine).join("\n") || "(none)"}`,
     `Offer: ${usd(input.offeredCents)} per item`,
-    `<agent_message>\n${untrusted(input.agentMessage?.trim() ?? "") || "(no message)"}\n</agent_message>`,
+    wrapUntrusted("agent_message", input.agentMessage, "(no message)"),
   ].join("\n\n");
 }
 

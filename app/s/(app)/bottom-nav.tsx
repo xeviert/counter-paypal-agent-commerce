@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeIcon, InboxIcon, PackageIcon, PlusIcon, TagIcon } from "lucide-react";
+import { HomeIcon, InboxIcon, PackageIcon, PlusIcon, SparklesIcon, TagIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/components/i18n";
@@ -11,6 +11,7 @@ const ITEMS: { href: string; label: MessageKey; icon: typeof HomeIcon }[] = [
   { href: "/s/listings", label: "nav.listings", icon: TagIcon },
   { href: "/s/new", label: "nav.new", icon: PlusIcon },
   { href: "/s/orders", label: "nav.orders", icon: PackageIcon },
+  { href: "/s/copilot", label: "nav.copilot", icon: SparklesIcon },
   { href: "/s/inbox", label: "nav.inbox", icon: InboxIcon },
 ];
 
@@ -19,7 +20,7 @@ export function BottomNav({ unread }: { unread: number }) {
   const pathname = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 border-t bg-background pb-[env(safe-area-inset-bottom)]">
-      <ul className="mx-auto grid max-w-md grid-cols-5">
+      <ul className="mx-auto grid max-w-md grid-cols-6">
         {ITEMS.map(({ href, label, icon: Icon }) => {
           const active = href === "/s" ? pathname === "/s" : pathname.startsWith(href);
           return (

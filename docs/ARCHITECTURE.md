@@ -238,7 +238,7 @@ Payloads are stored in `events` first, then processed, so a failed handler can b
 | Listing builder | `claude-sonnet-5-5` | Photos + transcript | Zod-typed listing (EN + native), price guidance | None (structured output) | No |
 | Negotiator | `claude-sonnet-5-5` (eval-picked over Opus, BUILDOUT §6.4) | Offer, listing, effective floor, this agent's earlier offers on the product | `{decision, counterPrice, message, note}` | None | No. Output is clamped by `lib/policy` |
 | Buyer-question answerer | `claude-haiku-5-5` (P3; keyword stub over listing fields until then) | Question + cached catalog entry | Grounded answer | None | No |
-| Seller copilot | `claude-opus-5-5` | Maker chat in their language | Answers, proposed actions | `betaZodTool`s over DB + `lib/paypal` (refund, track, release status) | Proposes only. Refunds need a maker tap to confirm |
+| Seller copilot | `claude-opus-5-5` (eval-kept over Sonnet, BUILDOUT §7.1) | Maker chat in their language | Answers, proposed actions | `betaZodTool`s over DB + `lib/paypal` (refund, track, release status) | Proposes only. Refunds need a maker tap to confirm |
 | Operator copilot | `claude-opus-5-5` | Operator chat | Answers | PayPal remote MCP (`/sse`, platform token) | Read-oriented; see §8 |
 | Demo buyer agents | `claude-opus-5-5`, ChatGPT dev mode | Human request | Purchases | Counter MCP | Only via human approval on PayPal |
 

@@ -42,14 +42,23 @@ export function makerNet(order: Order): { cents: number; final: boolean } {
   return { cents: order.netAmount - order.refundedAmount + order.platformFeeRefunded, final: true };
 }
 
-export async function listSellerOrders(db: Tx, sellerId: string, limit = 100): Promise<SellerOrder[]> {
+export type OrderFilter = { limit?: number; status?: OrderStatus; capturedSince?: Date };
+
+export async function listSellerOrders(db: Tx, sellerId: string, filter: OrderFilter = {}): Promise<SellerOrder[]> {
   const rows = await db
     .select({ order: orders, listing: products.listing })
     .from(orders)
     .innerJoin(products, eq(orders.productId, products.id))
-    .where(and(eq(orders.sellerId, sellerId), inArray(orders.status, MAKER_VISIBLE)))
+    .where(
+      and(
+        eq(orders.sellerId, sellerId),
+        inArray(orders.status, MAKER_VISIBLE),
+        filter.status ? eq(orders.status, filter.status) : undefined,
+        filter.capturedSince ? gte(orders.capturedAt, filter.capturedSince) : undefined,
+      ),
+    )
     .orderBy(desc(orders.createdAt))
-    .limit(limit);
+    .limit(filter.limit ?? 100);
   return rows.map((r) => ({ order: r.order, title: makerTitle(r.listing) }));
 }
 
@@ -101,6 +110,15 @@ export const SELLER_TIME_ZONES: Record<SellerCountry, string> = {
 
 const TRUNC_UNIT: Record<SalesPeriod, string> = { today: "day", week: "week", month: "month" };
 
+/** Start of the current day, week (Monday) or month at the maker's midnight. */
+export async function periodStart(db: Tx, country: string, period: SalesPeriod): Promise<Date> {
+  const tz = SELLER_TIME_ZONES[sellerCountry.parse(country)];
+  const [start] = await db.execute<{ since: string | Date }>(
+    sql`select date_trunc(${TRUNC_UNIT[period]}, now() at time zone ${tz}) at time zone ${tz} as since`,
+  );
+  return new Date(start!.since);
+}
+
 export type SalesTotals = {
   currency: string;
   orders: number;
@@ -118,11 +136,7 @@ export async function salesSummary(
   seller: { id: string; country: string },
   period: SalesPeriod,
 ): Promise<{ period: SalesPeriod; since: Date; totals: SalesTotals[] }> {
-  const tz = SELLER_TIME_ZONES[sellerCountry.parse(seller.country)];
-  const [start] = await db.execute<{ since: string | Date }>(
-    sql`select date_trunc(${TRUNC_UNIT[period]}, now() at time zone ${tz}) at time zone ${tz} as since`,
-  );
-  const since = new Date(start!.since);
+  const since = await periodStart(db, seller.country, period);
   const net = sql`coalesce(${orders.netAmount} - ${orders.refundedAmount} + ${orders.platformFeeRefunded}, ${orders.itemAmount} + ${orders.shippingAmount} - ${orders.platformFee})`;
   const totals = await db
     .select({

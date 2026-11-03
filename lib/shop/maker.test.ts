@@ -164,6 +164,23 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
       await db.insert(orders).values({ ...orderValues(seller.id, product.id), status: "CheckoutCreated" });
       expect(await listSellerOrders(db, seller.id)).toEqual([]);
     });
+
+    it("filters the list by status and capture time", async () => {
+      const { seller, product } = await seedProduct(db);
+      const since = new Date(Date.now() - 3600_000);
+      const insert = (patch: Partial<typeof orders.$inferInsert>) =>
+        db.insert(orders).values({ ...orderValues(seller.id, product.id), ...patch }).returning();
+      const [recent] = await insert({ status: "PaidHeld", capturedAt: new Date() });
+      const [old] = await insert({ status: "PaidHeld", capturedAt: new Date(since.getTime() - 60_000) });
+      const [shipped] = await insert({ status: "Shipped", capturedAt: new Date() });
+      const ids = async (filter: Parameters<typeof listSellerOrders>[2]) =>
+        (await listSellerOrders(db, seller.id, filter)).map((r) => r.order.id).sort();
+
+      expect(await ids({ capturedSince: since })).toEqual([recent!.id, shipped!.id].sort());
+      expect(await ids({ status: "PaidHeld" })).toEqual([recent!.id, old!.id].sort());
+      expect(await ids({ status: "PaidHeld", capturedSince: since })).toEqual([recent!.id]);
+      expect(await ids({ limit: 1 })).toHaveLength(1);
+    });
   });
 
   describe("drafts", () => {
