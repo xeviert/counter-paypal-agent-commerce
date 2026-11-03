@@ -38,7 +38,13 @@ export type TrackingInput = { carrier: string; carrierNameOther?: string; tracki
 const TRACKING_NUMBER = /^[A-Za-z0-9-]{4,64}$/;
 
 /** PaidHeld → Shipped. Starts the release timer; one tracker per order. */
-export async function addTracking(db: Tx, maker: Maker, orderId: string, input: TrackingInput): Promise<Order> {
+export async function addTracking(
+  db: Tx,
+  maker: Maker,
+  orderId: string,
+  input: TrackingInput,
+  source: EventSource = "web",
+): Promise<Order> {
   const found = await getSellerOrder(db, maker.id, orderId);
   if (!found) throw new FulfillmentError("errors.notFound");
   const { order } = found;
@@ -71,7 +77,7 @@ export async function addTracking(db: Tx, maker: Maker, orderId: string, input: 
 
   const shippedAt = new Date();
   const { order: shipped } = await transition(db, order.id, "Shipped", {
-    source: "web",
+    source,
     actor: maker.id,
     from: ["PaidHeld"],
     patch: {
@@ -105,6 +111,7 @@ export async function refundOrder(
   maker: Maker,
   orderId: string,
   input: { cents?: number; reason?: string },
+  source: EventSource = "web",
 ): Promise<RefundResult> {
   const found = await getSellerOrder(db, maker.id, orderId);
   if (!found) throw new FulfillmentError("errors.notFound");
@@ -158,7 +165,7 @@ export async function refundOrder(
     throw err;
   }
 
-  const updated = await settleRefund(db, row.id, refund, { source: "web", actor: maker.id });
+  const updated = await settleRefund(db, row.id, refund, { source, actor: maker.id });
   if (refund.status !== "COMPLETED") log.warn("refund not completed yet", { order_id: order.id, status: refund.status });
   return { refundedCents: row.amount, order: updated };
 }

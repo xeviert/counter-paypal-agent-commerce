@@ -31,6 +31,7 @@ const envSchema = z.object({
   SESSION_SECRET: required.min(32).optional(),
   /** Shows one-tap sign-in as a seeded demo maker on /s/login. For judges; sandbox only. */
   DEMO_LOGIN: z.stringbool().default(false),
+  OPS_PASSWORD: later, // P3 operator console
 });
 
 export type Env = z.infer<typeof envSchema>;

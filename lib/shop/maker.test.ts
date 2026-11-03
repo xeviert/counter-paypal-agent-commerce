@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
+import type { Order } from "@/lib/db/orders";
 import { drafts, events, orders, photos, products, refunds } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { reviewInput } from "@/lib/schemas/maker";
@@ -17,7 +18,16 @@ import {
 } from "./drafts";
 import { addTracking, FulfillmentError, refundOrder } from "./fulfillment";
 import { markAllRead, notify, unreadCount } from "./notifications";
-import { getSellerOrder, listSellerOrders, sellerSummary } from "./seller-orders";
+import {
+  findSellerOrderByRef,
+  getSellerOrder,
+  listSellerOrders,
+  orderRef,
+  payoutStatus,
+  salesSummary,
+  SELLER_TIME_ZONES,
+  sellerSummary,
+} from "./seller-orders";
 import { setAutoNegotiate, setProductStatus, setProductStock } from "./seller-products";
 import { authenticate, createSellerAccount, isDemoSeller, listDemoSellers } from "./sellers";
 
@@ -127,6 +137,26 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
         "errors.notFound",
       );
       expect(await errorCode(refundOrder(db, other, order.id, {}))).toBe("errors.notFound");
+    });
+
+    it("finds an order by the ref the maker sees, only among their paid orders", async () => {
+      const { order, seller, product } = await paidOrder();
+      const { seller: other } = await seedProduct(db);
+      const ref = orderRef(order.id);
+
+      for (const said of [ref, ref.toLowerCase(), `#${ref}`, ` ${ref} `, order.id]) {
+        expect((await findSellerOrderByRef(db, seller.id, said))?.order.id).toBe(order.id);
+      }
+      expect(await findSellerOrderByRef(db, other.id, ref)).toBeUndefined();
+      for (const junk of ["", "123", "3f9a12bz", "%", `${ref}0`]) {
+        expect(await findSellerOrderByRef(db, seller.id, junk)).toBeUndefined();
+      }
+
+      const [unpaid] = await db
+        .insert(orders)
+        .values({ ...orderValues(seller.id, product.id), status: "CheckoutCreated" })
+        .returning();
+      expect(await findSellerOrderByRef(db, seller.id, orderRef(unpaid!.id))).toBeUndefined();
     });
 
     it("lists only paid orders", async () => {
@@ -260,6 +290,14 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
       expect(shipped.carrierNameOther).toBe("Fletes Oaxaca");
     });
 
+    it("logs who acted when the copilot adds tracking", async () => {
+      const { seller, order } = await paidOrder();
+      mockPayPal(() => json(201, { id: order.paypalOrderId }));
+      await addTracking(db, seller, order.id, { carrier: "DHL", trackingNumber: "1234567890" }, "copilot");
+      const [logged] = await db.select().from(events).where(eq(events.orderId, order.id));
+      expect(logged).toMatchObject({ type: "order.transition", source: "copilot", actor: seller.id });
+    });
+
     it("refuses orders that aren't waiting to ship", async () => {
       const { seller, order } = await paidOrder({ status: "Shipped" });
       expect(await errorCode(addTracking(db, seller, order.id, { carrier: "DHL", trackingNumber: "1234567890" }))).toBe(
@@ -303,6 +341,17 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
       expect((await db.select().from(events).where(eq(events.type, "order.refunded"))).length).toBe(2);
     });
 
+    it("logs the refund under the source that confirmed it", async () => {
+      const { seller, order } = await paidOrder();
+      mockPayPal(() => refunded(17500, 750));
+      await refundOrder(db, seller, order.id, {}, "copilot");
+      const logged = await db.select().from(events).where(eq(events.orderId, order.id));
+      expect(logged.map((e) => [e.type, e.source])).toEqual([
+        ["order.refunded", "copilot"],
+        ["order.transition", "copilot"],
+      ]);
+    });
+
     it("retries an unanswered refund with the same request id", async () => {
       const { seller, order } = await paidOrder();
       let fail = true;
@@ -333,6 +382,67 @@ describe.skipIf(!testDatabaseUrl)("maker app", () => {
     it("counts orders to ship, held money and live listings", async () => {
       const { seller } = await paidOrder();
       expect(await sellerSummary(db, seller.id)).toEqual({ toShip: 1, heldCents: 16150, live: 1 });
+    });
+
+    it("says when the maker gets paid", () => {
+      const day = new Date("2026-11-20T00:00:00Z");
+      const at = (status: Order["status"], extra: Partial<Order> = {}) =>
+        payoutStatus({ status, releasedAt: null, releaseDueAt: null, ...extra });
+      expect(at("Released", { releasedAt: day })).toEqual({ key: "orders.releasedOn", date: day });
+      expect(at("Shipped", { releaseDueAt: day })).toEqual({ key: "orders.releaseEta", date: day });
+      expect(at("PaidHeld")).toEqual({ key: "orders.releaseAfterTracking" });
+      expect(at("Disputed")).toEqual({ key: "orders.held" });
+      expect(at("Refunded")).toBeUndefined();
+    });
+
+    it("sums sales since the start of the maker's day, week and month", async () => {
+      const { seller, product } = await seedProduct(db);
+      const { seller: other, product: theirs } = await seedProduct(db);
+      const now = new Date();
+      const today = await salesSummary(db, seller, "today");
+      const sale = (patch: Partial<typeof orders.$inferInsert>, sellerId = seller.id, productId = product.id) =>
+        db.insert(orders).values({ ...orderValues(sellerId, productId), capturedAt: now, ...patch });
+      await sale({ status: "PaidHeld", netAmount: 16150 });
+      await sale({ status: "Released", netAmount: 16150, refundedAmount: 2000, platformFeeRefunded: 100, quantity: 2 });
+      await sale({ status: "PaidPending" });
+      const beforeToday = new Date(today.since.getTime() - 60_000);
+      await sale({ status: "PaidHeld", netAmount: 16150, capturedAt: beforeToday });
+      await sale({ status: "CheckoutCreated", capturedAt: null });
+      await sale({ status: "PaidHeld", netAmount: 16150 }, other.id, theirs.id);
+
+      const local = (date: Date) =>
+        Object.fromEntries(
+          new Intl.DateTimeFormat("en-US", {
+            timeZone: SELLER_TIME_ZONES.MX,
+            hourCycle: "h23",
+            weekday: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+            .formatToParts(date)
+            .map((p) => [p.type, p.value]),
+        );
+      expect(local(today.since)).toMatchObject({ hour: "00", minute: "00" });
+      expect(now.getTime() - today.since.getTime()).toBeLessThan(24 * 3600_000);
+      expect((await salesSummary(db, seller, "today")).totals).toEqual([
+        {
+          currency: "USD",
+          orders: 3,
+          units: 4,
+          grossCents: 3 * 17500,
+          refundedCents: 2000,
+          // 16150 held, 16150 - 2000 + 100 released, 17500 - 750 estimated before PayPal's fee is known.
+          netCents: 16150 + 14250 + 16750,
+          heldCents: 16150,
+        },
+      ]);
+
+      const week = await salesSummary(db, seller, "week");
+      expect(local(week.since)).toMatchObject({ weekday: "Mon", hour: "00", minute: "00" });
+      const month = await salesSummary(db, seller, "month");
+      expect(local(month.since)).toMatchObject({ day: "1", hour: "00", minute: "00" });
+      expect(month.totals[0]!.orders).toBe(month.since <= beforeToday ? 4 : 3);
     });
 
     it("counts unread notifications until read", async () => {

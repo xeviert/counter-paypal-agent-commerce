@@ -10,6 +10,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -78,6 +79,17 @@ export const category = pgEnum("category", CATEGORIES);
 export const draftStage = pgEnum("draft_stage", DRAFT_STAGES);
 
 export const notificationKind = pgEnum("notification_kind", NOTIFICATION_KINDS);
+
+export const copilotRole = pgEnum("copilot_role", ["user", "assistant"]);
+
+export const copilotActionStatus = pgEnum("copilot_action_status", ["proposed", "confirmed", "canceled", "failed"]);
+
+export const acpSessionStatus = pgEnum("acp_session_status", [
+  "not_ready_for_payment",
+  "ready_for_payment",
+  "completed",
+  "canceled",
+]);
 
 // ── Tables ───────────────────────────────────────────────────────────────
 
@@ -355,6 +367,90 @@ export const notifications = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("notifications_seller_idx").on(t.sellerId, t.createdAt)],
+);
+
+/** Seller copilot turns (BUILDOUT §7.1). `content` holds Anthropic content blocks, tool calls included. */
+export const copilotMessages = pgTable(
+  "copilot_messages",
+  {
+    id: id(),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellers.id),
+    conversationId: uuid("conversation_id").notNull(),
+    role: copilotRole("role").notNull(),
+    content: jsonb("content").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("copilot_messages_conversation_idx").on(t.sellerId, t.conversationId, t.createdAt)],
+);
+
+/**
+ * Actions the copilot proposes but never executes. A refund runs only when the maker taps the
+ * confirm card. The amount is fixed at proposal time so the card shows an exact number.
+ */
+export const copilotActions = pgTable(
+  "copilot_actions",
+  {
+    id: id(),
+    sellerId: uuid("seller_id")
+      .notNull()
+      .references(() => sellers.id),
+    conversationId: uuid("conversation_id").notNull(),
+    orderId: uuid("order_id")
+      .notNull()
+      .references(() => orders.id),
+    kind: text("kind").notNull(),
+    amount: money("amount").notNull(),
+    currency: currency().notNull(),
+    reason: text("reason"),
+    status: copilotActionStatus("status").notNull().default("proposed"),
+    error: text("error"),
+    createdAt: createdAt(),
+    decidedAt: ts("decided_at"),
+  },
+  (t) => [
+    index("copilot_actions_seller_idx").on(t.sellerId, t.createdAt),
+    check("copilot_actions_amount_check", sql`${t.amount} > 0`),
+  ],
+);
+
+/** ACP-shaped checkout sessions (BUILDOUT §7.6). Totals are re-quoted from lib/policy, never stored. */
+export const acpSessions = pgTable(
+  "acp_sessions",
+  {
+    id: id(),
+    status: acpSessionStatus("status").notNull().default("not_ready_for_payment"),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id),
+    quantity: integer("quantity").notNull().default(1),
+    // Null until the agent sends an address; only its country picks the shipping region.
+    buyerCountry: country("buyer_country"),
+    buyer: jsonb("buyer"),
+    agentId: text("agent_id"),
+    orderId: uuid("order_id")
+      .unique()
+      .references(() => orders.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("acp_sessions_quantity_check", sql`${t.quantity} > 0`)],
+);
+
+/** `Idempotency-Key` replay store. `responseStatus` is null while the first request is in flight. */
+export const idempotencyKeys = pgTable(
+  "idempotency_keys",
+  {
+    /** e.g. `acp:POST /checkout_sessions`. */
+    scope: text("scope").notNull(),
+    key: text("key").notNull(),
+    requestHash: text("request_hash").notNull(),
+    responseStatus: integer("response_status"),
+    responseBody: jsonb("response_body"),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.scope, t.key] })],
 );
 
 // Append-only audit log. Only verified, processed_at, error and order_id are updated (webhook processing).

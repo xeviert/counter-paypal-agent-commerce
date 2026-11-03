@@ -9,7 +9,7 @@ import { CARRIERS, carrierLabel } from "@/lib/policy/carriers";
 import { sellerCountry } from "@/lib/schemas/common";
 import { shipping } from "@/lib/schemas/paypal";
 import { refundableCents } from "@/lib/shop/fulfillment";
-import { getSellerOrder, makerNet, orderRef } from "@/lib/shop/seller-orders";
+import { getSellerOrder, makerNet, orderRef, payoutStatus } from "@/lib/shop/seller-orders";
 import { RefundDialog } from "../refund-dialog";
 import { TrackingForm } from "../tracking-form";
 
@@ -89,12 +89,10 @@ async function OrderDetail({ params }: { params: PageProps<"/s/orders/[id]">["pa
 }
 
 function Release({ order, seller, t }: { order: Order; seller: SessionSeller; t: T }) {
-  let text: string | undefined;
-  if (order.releasedAt) text = t("orders.releasedOn", { date: formatDate(order.releasedAt, seller.locale) });
-  else if (order.releaseDueAt && order.status === "Shipped") text = t("orders.releaseEta", { date: formatDate(order.releaseDueAt, seller.locale) });
-  else if (order.status === "PaidHeld") text = t("orders.releaseAfterTracking");
-  else if (order.status === "Disputed") text = t("orders.held");
-  return text ? <p className="rounded-lg bg-muted p-3 text-sm">{text}</p> : null;
+  const payout = payoutStatus(order);
+  if (!payout) return null;
+  const text = t(payout.key, payout.date && { date: formatDate(payout.date, seller.locale) });
+  return <p className="rounded-lg bg-muted p-3 text-sm">{text}</p>;
 }
 
 /** Full address: the maker ships it. Public pages and agents only ever see city + country. */

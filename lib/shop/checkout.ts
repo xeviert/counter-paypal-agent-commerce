@@ -1,6 +1,6 @@
 import type { z } from "zod";
 import type { Tx } from "@/lib/db";
-import { attachPayPalOrder, openCheckout, transition, type Order } from "@/lib/db/orders";
+import { attachPayPalOrder, openCheckout, transition, type EventSource, type Order } from "@/lib/db/orders";
 import { getEnv } from "@/lib/env";
 import { log } from "@/lib/log";
 import { PayPalError } from "@/lib/paypal/client";
@@ -23,8 +23,9 @@ export type CheckoutResult = { output: z.output<typeof createCheckoutOutput>; or
 export async function createCheckout(
   db: Tx,
   input: z.output<typeof createCheckoutInput>,
-  caller: { agentId?: string } = {},
+  caller: { agentId?: string; source?: EventSource } = {},
 ): Promise<CheckoutResult> {
+  const source = caller.source ?? "mcp";
   const offer = input.offerId
     ? await findCheckoutOffer(db, input.offerId, { productId: input.productId, agentId: caller.agentId })
     : undefined;
@@ -43,7 +44,7 @@ export async function createCheckout(
     weightClass: product.weightClass,
     feeBps: getEnv().PLATFORM_FEE_BPS,
   });
-  const opened = await openCheckout(db, { product, quote, source: "mcp", agentId: caller.agentId, offerId: offer?.id });
+  const opened = await openCheckout(db, { product, quote, source, agentId: caller.agentId, offerId: offer?.id });
 
   let paypal: { paypalOrderId: string; approvalUrl: string };
   try {
@@ -58,7 +59,7 @@ export async function createCheckout(
   } catch (err) {
     const issue = err instanceof SellerNotReceivableError || err instanceof PayPalError ? err.issue : undefined;
     await transition(db, opened.id, "Canceled", {
-      source: "mcp",
+      source,
       actor: caller.agentId,
       from: ["CheckoutCreated"],
       payload: { reason: "paypal_create_failed", issue: issue ?? null },

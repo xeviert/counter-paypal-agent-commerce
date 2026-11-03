@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { orderValues, pgError, seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
 import type { Db } from "./index";
-import { events, offers, orders, products } from "./schema";
+import { copilotActions, events, offers, orders, products } from "./schema";
 
 describe.skipIf(!testDatabaseUrl)("db schema", () => {
   let db: Db;
@@ -56,6 +56,23 @@ describe.skipIf(!testDatabaseUrl)("db schema", () => {
     expect(
       await pgError(db.insert(orders).values({ ...orderValues(seller.id, product.id), platformFee: 15001 })),
     ).toMatch(/orders_amounts_check/);
+  });
+
+  it("rejects a copilot refund proposal without a positive amount", async () => {
+    const { seller, product } = await seedProduct(db);
+    const [order] = await db.insert(orders).values(orderValues(seller.id, product.id)).returning();
+    const proposal = {
+      sellerId: seller.id,
+      conversationId: crypto.randomUUID(),
+      orderId: order!.id,
+      kind: "refund",
+      amount: 0,
+      currency: "USD",
+    };
+    expect(await pgError(db.insert(copilotActions).values(proposal))).toMatch(/copilot_actions_amount_check/);
+    expect(await db.insert(copilotActions).values({ ...proposal, amount: 500 }).returning()).toMatchObject([
+      { status: "proposed" },
+    ]);
   });
 
   it("enforces unique status_token and paypal_order_id but allows many null paypal_order_ids", async () => {

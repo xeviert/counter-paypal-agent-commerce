@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
-import { offers, orders, products } from "@/lib/db/schema";
+import { events, offers, orders, products } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { PolicyError } from "@/lib/policy/errors";
 import { createCheckoutInput, createCheckoutOutput } from "@/lib/schemas/mcp";
@@ -123,6 +123,20 @@ describe.skipIf(!testDatabaseUrl)("createCheckout", () => {
     mockPayPal(() => json(500, { name: "INTERNAL_SERVER_ERROR", debug_id: "dbg" }));
     expect(await policyCode(checkout(product.id))).toBe("PAYMENT_PROVIDER_ERROR");
     expect(await productRow(product.id)).toMatchObject({ reserved: 0 });
+  });
+
+  it("logs the caller's channel on the order events", async () => {
+    const { product } = await seedProduct(db, { stock: 4 });
+    mockPayPal(created);
+    const input = createCheckoutInput.parse({ productId: product.id, buyerCountry: "US" });
+    const { order } = await createCheckout(db, input, { agentId: "agt_acp", source: "acp" });
+    const logged = await db.select().from(events).where(eq(events.orderId, order.id));
+    expect(logged.map((e) => [e.type, e.source])).toEqual([["order.created", "acp"]]);
+
+    mockPayPal(() => json(500, { name: "INTERNAL_SERVER_ERROR" }));
+    await createCheckout(db, input, { source: "acp" }).catch(() => {});
+    const [canceled] = await db.select().from(events).where(eq(events.type, "order.transition"));
+    expect(canceled).toMatchObject({ source: "acp", payload: { to: "Canceled" } });
   });
 
   it("rejects a destination outside the shipping table", async () => {

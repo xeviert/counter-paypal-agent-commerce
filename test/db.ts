@@ -12,7 +12,7 @@ export function testDb(): Db {
 }
 
 export async function truncateAll(db: Db) {
-  await db.execute(sql`TRUNCATE sellers, products, photos, offers, orders, refunds, events, drafts, voice_notes, notifications CASCADE`);
+  await db.execute(sql`TRUNCATE sellers, products, photos, offers, orders, refunds, events, drafts, voice_notes, notifications, copilot_messages, copilot_actions, acp_sessions, idempotency_keys CASCADE`);
 }
 
 /** Drizzle wraps driver errors; the Postgres message is on `cause`. */

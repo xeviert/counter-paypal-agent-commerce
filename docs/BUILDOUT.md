@@ -380,13 +380,13 @@ Decided (Nov 1, P3 planning):
 - **Day 0 (Nov 2) is the P2 exit run** before any P3 feature code
 - Every new Claude role gets an eval on Opus **and** Sonnet before picking a model, and no structured output asks for "reasoning" (§6.4 refusal lesson)
 
-Gaps found while planning (fix in the step that needs them):
+Gaps found while planning (2–6 fixed Nov 3; 1 is a convention):
 1. The maker cookie has `path: "/s"` (`lib/auth/session.ts`), so `/api/s/analytics/*` would never see a session. Maker APIs live under `app/s/api/...`
-2. `addTracking` / `refundOrder` hard-code `source: "web"`, `createCheckout` hard-codes `"mcp"`: add a `source` param (copilot, acp)
-3. No order-ref → order lookup (`orderRef` = first 8 hex of the id): add a seller-scoped `findSellerOrderByRef`
-4. No period sales query; the payout sentence lives in the order page. Add `salesSummary(period)` and a shared `payoutStatus(order)`
-5. `mcp.search_products` events have no product or seller ref, so the funnel's search step can't be scoped per maker. Log result `productIds` in the payload
-6. No tables yet: `0005_copilot` (`copilot_messages`, `copilot_actions`), `0006_acp` (`acp_sessions`, `idempotency_keys`). `OPS_PASSWORD` not in env/`render.yaml` yet
+2. [x] `addTracking(…, source = "web")`, `refundOrder(…, source = "web")`, `createCheckout(db, input, { agentId, source = "mcp" })`. Actor stays the maker for copilot actions
+3. [x] `findSellerOrderByRef(db, sellerId, ref)` in `lib/shop/seller-orders.ts`: takes `3F9A12BC`, `#3f9a12bc` or a full id; only the maker's paid (`MAKER_VISIBLE`) orders
+4. [x] `salesSummary(db, seller, "today" | "week" | "month")`: calendar periods in the maker's time zone (`SELLER_TIME_ZONES`, weeks start Monday), by `captured_at`, one row per currency (orders, units, gross, refunded, net like `makerNet`, held). `payoutStatus(order)` returns the i18n key + date; the order page uses it
+5. [x] `mcp.search_products` events carry `payload.productIds` (funnel: `payload->'productIds' ? id`, join products → seller)
+6. [x] `0005_copilot` (`copilot_messages`, `copilot_actions`), `0006_acp` (`acp_sessions`, `idempotency_keys`). `OPS_PASSWORD` in `lib/env.ts` (optional), `.env.example`, `render.yaml` (`sync: false`: set it in the dashboard, existing Blueprints don't prompt)
 
 ### 7.1 Seller copilot
 
@@ -543,7 +543,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 - [x] ARCHITECTURE: shipping + fee base, buyer address, status token, order create/capture details, MCP session mode + errors, env vars, Render paid plans (Oct 26)
 - [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it). Maker auth ✅ Oct 31 (§11 #5)
 - [x] ARCHITECTURE §8: `photos`, `refunds`; `offers` agent binding + `used_at`; `products` `price_guidance`, `restricted_flag`, auto-negotiate toggle (Oct 27)
-- [ ] ARCHITECTURE §8: `copilot_messages` + `copilot_actions` (P3). `notifications`, `drafts`, `voice_notes` and seller login fields ✅ Oct 31
-- [ ] ARCHITECTURE §5–6: release rules from §6.3 (buyer confirm, stale `PaidHeld`, no refund after release), i18n (`en`/`es`/`fil`/`sw`), `OPS_PASSWORD` + `AI_DAILY_CALL_CAP` in §10 env list
+- [x] ARCHITECTURE §8: `copilot_messages` + `copilot_actions`, `acp_sessions` + `idempotency_keys` (Nov 3). `notifications`, `drafts`, `voice_notes` and seller login fields ✅ Oct 31
+- [ ] ARCHITECTURE §5–6: release rules from §6.3 (buyer confirm, stale `PaidHeld`, no refund after release), i18n (`en`/`es`/`fil`/`sw`), `OPS_PASSWORD` ✅ Nov 3 + `AI_DAILY_CALL_CAP` ✅ in §10 env list
 - [ ] Planning doc §10: replace with a pointer to this file (also resolves ARCHITECTURE §11 #8: copilot uses REST tools with assertion, not PayPal MCP)
 - [ ] Planning doc §12: tick eligibility, personas, cited stats as they close

@@ -43,6 +43,8 @@ type ToolSuccess = {
   /** Rows that exist, for the `events` foreign keys. */
   refs?: { productId?: string; orderId?: string };
   count?: number;
+  /** Products shown to the agent, so the maker funnel (BUILDOUT §7.3) can count search appearances. */
+  productIds?: string[];
   /** Extra fields for the `events` payload, e.g. how an offer was clamped (the injection demo beat). */
   audit?: Record<string, unknown>;
 };
@@ -114,6 +116,7 @@ async function runTool(
         outcome: code ? "error" : "ok",
         ...(code && { code }),
         ...(success?.count !== undefined && { count: success.count }),
+        ...(success?.productIds && { productIds: success.productIds }),
         ...(success?.audit && { audit: success.audit }),
         ms,
         userAgent: agent.userAgent,
@@ -151,6 +154,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
             ? `${found.length} products:\n${lines.join("\n")}`
             : "No products matched. Try broader words.",
           count: found.length,
+          productIds: found.map((p) => p.productId),
         };
       }),
   );

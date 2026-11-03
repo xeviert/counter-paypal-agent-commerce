@@ -180,7 +180,7 @@ describe.skipIf(!testDatabaseUrl)("shop tools over MCP", () => {
     const output = searchProductsOutput.parse(result.structuredContent);
     expect(output.products.map((p) => p.productId)).toEqual([product.id]);
     const [logged] = await db.select().from(events).where(eq(events.type, "mcp.search_products"));
-    expect(logged).toMatchObject({ source: "mcp", payload: { outcome: "ok", count: 1 } });
+    expect(logged).toMatchObject({ source: "mcp", payload: { outcome: "ok", count: 1, productIds: [product.id] } });
     expect(logged!.actor).toMatch(/^agt_/);
     await client.close();
   });
