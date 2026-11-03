@@ -217,15 +217,24 @@ export const trackResponse = z.looseObject({ id: z.string() });
 
 /**
  * `POST /v1/payments/referenced-payouts-items` response, and the `PAYMENT.REFERENCED-PAYOUT-ITEM.*`
- * webhook resource (`reference_id` = capture id). `payout_amount` is in the maker's currency in
- * PayPal's minor-unit shape; kept as information only.
+ * webhook resource (`reference_id` = capture id). `payout_amount` is in the maker's currency, kept as
+ * information only: the webhook sends `{ amount, currencyCode, exponent }` (minor units), the POST
+ * response doesn't, so every field is optional and both shapes parse.
  */
 export const referencedPayoutItem = z.looseObject({
   item_id: z.string().optional(),
   reference_id: z.string(),
   reference_type: z.string().optional(),
   processing_state: z.looseObject({ status: z.string(), reason: z.string().optional() }).optional(),
-  payout_amount: z.looseObject({ amount: z.number(), currencyCode: z.string(), exponent: z.number() }).optional(),
+  payout_amount: z
+    .looseObject({
+      amount: z.number().optional(),
+      currencyCode: z.string().optional(),
+      exponent: z.number().optional(),
+      currency_code: z.string().optional(),
+      value: z.string().optional(),
+    })
+    .optional(),
   payout_transaction_id: z.string().optional(),
 });
 

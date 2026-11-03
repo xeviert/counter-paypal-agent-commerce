@@ -77,6 +77,10 @@ export function platformFeeReturned(r: Refund): number {
   return (r.seller_payable_breakdown?.platform_fees ?? []).reduce((sum, fee) => sum + fee.amount.cents, 0);
 }
 
+export function buildReleaseBody(captureId: string) {
+  return { reference_id: captureId, reference_type: "TRANSACTION_ID" };
+}
+
 /**
  * Releases a DELAYED capture to the maker (referenced payouts). Platform token, no assertion: the
  * platform holds the funds. `release:{orderId}` makes a retry replay PayPal's first answer.
@@ -86,7 +90,7 @@ export async function releaseFunds(input: { orderId: string; captureId: string }
     method: "POST",
     requestId: `release:${input.orderId}`,
     headers: { Prefer: "return=representation" },
-    body: { reference_id: input.captureId, reference_type: "TRANSACTION_ID" },
+    body: buildReleaseBody(input.captureId),
     schema: referencedPayoutItem,
   });
 }

@@ -1,0 +1,113 @@
+{
+  "id": "24940895M68908739",
+  "intent": "CAPTURE",
+  "status": "APPROVED",
+  "payment_source": {
+    "paypal": {
+      "email_address": "sb-xkveo53530182@personal.example.com",
+      "account_id": "KG9W38PMY52F8",
+      "account_status": "VERIFIED",
+      "name": {
+        "given_name": "John",
+        "surname": "Doe"
+      },
+      "address": {
+        "country_code": "US"
+      }
+    }
+  },
+  "purchase_units": [
+    {
+      "reference_id": "f3c5c65c-4e13-401f-aa65-d5ff7452ca87",
+      "amount": {
+        "currency_code": "USD",
+        "value": "43.00",
+        "breakdown": {
+          "item_total": {
+            "currency_code": "USD",
+            "value": "25.00"
+          },
+          "shipping": {
+            "currency_code": "USD",
+            "value": "18.00"
+          }
+        }
+      },
+      "payee": {
+        "merchant_id": "2Y6DQGZ4HV2DE",
+        "display_data": {
+          "brand_name": "Counter"
+        }
+      },
+      "payment_instruction": {
+        "platform_fees": [
+          {
+            "amount": {
+              "currency_code": "USD",
+              "value": "1.25"
+            },
+            "payee": {
+              "merchant_id": "9MGXZVWN9N9EE"
+            }
+          }
+        ],
+        "disbursement_mode": "DELAYED"
+      },
+      "custom_id": "f3c5c65c-4e13-401f-aa65-d5ff7452ca87",
+      "soft_descriptor": "TEST STORE",
+      "items": [
+        {
+          "name": "E2E test basket",
+          "unit_amount": {
+            "currency_code": "USD",
+            "value": "12.50"
+          },
+          "quantity": "2",
+          "sku": "e2e-f3c5c65c",
+          "category": "PHYSICAL_GOODS"
+        }
+      ],
+      "shipping": {
+        "name": {
+          "full_name": "John Doe"
+        },
+        "address": {
+          "address_line_1": "2211 N First St",
+          "admin_area_2": "San Jose",
+          "admin_area_1": "CA",
+          "postal_code": "95131",
+          "country_code": "US"
+        }
+      }
+    }
+  ],
+  "payer": {
+    "name": {
+      "given_name": "John",
+      "surname": "Doe"
+    },
+    "email_address": "sb-xkveo53530182@personal.example.com",
+    "payer_id": "KG9W38PMY52F8",
+    "address": {
+      "country_code": "US"
+    }
+  },
+  "create_time": "2026-11-03T15:21:48Z",
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/24940895M68908739",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/24940895M68908739",
+      "rel": "update",
+      "method": "PATCH"
+    },
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/24940895M68908739/capture",
+      "rel": "capture",
+      "method": "POST"
+    }
+  ]
+}

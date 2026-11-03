@@ -218,9 +218,11 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
       runTool("make_offer", args, deps, async () => {
         const { output, audit, productId } = await makeOffer(deps.db(), args, { agentId: deps.agent.agentId });
         const price = output.price ? ` at ${fmt(output.price)} per item` : "";
+        // claude.ai shows the model only the text, so the handle create_checkout needs must be in it.
+        const handle = output.price ? ` offerId: ${output.offerId}` : "";
         return {
           output,
-          text: `${output.decision}${price}: "${output.message}" ${output.nextStep}`,
+          text: `${output.decision}${price}: "${output.message}" ${output.nextStep}${handle}`,
           refs: { productId },
           audit,
         };

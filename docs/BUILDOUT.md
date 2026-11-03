@@ -322,9 +322,9 @@ PayPal pays a DELAYED capture to the seller by itself after **28 days** ([Delay 
 - [x] Consent revoked or not receivable: the maker's listings drop out of `search_products`; `get_product` / `create_checkout` return `SELLER_NOT_RECEIVABLE`; `/p/[slug]` says not for sale. Reconnecting restores them (no per-product pause)
 - [x] Buyer "I received it" on `/o/[statusToken]` (confirm dialog) → `buyer_confirmed_at` + release now. No MCP tool for it: agents can't release a maker's money
 - [x] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts` (`pnpm e2e:release`, `pnpm e2e:refund`; MX maker by default, shared `scripts/lib/e2e.ts`)
-- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm)
+- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm). **Nov 3: fails**, see bug 1 in "P2 exit run (Nov 3)" below. Fixed in code Nov 3; re-run pending (the script now saves the raw release response to `test/fixtures/paypal/referenced-payouts.release.json`)
 - [ ] Capture real `CUSTOMER.DISPUTE.*` and `MERCHANT.PARTNER-CONSENT.REVOKED` deliveries into `test/fixtures/webhooks/` (open a dispute as the sandbox buyer; revoke from a sandbox business account)
-- [ ] On Render: set `PLATFORM_CLIENT_ID` / `PLATFORM_CLIENT_SECRET` on `counter-sweep` (same values as `counter`); `RELEASE_AFTER_DAYS=0.002` only while filming the timer beat
+- [x] On Render: set `PLATFORM_CLIENT_ID` / `PLATFORM_CLIENT_SECRET` on `counter-sweep` (same values as `counter`); `RELEASE_AFTER_DAYS=0.002` only while filming the timer beat
 
 ### 6.4 Negotiation
 
@@ -338,7 +338,7 @@ PayPal pays a DELAYED capture to the seller by itself after **28 days** ([Delay 
 - [x] `scripts/eval-negotiator.ts` (`pnpm eval:negotiator [--model …] [case …]`): 10 cases in `test/fixtures/negotiator-eval/cases.json` through the same `settleOffer` as `make_offer`. Checks final price in `[floor, list]`, no leak in the reply, expected decision, and that the model held policy and didn't leak **before** the clamp
 - [x] Eval run Nov 1: **Opus 10/10** (~$0.004/call, 2-4 s), **Sonnet 10/10** (~$0.002/call, ~2 s), no pre-clamp breach on either, every injection case countered at $142-146. Switched to Sonnet. Negotiator calls count toward `AI_DAILY_CALL_CAP` (`ai.call`, role `negotiator`)
 - [ ] Over MCP on Render with the claude.ai connector: negotiate → `create_checkout(offerId)` → approve → `PaidHeld` at the agreed price. Local smoke Nov 1 (real Claude + sandbox): $420 rug, $210 offer with an injection message → counter $399 → PayPal order at $399 + $38 shipping, approval not done
-- [ ] **Bug (found Nov 3, claude.ai voice mode on Render):** `make_offer` puts `offerId` only in `structuredContent`; the text block (`lib/mcp/tools.ts`, `make_offer` handler) says "call create_checkout with this offerId" but omits the id. claude.ai shows the model only the text, so after Lucía accepted $215 on a $230 rug, Claude had no `offerId` and created a list-price checkout ($285 incl. shipping) instead. Fix: append `offerId: <id>` to the text when `price` is set (as `search_products` does with `[productId]`), assert it in `lib/mcp/server.test.ts`, re-run the connector flow. Voice mode itself reached the connector, so §10 #7 = Claude voice mode
+- [x] **Bug (found Nov 3, claude.ai voice mode on Render):** `make_offer` puts `offerId` only in `structuredContent`; the text block (`lib/mcp/tools.ts`, `make_offer` handler) says "call create_checkout with this offerId" but omits the id. claude.ai shows the model only the text, so after Lucía accepted $215 on a $230 rug, Claude had no `offerId` and created a list-price checkout ($285 incl. shipping) instead. Fix: append `offerId: <id>` to the text when `price` is set (as `search_products` does with `[productId]`), assert it in `lib/mcp/server.test.ts`, re-run the connector flow. Voice mode itself reached the connector, so §10 #7 = Claude voice mode. **Fixed Nov 3:** the text ends with `offerId: <id>` on accept and counter (not reject); connector re-run is the open item above
 - [ ] Native-speaker pass on the new `listings.negotiate*` strings (es/fil/sw, Claude-drafted), with the rest of the §6.1 language pass
 - [ ] Tune before filming: Sonnet accepted an opening offer exactly at the floor (`at-floor` case) where Opus countered at $140. Within policy, but the maker gets less. If it matters for the demo, add a "don't accept a first offer at the lowest price" line and re-run both models
 
@@ -360,6 +360,30 @@ Decided (Nov 1):
 3. claude.ai connector on Render: negotiate → checkout(offerId) → approve → `PaidHeld` (§6.4)
 4. Real phone: capture matrix + 60s budget over 4G (§6.1, §6.2), then decide STT (§10 #3)
 5. Add tracking from the phone → `RELEASE_AFTER_DAYS=0.002` → release → MX sandbox balance (§6.3)
+
+**P2 exit run (Nov 3):**
+
+| Step | Result |
+|---|---|
+| Render env vars (item 1) | ✅ `counter-sweep` PayPal creds, `counter-workflows` Anthropic key, `counter` Render key; Console spend limit set. `OPS_PASSWORD` still open |
+| `pnpm e2e:purchase` | ✅ ALL PASSED (MX, capture `22G84099KF297250D`): `DELAYED`, gross 4300 = 2500 + 1800, fee 125 = 500 bps, PayPal fee 257, net 3918, replays idempotent. Raw responses in `test/fixtures/paypal/` |
+| `pnpm e2e:release` | ❌ Bug 1. Capture + tracker pass; release call throws |
+| `pnpm e2e:refund` | ✅ ALL PASSED (capture `2P372581SL8840430`): partial $2.00 with fee 7 of 100 returned, replay same refund, rest refunded, fee 7 + 93 = 100, over-refund → `CAPTURE_FULLY_REFUNDED` |
+| claude.ai connector, list price | ✅ Purchase approved, status page shows paid/held |
+| claude.ai connector, negotiated | ❌ Bug in §6.4 (`offerId` missing from `make_offer` text) |
+| Claude mobile voice mode | ✅ Reaches the connector → §10 #7 = Claude voice mode, no `/voice` page |
+| Phone capture (Pixel 9a, Chrome, 4G) | ❌ Bugs 2 + 3. Typed description instead: submit → draft ~18 s, published at $80 |
+| Tracking → release (`RELEASE_AFTER_DAYS=0.002`, reset to 14 after) | ✅ Looks released. Likely via the payout webhook, not the sweep's own call (bug 1) |
+
+Bugs found:
+1. **Release response fails schema.** `referencedPayoutItem.payout_amount` (`lib/schemas/paypal.ts`) requires the webhook's minor-unit shape (`amount`, `currencyCode`, `exponent`). The `POST /v1/payments/referenced-payouts-items` response has a `payout_amount` without those fields, so `paypalRequest` throws "returned an unexpected response" after PayPal has already released the money. In `lib/shop/release.ts` that's a non-`PayPalError`, so the order stays `pending` and the sweep re-calls release every minute (same request id, so no double payout) until the webhook's `recordPayout` marks it Released. Fix: make the `payout_amount` fields optional (or accept both shapes), save the raw response as a fixture, re-run `pnpm e2e:release`, then check deployed `events` for `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` (capture `0UR37491K86413925`). **Fixed Nov 3:** every `payout_amount` field is optional, so both shapes parse (it's information only). `scripts/e2e-release.ts` makes the first release call without a schema and saves it before checking it; `lib/schemas/paypal.test.ts` parses that fixture once it exists. Open: re-run `pnpm e2e:release`
+2. **Voice note does nothing on Android Chrome.** Tapping record shows no transcript in the text box. `components/maker/use-voice.ts` opens `getUserMedia` (MediaRecorder) and then starts Web Speech; suspected cause: Android Chrome won't give `SpeechRecognition` the mic while the recorder holds it (`audio-capture` error, swallowed). Not yet confirmed: check `onerror` on device via `chrome://inspect`. Blocks the hero beat; feeds the STT decision (§10 #3: server-side STT on the recorded audio would sidestep it). **Fixed Nov 3, not yet on device:** speech errors show under the record button with the raw code ("Live transcript stopped (audio-capture)…"), so the Pixel run confirms the cause without `chrome://inspect`. On the first `audio-capture` the recorder stops and frees the mic and Web Speech restarts alone (`speechErrorAction` in `use-voice.ts`); that note uploads no audio, which costs nothing while the pipeline uses the browser transcript. If Android fails without any error, the fallback can't trigger. Recommendation: server-side STT on the recording (§10 #3) is the durable fix (any browser, incl. iOS); needs a vendor pick
+3. **No in-app camera.** The photo input (`app/s/(app)/drafts/capture.tsx`, `accept="image/*"`) has no `capture` attribute, so it opens a file picker, not the camera. Decide: add `capture="environment"` (camera only) or keep the picker and make sure it offers the camera. **Fixed Nov 3:** two tiles, "Take photo" (`capture="environment"`, one photo) and "Choose photos" (gallery, multiple), in `app/s/(app)/drafts/photo-inputs.tsx`. Open: check on the Pixel
+4. **`statusToken` missing from `create_checkout` text** (found Nov 3 while fixing the §6.4 `offerId` bug; not yet seen live). Same cause: `statusToken` is only in `structuredContent`; the text has it only inside the status page URL (`/o/<token>`). On claude.ai, a later "did my payment go through?" can't call `get_order_status` unless the model pulls the token out of the URL. Plan:
+   - `lib/mcp/tools.ts`, `create_checkout` handler: end the text with `statusToken: <token> (pass to get_order_status; keep private)`. Text never reaches `events` (only redacted args), so the audit log stays clean
+   - Test in `lib/mcp/server.test.ts`: first `create_checkout` success over MCP, using `mockPayPal` (`test/paypal.ts`) and `seedProduct`; assert the text contains `statusToken: ${output.statusToken}` and `events` still logs no token
+   - Sweep the other tool texts for any handle the next call needs that only `structuredContent` has (`search_products`, `get_product` already carry `productId`)
+   - Re-run on the claude.ai connector: checkout → approve → "is it paid?" → `get_order_status` answers without the buyer pasting the URL
 6. Before the video, not blocking P3: real seed + eval photos (§5.7, §6.2), dispute / consent-revoked webhook fixtures (§6.3), fresh-maker onboarding run (§6.1), native-speaker pass (§6.1, §6.4)
 
 ---

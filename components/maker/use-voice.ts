@@ -3,8 +3,9 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 // Voice note capture (BUILDOUT §6.1): MediaRecorder always records the audio, so a paid STT can
-// re-transcribe it later. Web Speech gives a live transcript where the browser has it. Whether both
-// can share the mic on iOS is part of the real-phone test matrix.
+// re-transcribe it later. Web Speech gives a live transcript where the browser has it. Android Chrome
+// won't let both hold the mic (Web Speech fails with `audio-capture`), so there the recorder stops and
+// the live transcript carries on alone.
 
 // Not in TypeScript's DOM lib yet.
 type Recognition = {
@@ -30,6 +31,13 @@ function recognitionCtor(): RecognitionCtor | undefined {
 const noop = () => () => {};
 const canRecord = () => typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
 
+/** What to do with a Web Speech `error` code. */
+export function speechErrorAction(error: string, speechOnly: boolean): "ignore" | "speech-only" | "show" {
+  if (error === "no-speech" || error === "aborted") return "ignore";
+  if (error === "audio-capture" && !speechOnly) return "speech-only";
+  return "show";
+}
+
 export type VoiceState = "idle" | "recording" | "denied" | "unsupported";
 
 export type Recording = { blob: Blob; mime: string; durationMs: number };
@@ -41,11 +49,13 @@ export function useVoice(opts: {
 }) {
   const [recState, setState] = useState<Exclude<VoiceState, "unsupported">>("idle");
   const [seconds, setSeconds] = useState(0);
+  const [speechError, setSpeechError] = useState<string>();
   const supported = useSyncExternalStore(noop, canRecord, () => true);
   const state: VoiceState = supported ? recState : "unsupported";
   const recorder = useRef<MediaRecorder | null>(null);
   const recognition = useRef<Recognition | null>(null);
   const recording = useRef(false);
+  const speechOnly = useRef(false);
   const callbacks = useRef(opts);
   useEffect(() => {
     callbacks.current = opts;
@@ -55,6 +65,7 @@ export function useVoice(opts: {
     recording.current = false;
     recognition.current?.stop();
     if (recorder.current?.state === "recording") recorder.current.stop();
+    else setState("idle");
   }, []);
 
   useEffect(() => {
@@ -82,15 +93,19 @@ export function useVoice(opts: {
     const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
     const chunks: Blob[] = [];
     const startedAt = Date.now();
+    const releaseMic = () => stream.getTracks().forEach((track) => track.stop());
     rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
     rec.onstop = () => {
-      stream.getTracks().forEach((track) => track.stop());
+      releaseMic();
+      if (speechOnly.current) return;
       setState("idle");
       const type = rec.mimeType || mime || "audio/webm";
       if (chunks.length) callbacks.current.onRecorded({ blob: new Blob(chunks, { type }), mime: type, durationMs: Date.now() - startedAt });
     };
     recorder.current = rec;
     recording.current = true;
+    speechOnly.current = false;
+    setSpeechError(undefined);
     rec.start(1000);
     setSeconds(0);
     setState("recording");
@@ -102,6 +117,7 @@ export function useVoice(opts: {
     speech.continuous = true;
     speech.interimResults = true;
     let finals = "";
+    let failed = false;
     speech.onresult = (event) => {
       let interim = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -111,26 +127,42 @@ export function useVoice(opts: {
       }
       callbacks.current.onTranscript(`${finals}${interim}`.trim());
     };
-    // Chrome ends recognition after a pause; keep listening while the recorder runs.
+    // Chrome ends recognition after a pause, and after an error; keep listening while recording.
     speech.onend = () => {
-      if (recording.current) {
-        try {
-          speech.start();
-        } catch {
-          // Already restarting.
-        }
-      }
+      if (!recording.current || failed) return;
+      // Give Android a moment to hand over the mic the recorder just let go of.
+      setTimeout(
+        () => {
+          try {
+            if (recording.current) speech.start();
+          } catch {
+            // Already restarting.
+          }
+        },
+        speechOnly.current ? 300 : 0,
+      );
     };
     speech.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") recording.current = false;
+      const action = speechErrorAction(e.error, speechOnly.current);
+      if (action === "ignore") return;
+      if (action === "speech-only") {
+        speechOnly.current = true;
+        rec.stop();
+        releaseMic();
+        return;
+      }
+      failed = true;
+      setSpeechError(e.error);
+      // Nothing is listening any more without the recorder.
+      if (speechOnly.current) stop();
     };
     recognition.current = speech;
     try {
       speech.start();
     } catch {
-      // Live transcript is a bonus; the recording continues.
+      setSpeechError("start-failed");
     }
-  }, []);
+  }, [stop]);
 
-  return { state, seconds, start, stop };
+  return { state, seconds, speechError, start, stop };
 }

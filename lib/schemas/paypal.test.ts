@@ -1,6 +1,15 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { approvalLink, capture, firstCapture, grantedScopes, merchantIntegration, order, paypalMoney } from "./paypal";
+import {
+  approvalLink,
+  capture,
+  firstCapture,
+  grantedScopes,
+  merchantIntegration,
+  order,
+  paypalMoney,
+  referencedPayoutItem,
+} from "./paypal";
 
 // Real sandbox deliveries from spike 11 (Oct 27).
 function fixtureResource(eventType: string): unknown {
@@ -91,5 +100,31 @@ describe("merchantIntegration", () => {
       ],
     });
     expect(grantedScopes(m)).toEqual(["https://uri.paypal.com/services/payments/payment", "a", "b"]);
+  });
+});
+
+describe("referencedPayoutItem", () => {
+  it("parses the webhook resource with its minor-unit payout_amount", () => {
+    const item = referencedPayoutItem.parse(fixtureResource("PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED"));
+    expect(item.processing_state?.status).toBe("SUCCESS");
+    expect(item.payout_amount).toMatchObject({ amount: expect.any(Number), currencyCode: expect.any(String) });
+  });
+
+  it("parses a release response whose payout_amount isn't in the webhook shape", () => {
+    const item = referencedPayoutItem.parse({
+      item_id: "ITEM-1",
+      reference_id: "0UR37491K86413925",
+      reference_type: "TRANSACTION_ID",
+      processing_state: { status: "SUCCESS" },
+      payout_amount: { currency_code: "MXN", value: "512.40" },
+    });
+    expect(item.payout_amount).toEqual({ currency_code: "MXN", value: "512.40" });
+  });
+
+  // Written by `pnpm e2e:release`.
+  const release = "test/fixtures/paypal/referenced-payouts.release.json";
+  it.skipIf(!existsSync(release))("parses the sandbox release response", () => {
+    const item = referencedPayoutItem.parse(JSON.parse(readFileSync(release, "utf8")));
+    expect(item.processing_state?.status).toBe("SUCCESS");
   });
 });

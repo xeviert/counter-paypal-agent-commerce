@@ -1,0 +1,19 @@
+{
+  "id": "24940895M68908739",
+  "status": "PAYER_ACTION_REQUIRED",
+  "payment_source": {
+    "paypal": {}
+  },
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v2/checkout/orders/24940895M68908739",
+      "rel": "self",
+      "method": "GET"
+    },
+    {
+      "href": "https://www.sandbox.paypal.com/checkoutnow?token=24940895M68908739",
+      "rel": "payer-action",
+      "method": "GET"
+    }
+  ]
+}

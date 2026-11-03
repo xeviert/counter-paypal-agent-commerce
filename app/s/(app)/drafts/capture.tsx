@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftIcon, CameraIcon, MicIcon, SquareIcon, XIcon } from "lucide-react";
+import { ArrowLeftIcon, MicIcon, SquareIcon, XIcon } from "lucide-react";
 import { useRef, useState, useTransition } from "react";
 import { useI18n } from "@/components/i18n";
 import { FormError, TextAreaField } from "@/components/maker/field";
@@ -8,6 +8,7 @@ import { useVoice, type Recording } from "@/components/maker/use-voice";
 import { Button } from "@/components/ui/button";
 import { LOCALE_TAGS, type MessageKey } from "@/lib/i18n/core";
 import { finishCapture, movePhoto, removePhoto, uploadPhoto, uploadVoice } from "./actions";
+import { AddPhotoTiles } from "./photo-inputs";
 
 const MAX_PHOTOS = 4;
 const MAX_SIDE = 1280;
@@ -50,7 +51,6 @@ export function Capture({
   const [transcript, setTranscript] = useState(initial?.transcript ?? "");
   const [hasVoice, setHasVoice] = useState(initial?.hasVoice ?? false);
   const [submitting, startSubmit] = useTransition();
-  const fileInput = useRef<HTMLInputElement>(null);
 
   function adoptDraft(draftId: string) {
     if (draftRef.current) return;
@@ -59,11 +59,14 @@ export function Capture({
     window.history.replaceState(null, "", `/s/drafts/${draftId}`);
   }
 
-  async function onFiles(files: FileList | null) {
-    if (!files) return;
+  async function onFiles(input: HTMLInputElement) {
+    const files = Array.from(input.files ?? []);
+    // Cleared now so picking the same photo again still fires onChange.
+    input.value = "";
+    if (!files.length) return;
     setError(undefined);
     // One at a time: the first upload creates the draft the rest attach to.
-    for (const file of Array.from(files).slice(0, MAX_PHOTOS - photos.length)) {
+    for (const file of files.slice(0, MAX_PHOTOS - photos.length)) {
       setUploading((n) => n + 1);
       try {
         const form = new FormData();
@@ -82,7 +85,6 @@ export function Capture({
         setUploading((n) => n - 1);
       }
     }
-    if (fileInput.current) fileInput.current.value = "";
   }
 
   async function onRemove(photoId: string) {
@@ -159,22 +161,7 @@ export function Capture({
               {t("capture.uploading")}
             </li>
           ))}
-          {photos.length + uploading < MAX_PHOTOS && (
-            <li>
-              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed text-sm text-muted-foreground">
-                <CameraIcon className="size-8" aria-hidden />
-                {t("capture.addPhoto")}
-                <input
-                  ref={fileInput}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="sr-only"
-                  onChange={(e) => void onFiles(e.target.files)}
-                />
-              </label>
-            </li>
-          )}
+          {photos.length + uploading < MAX_PHOTOS && <AddPhotoTiles onFiles={(input) => void onFiles(input)} />}
         </ul>
       </section>
 
@@ -197,6 +184,9 @@ export function Capture({
           </Button>
         )}
         {voice.state === "denied" && <p className="text-sm text-destructive">{t("capture.micDenied")}</p>}
+        {voice.speechError && (
+          <p className="text-sm text-destructive">{t("capture.speechFailed", { error: voice.speechError })}</p>
+        )}
         <TextAreaField
           name="transcript"
           label={t("capture.transcript")}

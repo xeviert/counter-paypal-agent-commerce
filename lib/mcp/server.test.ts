@@ -217,6 +217,7 @@ describe.skipIf(!testDatabaseUrl)("shop tools over MCP", () => {
     expect(result.isError).toBeFalsy();
     const output = makeOfferOutput.parse(result.structuredContent);
     expect(output).toMatchObject({ decision: "counter", price: { value: "150.00" } });
+    expect(result.content).toEqual([{ type: "text", text: expect.stringContaining(`offerId: ${output.offerId}`) }]);
     const [logged] = await db.select().from(events).where(eq(events.type, "mcp.make_offer"));
     expect(logged).toMatchObject({
       productId: product.id,
