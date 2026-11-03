@@ -206,6 +206,17 @@ describe.skipIf(!testDatabaseUrl)("shop tools over MCP", () => {
     await client.close();
   });
 
+  it("logs who answered a question", async () => {
+    vi.stubEnv("AI_DAILY_CALL_CAP", "0");
+    const { product } = await seedProduct(db);
+    const client = await connect("modern", "test-agent/1.0", handler());
+    const result = await client.callTool({ name: "ask_question", arguments: { productId: product.id, question: "Is it organic?" } });
+    expect(result.structuredContent).toMatchObject({ answered: false });
+    const [logged] = await db.select().from(events).where(eq(events.type, "mcp.ask_question"));
+    expect(logged).toMatchObject({ productId: product.id, payload: { audit: { answered: false, answerer: "cap" } } });
+    await client.close();
+  });
+
   it("logs how an offer was clamped and redacts the offer id at checkout", async () => {
     vi.stubEnv("AI_DAILY_CALL_CAP", "0");
     const { product } = await seedProduct(db);

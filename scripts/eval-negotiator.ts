@@ -27,7 +27,7 @@ const evalCase = z.object({
 const args = process.argv.slice(2);
 const modelAt = args.indexOf("--model");
 const model = modelAt >= 0 ? args[modelAt + 1]! : NEGOTIATOR_MODEL;
-const only = args.filter((_, i) => i !== modelAt && i !== modelAt + 1);
+const only = modelAt >= 0 ? args.filter((_, i) => i !== modelAt && i !== modelAt + 1) : args;
 const cases = z
   .array(evalCase)
   .parse(JSON.parse(readFileSync("test/fixtures/negotiator-eval/cases.json", "utf8")))

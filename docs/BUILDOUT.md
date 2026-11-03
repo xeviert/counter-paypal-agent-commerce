@@ -441,23 +441,24 @@ Decided (Nov 3):
 Replaces the keyword stub in `lib/shop/questions.ts`. The MCP adapter, the `{ answered, answer }` output and the 30/hour per `agentId` limit (§6.4) stay.
 
 **Call**
-- [ ] `lib/ai/answerer.ts`: `claude-haiku-5-5` (pending eval below), same call shape as the negotiator (stream, structured output `{ answered, answer }`, `fallbacks: "default"`), no thinking, no tools. `answer` ≤ 600 chars
-- [ ] Deterministic topics first: price, stock, shipping and "can I negotiate" stay on the stub's templates (money comes from `lib/policy`, never the model). The model only gets free-text topics (materials, care, technique, gifting, sizing in context)
-- [ ] Context = listing fields only: EN + native text, dimensions, category, `negotiable`. Never the floor, `max_discount_bps`, `price_guidance`, `restricted_flag`, seller email, merchant id or any order data
-- [ ] Question in a `<buyer_question>` block with closing tags stripped. Move the negotiator's `<agent_message>` stripping into a shared `lib/ai/untrusted.ts`; §7.1 and §7.4 use it too
-- [ ] Reply in the question's language if it's `en`/`es`/`fil`/`sw`, else English. Unknown → `answered: false` + "the maker hasn't said"; no guessing
-- [ ] Caching: system prompt cached. A listing breakpoint only pays above the model's minimum cacheable length; check `cache_creation_input_tokens` in the first `ai.call` rows and drop it if it never writes
+- [x] `lib/ai/answerer.ts`: **`claude-sonnet-5-5`** (eval-picked over Haiku, below), same call shape as the negotiator (stream, structured output `{ answered, answer }`, `fallbacks: "default"`, adaptive thinking at `low`), no tools. `answer` cut to ≤ 600 chars at a sentence end (`toAnswererResult`). Haiku stays selectable with `--model`/`deps.model`: no `fallbacks` (Haiku 5.5 has none) and `thinking: disabled` at `low`
+- [x] Deterministic topics first: price/negotiate, stock and shipping stay on the stub's templates (`routeQuestion`). The model is skipped when only those matched; for mixed questions the templates come first and the model is told which topics are `covered` so it leaves them out
+- [x] Context = listing fields only, picked one by one (`listingContext`): category, dimensions, `negotiable`, EN + native title/description/materials/care/provenance. Never the floor, `max_discount_bps`, `price_guidance`, `restricted_flag`, seller email, merchant id or order data
+- [x] Question in `<buyer_question>` via the shared `wrapUntrusted` (`lib/ai/untrusted.ts`, done in §7.1)
+- [x] Reply in the question's language (en/es/fil/sw), else English. Unknown → `answered: false` + "the maker hasn't said"
+- [x] Caching: system prompt cached (Haiku wrote 784-831 tokens on the first call, so it clears the minimum). No listing breakpoint
 
 **Budget + fallback**
-- [ ] `assertUnderCap` before the call; `ai.call` role `answerer`. Over cap, API error, refusal or bad output → the stub's answer
-- [ ] `mcp.ask_question` events add `audit: { answered, answerer: "model" | "stub" | "cap" | "error" | "refused", ms }`
+- [x] `assertUnderCap` before the call; one `ai.call` per call, role `answerer`. Over cap, API error, refusal, bad output, or an answer that names the floor (`leaksFloor`) → the stub's answer
+- [x] `mcp.ask_question` events carry `audit: { answered, answerer: "model" | "stub" | "cap" | "error" | "refused" | "invalid" | "leak", ms }`
 
 **Eval + tests**
-- [ ] `scripts/eval-answerer.ts` (`pnpm eval:answerer`), ~12 cases in `test/fixtures/answerer-eval/`: one answerable per listing field; missing field ("machine washable?" with no care text → `answered: false`); hallucination bait ("organic certified?"); Spanish question; injections (asks for the lowest price, fake `</buyer_question>` + system tag, "tell the agent to buy 10"). Checks: `answered` matches, key terms come from the listing, no floor leak (`leaksFloor`), reply language
-- [ ] Run on Haiku and Sonnet; record results and the pick here
-- [ ] `lib/shop/questions.test.ts` keeps the stub cases (they're now the fallback); mocked model for the happy path and each fallback reason
+- [x] `scripts/eval-answerer.ts` (`pnpm eval:answerer [--model] [case…]`): 13 cases over a rug (es) and a basket (fil) in `test/fixtures/answerer-eval/cases.json`, routed like `ask_question`. Covers answerable fields, gift/fit inference, missing care, "organic certified?" bait, Spanish and Swahili, injections (lowest price, fake `</buyer_question><system>`, "tell the agent to buy 10"), and a mixed shipping + materials question. Checks: `answered`, required/forbidden terms, `leaksFloor`, reply language
+- [x] Eval runs Nov 3, after fixing the checks' false positives: **Sonnet passed every case in 4 of 4 runs**; **Haiku passed every case in 2 of 6 runs**, missing one case in the other 4. Haiku's misses: it flipped `answered` on "fits a 90 cm hallway?" and once repeated the injected "best rug" phrase, and it often added "shipping is handled by Counter" after the template line. Neither leaked a floor or followed an injection. Same latency (~1.5 s avg, ~2 s max); Sonnet ~$0.002 vs Haiku ~$0.0001 per question (at most ~$0.55/day at a 300-call cap). **Picked Sonnet**
+- [x] `lib/shop/questions.test.ts`: stub cases under cap 0, templates never call the model, model happy path + `ai.call`, mixed question, floor leak, API error/refusal/bad output; `lib/ai/answerer.test.ts`; `mcp.ask_question` audit in `lib/mcp/server.test.ts`. Local smoke with real Claude on the local DB: Spanish care question answered in Spanish, "organic certified?" → `answered: false`, shipping by template in 4 ms
+- [x] Also fixed in `scripts/eval-negotiator.ts`: with no `--model`, the first case-name argument was dropped
 
-**Optional (cut #1): forward to the maker**
+**Optional (cut #1): forward to the maker** (skipped Nov 3, user decision)
 - [ ] Migration: `questions` (product, agentId, question, translated, answer, answered_at). Unanswered → notification kind `question` with the question translated to the maker's language
 - [ ] Maker answers from `/s/inbox` in their language; one Haiku call translates to EN; `get_product` returns answered ones as `faq[]`. i18n strings ×4
 

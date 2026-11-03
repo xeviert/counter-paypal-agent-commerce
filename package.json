@@ -26,6 +26,7 @@
     "eval:listing": "tsx scripts/eval-listing.ts",
     "eval:negotiator": "tsx scripts/eval-negotiator.ts",
     "eval:copilot": "tsx scripts/eval-copilot.ts",
+    "eval:answerer": "tsx scripts/eval-answerer.ts",
     "spike:webhooks": "tsx scripts/spike-webhooks.ts",
     "spike:mcp": "tsx scripts/spike-mcp-connector.ts",
     "workflows:start": "tsx workflows/index.ts",

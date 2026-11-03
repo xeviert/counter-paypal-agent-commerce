@@ -196,8 +196,8 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
     },
     (args) =>
       runTool("ask_question", args, deps, async () => {
-        const { productId, ...output } = await askQuestion(deps.db(), args);
-        return { output, text: output.answer, refs: { productId } };
+        const { productId, audit, ...output } = await askQuestion(deps.db(), args, { agentId: deps.agent.agentId });
+        return { output, text: output.answer, refs: { productId }, audit };
       }),
   );
 
