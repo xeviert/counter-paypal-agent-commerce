@@ -104,7 +104,7 @@ Drizzle schema for every ARCHITECTURE §8 table + `drizzle-zod`. Fix these befor
 - [x] Verification call: build the `verify-webhook-signature` body as a string with the raw payload spliced in as `webhook_event`. Re-serialized JSON can fail verification. Headers to forward: `paypal-transmission-id`, `paypal-transmission-time`, `paypal-transmission-sig`, `paypal-cert-url`, `paypal-auth-algo`
 - [x] Test with a **real** sandbox order (create → approve → capture). Simulator events can't be signature-verified. `pnpm spike:webhooks`: PH maker payee, $0.50 fee, `DELAYED`, $2 partial refund with assertion, release. **All 5 deliveries passed signature verification** (Oct 27)
 - [x] Record which events actually arrive for payee-routed captures and for a referenced-payout release. Arrived within ~30s, subscribed with `*`: `CHECKOUT.ORDER.APPROVED`, `PAYMENT.CAPTURE.COMPLETED`, `CHECKOUT.ORDER.COMPLETED`, `PAYMENT.CAPTURE.REFUNDED`, `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` (resource `reference_id` = capture id). The payout events are missing from PayPal's `webhooks-event-types` list but PayPal accepts them in an explicit subscription. No poll fallback needed
-- [ ] Re-confirm the release event arrives under the explicit list (not just `*`) on the next `e2e-release.ts` run (§6.3 checklist)
+- [x] Re-confirm the release event arrives under the explicit list (not just `*`) on the next `e2e-release.ts` run (§6.3 checklist). ✅ Nov 3: `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` for capture `0UR37491K86413925` in the deployed `events`
 - [x] Save real payloads to `test/fixtures/webhooks/` for P1 handler tests
 
 ### 4.6 Render Workflows check
@@ -322,7 +322,7 @@ PayPal pays a DELAYED capture to the seller by itself after **28 days** ([Delay 
 - [x] Consent revoked or not receivable: the maker's listings drop out of `search_products`; `get_product` / `create_checkout` return `SELLER_NOT_RECEIVABLE`; `/p/[slug]` says not for sale. Reconnecting restores them (no per-product pause)
 - [x] Buyer "I received it" on `/o/[statusToken]` (confirm dialog) → `buyer_confirmed_at` + release now. No MCP tool for it: agents can't release a maker's money
 - [x] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts` (`pnpm e2e:release`, `pnpm e2e:refund`; MX maker by default, shared `scripts/lib/e2e.ts`)
-- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm). **Nov 3: fails**, see bug 1 in "P2 exit run (Nov 3)" below. Fixed in code Nov 3; re-run pending (the script now saves the raw release response to `test/fixtures/paypal/referenced-payouts.release.json`)
+- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm). Nov 3: webhook ✅ (§4.5 closed), but the script fails on bug 1 in "P2 exit run (Nov 3)" below; re-run after the fix. Fixed in code Nov 3; re-run pending (the script now saves the raw release response to `test/fixtures/paypal/referenced-payouts.release.json`)
 - [ ] Capture real `CUSTOMER.DISPUTE.*` and `MERCHANT.PARTNER-CONSENT.REVOKED` deliveries into `test/fixtures/webhooks/` (open a dispute as the sandbox buyer; revoke from a sandbox business account)
 - [x] On Render: set `PLATFORM_CLIENT_ID` / `PLATFORM_CLIENT_SECRET` on `counter-sweep` (same values as `counter`); `RELEASE_AFTER_DAYS=0.002` only while filming the timer beat
 
@@ -367,7 +367,7 @@ Decided (Nov 1):
 |---|---|
 | Render env vars (item 1) | ✅ `counter-sweep` PayPal creds, `counter-workflows` Anthropic key, `counter` Render key; Console spend limit set. `OPS_PASSWORD` still open |
 | `pnpm e2e:purchase` | ✅ ALL PASSED (MX, capture `22G84099KF297250D`): `DELAYED`, gross 4300 = 2500 + 1800, fee 125 = 500 bps, PayPal fee 257, net 3918, replays idempotent. Raw responses in `test/fixtures/paypal/` |
-| `pnpm e2e:release` | ❌ Bug 1. Capture + tracker pass; release call throws |
+| `pnpm e2e:release` | ❌ Bug 1. Capture + tracker pass; release call throws, but PayPal released: deployed `events` has `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` (15:24:36) for capture `0UR37491K86413925`, under the explicit subscription. It landed ~3 s **before** that capture's `PAYMENT.CAPTURE.COMPLETED` (15:24:39), so handlers can't assume webhook order |
 | `pnpm e2e:refund` | ✅ ALL PASSED (capture `2P372581SL8840430`): partial $2.00 with fee 7 of 100 returned, replay same refund, rest refunded, fee 7 + 93 = 100, over-refund → `CAPTURE_FULLY_REFUNDED` |
 | claude.ai connector, list price | ✅ Purchase approved, status page shows paid/held |
 | claude.ai connector, negotiated | ❌ Bug in §6.4 (`offerId` missing from `make_offer` text) |
