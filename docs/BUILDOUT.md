@@ -411,7 +411,7 @@ Gaps found while planning (2–6 fixed Nov 3; 1 is a convention):
 3. [x] `findSellerOrderByRef(db, sellerId, ref)` in `lib/shop/seller-orders.ts`: takes `3F9A12BC`, `#3f9a12bc` or a full id; only the maker's paid (`MAKER_VISIBLE`) orders
 4. [x] `salesSummary(db, seller, "today" | "week" | "month")`: calendar periods in the maker's time zone (`SELLER_TIME_ZONES`, weeks start Monday), by `captured_at`, one row per currency (orders, units, gross, refunded, net like `makerNet`, held). `payoutStatus(order)` returns the i18n key + date; the order page uses it
 5. [x] `mcp.search_products` events carry `payload.productIds` (funnel: `payload->'productIds' ? id`, join products → seller)
-6. [x] `0005_copilot` (`copilot_messages`, `copilot_actions`), `0006_acp` (`acp_sessions`, `idempotency_keys`). `OPS_PASSWORD` in `lib/env.ts` (optional), `.env.example`, `render.yaml` (`sync: false`: set it in the dashboard, existing Blueprints don't prompt)
+6. [x] `0005_copilot` (`copilot_messages`, `copilot_actions`), `0006_acp` (`acp_sessions`, `idempotency_keys`). `OPS_PASSWORD` in `lib/env.ts` (optional), `.env.example`, `render.yaml` (`sync: false`). Set on `counter` in the Render dashboard (same value as local `.env`)
 
 ### 7.1 Seller copilot
 
@@ -522,7 +522,8 @@ Facts from the code (Nov 4, before building):
 - [x] `lib/auth/token.ts` generalized to `signToken(secret, scope, subject, ttl)`: the scope goes into the MAC, not the value, so a maker cookie never verifies as an operator one and existing maker cookies stay valid. Cookie `counter_ops` = `{role}.{exp}.{hmac}`, `httpOnly`, `sameSite: strict`, `path: "/ops"`, 12 h
 - [x] `requireOperator()` / `requireOperatorWrite()` in every page, action and route (`connection()` first, so `OPS_PASSWORD` is read at request time). `/ops/api/*` answers 401/403 itself; the proxy only redirects pages
 - [x] §10 #8 **yes**: optional `OPS_JUDGE_PASSWORD` (env, `.env.example`, `render.yaml` `sync: false`) → role `judge`: same views, no Approve/Reject (actions refuse), no copilot, no buyer name/email (`toOpsOrderView`), no webhook bodies, PII keys hidden in other payloads (`redactPii`). Address and payer id are never selected for either role
-- [ ] Set `OPS_PASSWORD` (and `OPS_JUDGE_PASSWORD` if judges get access) on `counter` in the Render dashboard
+- [x] `OPS_PASSWORD` already set on `counter` in Render (same value as local `.env`)
+- [ ] `OPS_JUDGE_PASSWORD` on Render, only if judges get `/ops` access (optional; unset = no judge login)
 - [ ] The login rate limit and "judge can't approve" are in the code paths but not under test (server actions need the Next runtime)
 
 **Views** (`app/ops/(console)`, server components, English, all times UTC)
@@ -558,7 +559,7 @@ Facts from the code (Nov 4, before building):
 - [x] Local run: "How much did we earn in fees this week?" → `ops_query` → 48.95 USD from 6 orders, matching `/ops/fees`
 
 **Open**
-- [ ] On Render: set the env vars, deploy, run the exit checks below
+- [ ] On Render: deploy, run the exit checks below
 - [ ] Re-run `pnpm spike:paypal-mcp` before filming (the sandbox MCP error is on PayPal's side)
 
 **Exit (on Render):** `/ops` 404s without `OPS_PASSWORD`; login works; the injection offer from the §6.4 run shows in the audit log with its clamp; a `review` listing approved → searchable via MCP; fees page matches the seeded history; copilot answers "fees earned this week"
