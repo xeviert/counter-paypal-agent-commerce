@@ -32,6 +32,8 @@ const envSchema = z.object({
   /** Shows one-tap sign-in as a seeded demo maker on /s/login. For judges; sandbox only. */
   DEMO_LOGIN: z.stringbool().default(false),
   OPS_PASSWORD: later, // P3 operator console
+  /** AG Studio license (BUILDOUT §7.3). Sent to the browser: Studio checks it client-side. Unset = trial watermark. */
+  AG_STUDIO_LICENSE_KEY: later,
 });
 
 export type Env = z.infer<typeof envSchema>;

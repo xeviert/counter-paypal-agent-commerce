@@ -1,6 +1,6 @@
 # Counter: Buildout Plan
 
-> Status: **active** · Last updated: 2026-11-03 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
+> Status: **active** · Last updated: 2026-11-04 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
 > What to build: [ARCHITECTURE.md](ARCHITECTURE.md). Why and sandbox evidence: [info-and-planning.md](info-and-planning.md).
 > This doc replaces planning doc §10 as the schedule. Tick boxes here as work lands.
 
@@ -394,14 +394,14 @@ Bugs found:
 |---|---|
 | Nov 2 | Day 0: P2 exit run (§6 "P2 exit status"), AG Studio trial signup; P3 groundwork (gaps 2–5 below) |
 | Nov 3 | §7.1 seller copilot, §7.2 answerer |
-| Nov 4 | §7.3 AG Studio dashboard (sponsor target; whole day) |
+| Nov 4 | §7.3 AG Studio dashboard (sponsor target; built Nov 3, Nov 4 = Render run, eval, custom widget) |
 | Nov 5 | §7.5 discovery → §7.4 operator console → §7.7 voice + accessibility → §7.6 ACP (cheapest first, highest cut item last) |
 
 Anything unfinished by Nov 5 EOD drops in §9 order.
 
 Decided (Nov 1, P3 planning):
 - **ChatGPT purchase cut.** The claude.ai connector + voice beat carry "any agent"
-- **AG Studio trial not started.** The user signs up Nov 2; the §7.3 spike opens Nov 4. If the Studio Agent Framework can't attach our agent, keep a static Studio dashboard (cut #5)
+- **AG Studio trial started Nov 3** (expires ~Dec 18). The Studio Agent Framework attaches Claude through `AgLlmAdapter`, so cut #5 isn't needed (§7.3)
 - **Day 0 (Nov 2) is the P2 exit run** before any P3 feature code
 - Every new Claude role gets an eval on Opus **and** Sonnet before picking a model, and no structured output asks for "reasoning" (§6.4 refusal lesson)
 
@@ -464,34 +464,46 @@ Replaces the keyword stub in `lib/shop/questions.ts`. The MCP adapter, the `{ an
 
 ### 7.3 AG Studio dashboard (sponsor target)
 
-The Nov 1 spike didn't happen; it opens Nov 4 (§7 Decided). Nothing below is known to work with Studio yet, so the spike's answers gate the rest of the day.
+Built Nov 3 (a day early; the trial started Nov 3). Architecture: ARCHITECTURE §7.4.
 
-**Spike (Nov 4 AM, 2h timebox)**
-- [ ] Start the trial (45 days from Nov 4 → ~Dec 19, covers judging to Dec 15). Write the expiry date here
-- [ ] Answer and record here: (1) package names and how the license key is supplied (client-exposed?); (2) does a dashboard render inside our Next.js page (`dynamic(..., { ssr: false })`) or only on AG's hosted Studio; (3) data source: fetch from our URL with the maker cookie, or pushed JSON; (4) how the Studio Agent Framework attaches a custom agent (MCP, HTTP tool, their SDK); (5) what an embedded dashboard does after the trial ends
-- [ ] Gates: (2) hosted-only → dashboard lives on Studio with a share link and the maker app links out. (4) can't attach our agent → cut #5 now, static dashboard only
+**Spike (answered from the `ag-studio` 3.0.0 types, the bundle and the [paypaldev boilerplate](https://github.com/paypaldev/hackathon-paypal-ag-grid-boilerplate))**
+- [x] Trial started **Nov 3 → expires ~Dec 18** (45 days), after judging ends Dec 15
+- [x] (1) `ag-studio` + `ag-studio-react` 3.0.0 (same version), `ag-studio-locale` for Studio's own UI text. License via `<AgStudioProvider licenseKey>`, checked in the browser, so it's client-exposed by design. `AgStudioAiModule` needs the PRO-AI tier; the trial covers it. Env var `AG_STUDIO_LICENSE_KEY` (server-only name, passed to the page as a prop; `NEXT_PUBLIC_` would bake it in at build)
+- [x] (2) Renders inside our page. Server import is safe; the component is client-only (`'use client'`), loaded with `next/dynamic({ ssr: false })` because Studio + AG Grid/Charts Enterprise is a few MB
+- [x] (3) In-memory row sources (`{ id, data, fields }`) built by a server component; relationships + one calendar. No analytics API routes needed
+- [x] (4) Studio Agent Framework: implement `AgLlmAdapter.executeTurn` and pass it to `createAiHarness` → Studio's five built-in agents (lead, data, page, planning, widget) run their loop and tools in the browser and call us once per LLM turn. Gate passed: Claude drives them end to end
+- [x] (5) After the trial: "Trial Period Expired" watermark + console banner, nothing disabled. The watermark never shows on localhost; elsewhere it fades after 5 s
 
-**Data (`app/s/api/analytics/*`)**
-- [ ] `lib/shop/analytics.ts`: each query takes `(db, seller, range)`, periods in the maker's time zone (reuse the `salesSummary` period math), one series per currency, integer cents (client formats):
-  - `earnings`: gross, refunded, net by day (`captured_at`)
-  - `holds`: held vs released vs refunded by day
-  - `funnel`: per product, counts of `mcp.search_products` (`payload->'productIds' ? id`), `mcp.get_product`, `mcp.ask_question`, `mcp.make_offer`, `mcp.create_checkout`, paid orders. Count events, not distinct `agentId`s (claude.ai callers share one)
-  - `topProducts`, `buyerCountries` (from `shipping_address`)
-- [ ] Thin `GET` route handlers: `requireSeller()`, Zod-validated `range`, `Cache-Control: private, no-store`. Tests: maker A can't read maker B (like `lib/shop/maker.test.ts`); funnel counts on seeded events
-- [ ] `EXPLAIN` the funnel query on seeded volume; add an `events (type, created_at)` or `payload` GIN index if it scans
-- [ ] Demo history now, not in P4: `scripts/seed-activity.ts` writes ~30 days of orders + MCP events for the hero maker across several buyer countries. Orders only in terminal states (`Released`, `Refunded`) with fake PayPal ids, so the sweep never calls PayPal for them. Tagged (`payload.seeded`) so a reset can remove them
+**Built**
+- [x] `lib/shop/analytics.ts` `dashboardDataset(db, seller)`: last 90 days, session maker only, days in the maker's time zone (`SELLER_TIME_ZONES`, SQL `at time zone`). Tables: `orders` (paid only, `MAKER_VISIBLE`; net = `makerNet` rule; payout state), `products`, `activity` (MCP events per day × product × step, searches via `payload->'productIds' ? id`, failed calls excluded, paid orders as the last step). Counts events, not agents. No buyer name/email/address, no merchant id, no agent text. Shared types in `lib/schemas/dashboard.ts` (client-safe)
+- [x] `EXPLAIN ANALYZE` on seeded volume (330 searches, 1,658 MCP events): the search join uses `events_type_idx`, 2.5 ms; whole dataset 135 ms locally. No new index
+- [x] `drizzle/0007_dashboards.sql`: `seller_dashboards (seller_id pk, state jsonb, updated_at)`. `saveReport` / `resetReport` server actions (`requireSeller`); state must be report-shaped and ≤ 256 KB (`lib/shop/dashboards.ts`)
+- [x] `/s/dashboard` in a new `app/s/(wide)` group (full width; the phone layout is `max-w-md`): Sales page (KPIs with weekly sparklines: net, gross, orders, held; earnings by week; money by payout state; buyers by country; top products; order grid; date filter) and Agents page (funnel search → paid, activity by product and by week). View mode by default; "Editar y preguntar a la IA" opens Studio's AI, Compose and Data panels. Debounced autosave with a status line, reset (confirm dialog), refresh (`router.refresh`). Loading skeleton, empty state for a maker with no orders, error state; a saved report Studio can't load falls back to the default once
+- [x] Claude as Studio's LLM: `app/s/(wide)/dashboard/studio/adapter.ts` → `app/s/api/studio-ai/route.ts` (maker cookie, Zod, 4 MB body cap, 120 s, NDJSON) → `lib/shop/studio-ai.ts` (caps, `ai.call` role `studio` per turn) → `lib/ai/studio.ts` (Studio items ↔ Messages API, Claude stream → AG-UI events). `claude-opus-5-5`, effort `low`, `fallbacks: "default"`, cached prefix (Counter note + tools, then history). Prompt-starters in the maker's language, incl. the demo prompt
+- [x] Theme: `studioTheme.withParams` on `app/globals.css` tokens; chart tokens `--chart-1..6` are now the dataviz palette (validated: CVD + normal-vision pass in light mode; contrast WARN → legends on multi-series charts + the order grid as table view). Studio's edit-mode layout form needs hex colors (its picker can't parse `oklch()`), so `counterStudioLayout` passes them explicitly
+- [x] `/s` home card: today/week net from `salesSummary` + link to the dashboard. Strings `dashboard.*`, `home.dashboard*` in en/es/fil/sw (Claude-drafted; add to the native-speaker pass). Studio's own UI in Spanish via `AG_STUDIO_LOCALE_ES`; fil/sw get English Studio chrome
+- [x] `pnpm seed:activity [--persona MX] [--days 30] [--reset]` (`scripts/seed-activity.ts`): deterministic history for Lucía, local run: 66 orders (3 refunded), 1,658 MCP events. Only `Released`/`Refunded`, `SEED-` PayPal ids, events tagged `payload.seeded`; each run removes the last one's rows
+- [x] Tests: `lib/ai/studio.test.ts` (request mapping, tool call/result pairing, orphan and unanswered calls, forced `tool_choice` → instruction, JSON format + prompt fallback, stream → events → response), `lib/shop/analytics.test.ts` (maker A can't see B, MX day bucketing, no PII in the dataset, funnel counts incl. search, save/load/reset/size cap, relative-filter strip, studio turn + `ai.call` + per-maker cap + API error). Full suite 678 passed
 
-**UI**
-- [ ] `/s/dashboard`: client-only Studio dashboard, Counter theme, tablet/desktop layout; widgets for the five queries. Loading, empty (new maker, no orders) and error states
-- [ ] Phone: `/s` home card with today/week from `salesSummary` + a link to the dashboard
-- [ ] Widget titles from the i18n catalogs (×4); numbers and dates via `Intl` in the maker's locale
+**Local run (Nov 3, real Claude, local DB, Lucía):** both pages render on the seeded history; edit mode opens the Spanish AI panel. "Muéstrame mis ventas por país este mes" → 6 Opus turns, ~18 s, reply in Spanish; the agent reused the country chart, retitled it "Ventas por país – noviembre 2026" and added a widget filter `between 2026-11-01 and 2026-11-30`; it survives a reload. Usage: up to 26k cache-write tokens on the first long turn, then mostly cache reads
 
-**Agent-built widget (cut #5)**
-- [ ] Depends on §7.1 and spike answer (4). Copilot tool `build_widget(request)` → Studio agent → widget spec saved per maker → shown on the dashboard. The Studio agent can only use our analytics endpoints (allowlist), never raw SQL
-- [ ] Demo prompt: "Muéstrame mis ventas por país este mes"
+Decided (Nov 3):
+- **No `app/s/api/analytics/*` GET routes.** Rows go to Studio as page props (fewer authed surfaces); refresh re-renders the server component. Fixed 90-day window + Studio's date filter
+- **Agent-built widget = Studio's own AI panel on Claude**, not a copilot `build_widget` tool. The copilot is unchanged (`buildCopilotTools(ops, extra)` stays available)
+- **Thinking isn't replayed.** Studio keeps no thinking signatures; probe Nov 3 confirmed both 5.5 models accept tool-use history without the thinking blocks. Opus/Sonnet 5.5 reject forced `tool_choice`, so a forced choice becomes a system instruction
+- Studio's JSON-format turns use structured outputs; if the API rejects Studio's schema (400), the turn is retried once with the schema in the prompt
+- Studio 3.0 saves relative date filters ("this month") in a shape it rejects on load ("must be a two-element range"; the boilerplate hit it too). The prompt asks for absolute `between` ranges from today's date (maker time zone, in the system prompt), and `saveDashboard` drops any `inRelativeRange` filter that slips through
+- The first run's agent narrated between tool calls in English; the prompt now says every note, including reports to other agents, is in the maker's language (second run: all Spanish)
+- Caps: `MAKER_DAILY_STUDIO` = 150 turns per maker per UTC day on top of `AI_DAILY_CALL_CAP`. A request is ~5-10 turns, so 300/day covers ~30-60 dashboard requests: revisit with the §8.5 cost pass
 
-**Docs**
-- [ ] README AG Studio section with screenshots (sponsor prizes require real use); closes the §12 ARCHITECTURE item
+**Open**
+- [ ] Set `AG_STUDIO_LICENSE_KEY` on `counter` in the Render dashboard (`sync: false`), deploy, `pnpm seed:activity` against the Render DB, and repeat the local run there (watermark/license banner check)
+- [ ] Eval rule (§7): ~6 prompts on Opus **and** Sonnet in the browser (country this month in es; net by week; most-asked product; refunds this month; an English prompt from a Spanish maker; a product title containing instructions). Record turns, cost (`ai.call`), language, right widget. Only Opus has run so far
+- [ ] Custom widget (sponsor criterion "custom widgets"): e.g. a payout timeline (held → release ETA) via `createWidgets` with an `ai` description so the agents can place it. Not built
+- [ ] Phone: the dashboard works at tablet/desktop width; check 390 px is at least readable (the `/s` card says it's better on a bigger screen)
+- [ ] Studio's AG Charts logs `-1` option warnings on load (Studio-internal theme params, harmless); report upstream if time
+- [ ] README AG Studio section with screenshots (sponsor prizes require real use)
+- [ ] Demo prompt "Muéstrame mis ventas por país este mes" on Render for the video
 
 ### 7.4 Operator console (`/ops`)
 
@@ -617,7 +629,7 @@ With the ChatGPT purchase cut, no demo client calls these endpoints; they exist 
 
 - [x] Anthropic Console spend limit (Nov 3)
 - [ ] Render credits cover web + Postgres + cron + workflows through Dec 15 (check the billing page)
-- [ ] AG Studio trial expiry (§7.3) is after Dec 15; PayPal sandbox app and maker accounts stay active
+- [ ] PayPal sandbox app and maker accounts stay active through Dec 15. AG Studio trial ✅ expires ~Dec 18 (§7.3)
 - [ ] Weekly calendar reminder until Dec 15: Console usage, `/api/health`, stock
 
 **Freeze gate (Nov 8 EOD):** never-cut path on Render from a clean browser; `e2e:purchase`, `e2e:release`, `e2e:refund`, `eval:injection` pass; CI green. Then `git tag freeze`. After it: fixes, copy, video only.
@@ -677,7 +689,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 | 3 | STT provider | Oct 31 | Web Speech API unless Tagalog/Swahili accuracy blocks the < 60s listing |
 | 4 | Maker notifications | Oct 30 | In-app inbox first; web push only if time in P4 |
 | 5 | Demo hero persona | Oct 27 | MX weaver (Spanish voice note, USD → MXN conversion is clean) |
-| 6 | AG Studio trial start | Nov 1 | Start with the 2h spike so the 45-day trial covers judging (to ~Dec 16) |
+| 6 | AG Studio trial start ✅ decided | Nov 3 | Started Nov 3 → ~Dec 18, covers judging |
 | 7 | Voice-only purchase route | Nov 3 | Claude mobile voice mode + custom connector if it works; else our `/voice` page |
 | 8 | Operator auth | Nov 5 | `OPS_PASSWORD` login; add read-only judge access only if `/ops` is in the video |
 
@@ -714,7 +726,7 @@ Cut from the top when a phase misses its exit by more than half a day:
 ## 12. Doc updates owed
 
 - [x] ARCHITECTURE: shipping + fee base, buyer address, status token, order create/capture details, MCP session mode + errors, env vars, Render paid plans (Oct 26)
-- [ ] ARCHITECTURE: add AG Studio dashboard (planning §8/§9 target it; ARCHITECTURE never mentions it). Maker auth ✅ Oct 31 (§11 #5)
+- [x] ARCHITECTURE: AG Studio dashboard (§5.1 role, §7.4, `seller_dashboards`, `AG_STUDIO_LICENSE_KEY`) ✅ Nov 3. Maker auth ✅ Oct 31 (§11 #5)
 - [x] ARCHITECTURE §8: `photos`, `refunds`; `offers` agent binding + `used_at`; `products` `price_guidance`, `restricted_flag`, auto-negotiate toggle (Oct 27)
 - [x] ARCHITECTURE §8: `copilot_messages` + `copilot_actions`, `acp_sessions` + `idempotency_keys` (Nov 3). `notifications`, `drafts`, `voice_notes` and seller login fields ✅ Oct 31
 - [ ] ARCHITECTURE §5–6: release rules from §6.3 (buyer confirm, stale `PaidHeld`, no refund after release), i18n (`en`/`es`/`fil`/`sw`), `OPS_PASSWORD` ✅ Nov 3 + `AI_DAILY_CALL_CAP` ✅ in §10 env list

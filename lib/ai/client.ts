@@ -45,7 +45,7 @@ export async function assertUnderCap(db: Tx, now = new Date()): Promise<void> {
 }
 
 export type AiCallRecord = {
-  role: "listing" | "negotiator" | "answerer" | "copilot";
+  role: "listing" | "negotiator" | "answerer" | "copilot" | "studio";
   source: EventSource;
   actor: string;
   sellerId?: string;

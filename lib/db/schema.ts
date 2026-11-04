@@ -453,6 +453,15 @@ export const idempotencyKeys = pgTable(
   (t) => [primaryKey({ columns: [t.scope, t.key] })],
 );
 
+/** The maker's AG Studio report (BUILDOUT §7.3): Studio's own `AgReportState`, saved as the maker edits. */
+export const sellerDashboards = pgTable("seller_dashboards", {
+  sellerId: uuid("seller_id")
+    .primaryKey()
+    .references(() => sellers.id),
+  state: jsonb("state").notNull(),
+  updatedAt: updatedAt(),
+});
+
 // Append-only audit log. Only verified, processed_at, error and order_id are updated (webhook processing).
 export const events = pgTable(
   "events",

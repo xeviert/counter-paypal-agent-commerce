@@ -239,6 +239,7 @@ Payloads are stored in `events` first, then processed, so a failed handler can b
 | Negotiator | `claude-sonnet-5-5` (eval-picked over Opus, BUILDOUT §6.4) | Offer, listing, effective floor, this agent's earlier offers on the product | `{decision, counterPrice, message, note}` | None | No. Output is clamped by `lib/policy` |
 | Buyer-question answerer | `claude-sonnet-5-5` (eval-picked over Haiku, BUILDOUT §7.2) | Free-text question + listing text (price, stock and shipping come from templates instead) | Grounded answer; keyword stub on any failure | None | No |
 | Seller copilot | `claude-opus-5-5` (eval-kept over Sonnet, BUILDOUT §7.1) | Maker chat in their language | Answers, proposed actions | `betaZodTool`s over DB + `lib/paypal` (refund, track, release status) | Proposes only. Refunds need a maker tap to confirm |
+| AG Studio dashboard agents | `claude-opus-5-5` (Opus vs Sonnet eval open, BUILDOUT §7.3) | Maker request in Studio's AI panel + Studio's own agent instructions | Widget edits, answers | Studio's built-in tools, run in the browser over the dashboard rows (§7.4) | No. Sees no PII and no DB |
 | Operator copilot | `claude-opus-5-5` | Operator chat | Answers | PayPal remote MCP (`/sse`, platform token) | Read-oriented; see §8 |
 | Demo buyer agents | `claude-opus-5-5`, ChatGPT dev mode | Human request | Purchases | Counter MCP | Only via human approval on PayPal |
 
@@ -427,6 +428,23 @@ Deviation from ACP: `complete` doesn't accept a delegated payment token. It retu
 
 `/llms.txt`, `/feed.json` (catalog feed), and JSON-LD `Product` markup on `/p/[slug]`.
 
+### 7.4 Maker dashboard (AG Studio, `/s/dashboard`)
+
+Not agent-facing, but it's where Claude meets AG Studio's agent framework (BUILDOUT §7.3).
+
+```mermaid
+flowchart LR
+  page["/s/dashboard (server)"] -- "dashboardDataset(): orders, products, agent activity" --> studio["AG Studio (browser)"]
+  studio -- "AgLlmAdapter.executeTurn" --> proxy["/s/api/studio-ai"]
+  proxy -- "Messages API, streamed" --> claude["Claude"]
+  proxy -- "NDJSON Studio events" --> studio
+  studio -- "saveReport (server action)" --> db[("seller_dashboards")]
+```
+
+- **Data:** `lib/shop/analytics.ts` builds three flat tables for the session maker only, last 90 days: paid orders (ref, day in the maker's time zone, buyer country, payout state, gross, refunded, fees, net), products, and agent activity (MCP event counts per day × product × step; searches via `payload.productIds`). No buyer names, emails, addresses or agent message text.
+- **Agents:** Studio runs its five built-in agents and their tools in the browser. Counter implements only the LLM boundary (`app/s/(wide)/dashboard/studio/adapter.ts` → `/s/api/studio-ai` → `lib/ai/studio.ts`): Studio's conversation items become Messages API blocks, Claude's stream becomes Studio's AG-UI events. The model can only read and rearrange the rows on the page: no SQL, no PayPal, no other maker.
+- **Limits:** one `ai.call` (role `studio`) per turn, counted in `AI_DAILY_CALL_CAP`, plus 150 turns per maker per UTC day. Model allowlist (Opus, Sonnet), `max_tokens` 32k, 120 s per turn.
+
 ---
 
 ## 8. Data model
@@ -445,6 +463,7 @@ Deviation from ACP: `complete` doesn't accept a delegated payment token. It retu
 | `copilot_messages` | seller_id, conversation_id, role (user/assistant), content (JSONB Anthropic content blocks, tool calls included). Turn cap = rows per conversation |
 | `copilot_actions` | seller_id, conversation_id, order_id, kind (`refund`), amount (fixed at proposal, > 0), currency, reason, status (proposed/confirmed/canceled/failed), error, decided_at. The copilot only writes these; the maker's tap executes |
 | `acp_sessions` | status (`not_ready_for_payment` → `ready_for_payment` → `completed`/`canceled`), product_id, quantity, buyer_country (picks the shipping region), buyer (JSONB), agent_id, order_id (unique, set on complete). Totals re-quoted, never stored |
+| `seller_dashboards` | seller_id (PK), state (JSONB: AG Studio `AgReportState`, ≤ 256 KB, relative date filters dropped), updated_at |
 | `idempotency_keys` | PK (scope, key), request_hash, response status + body (null while in flight) for `Idempotency-Key` replay |
 | `events` | `bigserial` id, type, source (webhook/mcp/acp/web/workflow/copilot/ops/script), actor, order/seller/product ids, paypal_event_id (unique, webhook dedupe), raw_body + headers (webhook re-verification), payload, verified, processed_at, error. Append-only except the webhook processing fields |
 
@@ -481,7 +500,7 @@ Operator copilot note: PayPal MCP ignores `PayPal-Auth-Assertion`, so it only se
 | `release-timer` + checkout expiry | Render cron job every minute polling `release_due_at` / `expires_at`. Not a workflow: task runs are capped at 24h and can't sleep or be scheduled |
 | Webhook URL | `https://<app>.onrender.com/api/webhooks/paypal` on the Platform app |
 
-Env vars: `PAYPAL_ENVIRONMENT=SANDBOX`, `PLATFORM_CLIENT_ID`, `PLATFORM_CLIENT_SECRET`, `PLATFORM_MERCHANT_ID`, `PAYPAL_WEBHOOK_ID`, `PLATFORM_FEE_BPS`, `RELEASE_AFTER_DAYS`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `APP_BASE_URL` (defaults to Render's `RENDER_EXTERNAL_URL`), `SESSION_SECRET` (generated by the Blueprint; signs maker session cookies), `DEMO_LOGIN` (one-tap sign-in as a seeded maker on `/s/login`), `AI_DAILY_CALL_CAP` (Claude calls per UTC day), `LISTING_RUNNER` (`inline` or `workflow`) + `LISTING_WORKFLOW_SLUG` + `RENDER_API_KEY` (start listing workflow runs), `OPS_PASSWORD` (operator console `/ops` login), STT key if needed. The workflow service needs only `DATABASE_URL`, `ANTHROPIC_API_KEY` and `AI_DAILY_CALL_CAP`. Commit a `.env.example` with names only.
+Env vars: `PAYPAL_ENVIRONMENT=SANDBOX`, `PLATFORM_CLIENT_ID`, `PLATFORM_CLIENT_SECRET`, `PLATFORM_MERCHANT_ID`, `PAYPAL_WEBHOOK_ID`, `PLATFORM_FEE_BPS`, `RELEASE_AFTER_DAYS`, `ANTHROPIC_API_KEY`, `DATABASE_URL`, `APP_BASE_URL` (defaults to Render's `RENDER_EXTERNAL_URL`), `SESSION_SECRET` (generated by the Blueprint; signs maker session cookies), `DEMO_LOGIN` (one-tap sign-in as a seeded maker on `/s/login`), `AI_DAILY_CALL_CAP` (Claude calls per UTC day), `LISTING_RUNNER` (`inline` or `workflow`) + `LISTING_WORKFLOW_SLUG` + `RENDER_API_KEY` (start listing workflow runs), `OPS_PASSWORD` (operator console `/ops` login), `AG_STUDIO_LICENSE_KEY` (AG Studio license, passed to the browser; unset = trial watermark), STT key if needed. The workflow service needs only `DATABASE_URL`, `ANTHROPIC_API_KEY` and `AI_DAILY_CALL_CAP`. Commit a `.env.example` with names only.
 
 ---
 

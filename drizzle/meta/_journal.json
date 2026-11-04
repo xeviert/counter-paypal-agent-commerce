@@ -50,6 +50,13 @@
       "when": 1793717869743,
       "tag": "0006_acp",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793743074183,
+      "tag": "0007_dashboards",
+      "breakpoints": true
     }
   ]
 }

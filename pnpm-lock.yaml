@@ -181,6 +181,9 @@ importers:
       ag-studio:
         specifier: ^3.0.0
         version: 3.0.0
+      ag-studio-locale:
+        specifier: ^3.0.0
+        version: 3.0.0
       ag-studio-react:
         specifier: ^3.0.0
         version: 3.0.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1811,6 +1814,9 @@ packages:
 
   ag-stack@36.2.0:
     resolution: {integrity: sha512-f3XT2htFs9dUPcHni2z9ak69QNta5ODEpooHuuNvbjN98JkokpEqRQ9YLQHQJFdCcgi9Ybs/j3zkkvmNRamIPg==}
+
+  ag-studio-locale@3.0.0:
+    resolution: {integrity: sha512-FsydYGIKHpM1/4yhxkkiy+kW+yc4D74L4qc1W/SPQysmNT4kqAzI6+Bkos2yof0ulPXaU41FV7uN0SE37uX5YA==}
 
   ag-studio-react@3.0.0:
     resolution: {integrity: sha512-c7TfV+tDp3bJVsJk53X3AW5DIQmFG2pNuXTPSCmfuNGgPQjv5JOgTHm+SuE32uLq9MXgIUONhCGh01PJyMIKwQ==}
@@ -5454,6 +5460,8 @@ snapshots:
       react-dom: 19.3.0(react@19.3.0)
 
   ag-stack@36.2.0: {}
+
+  ag-studio-locale@3.0.0: {}
 
   ag-studio-react@3.0.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:

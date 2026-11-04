@@ -57,6 +57,9 @@ services:
       # Operator console /ops login (BUILDOUT §7.4).
       - key: OPS_PASSWORD
         sync: false
+      # AG Studio license for /s/dashboard (BUILDOUT §7.3). Unset = trial watermark.
+      - key: AG_STUDIO_LICENSE_KEY
+        sync: false
       # APP_BASE_URL defaults to RENDER_EXTERNAL_URL (lib/env.ts); set it only for a custom domain.
 
   # Every minute (BUILDOUT §6.3): checkout expiry, dead listing drafts, releases that are due, stuck
