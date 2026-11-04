@@ -572,11 +572,61 @@ Decided (Nov 4):
 
 ### 7.5 Discovery
 
-- [ ] Pin the ACP product feed spec (URL + date read, here). `lib/shop/feed.ts` maps products → spec fields (id, title, description, link, image link, price, availability, inventory, seller name, shipping), same filter as `search_products` (live, unrestricted, receivable maker). Shipping as one entry per buyer region from `lib/policy/shipping.ts`
-- [ ] `/feed.json` route, cached a few minutes (Cache Components `cacheLife`). Test: rows parse against a Zod schema written from the spec; paused, `review` and not-receivable products are absent
-- [ ] JSON-LD `Product` on `/p/[slug]`: `name`, `description`, `image`, `brand` (maker), `offers` (`price`, `priceCurrency`, `availability`, `url`, `shippingDetails` per region). Escape `<` in the serialized JSON: listing text is model- and maker-written, so a `</script>` in it would inject markup
-- [ ] Validate with Google's Rich Results Test and the schema.org validator; keep a screenshot for the README
-- [ ] `/llms.txt` as a route, so the MCP URL comes from `APP_BASE_URL` and the tool list from the registered tools: what Counter is, MCP URL, one line per tool, ACP endpoints (if §7.6 ships), "a human approves every payment on PayPal", rate limits
+Planned Nov 4 for the Nov 5 slot (first, cheapest; §7 day table). Budget ~3 h. Three read-only public surfaces over the same sellable-product filter: `/feed.json`, JSON-LD on `/p/[slug]`, `/llms.txt`.
+
+**Spec pinned** (read Nov 4, [OpenAI Commerce product feed spec](https://developers.openai.com/commerce/specs/file-upload/products); the page shows no version or date):
+- Required per row: `item_id`, `title` (≤ 150), `description` (plain text, ≤ 5,000), `url`, `brand`, `seller_name`, `image_url`, `availability` (`in_stock` | `out_of_stock` | `pre_order` | `backorder` | `unknown`), `price` as `"79.99 USD"`. Unknown optional fields are left out, never `null` / `"n/a"`
+- Optional fields we use: `condition`, `product_category` (`A > B`), `material`, `dimensions` `{ length, width, height?, unit: "cm" }` (≥ 2 of the three, decimal strings), `additional_image_urls[]`, `shipping` (`country:region:service_class:price`, e.g. `US::Standard:38.00 USD`), `is_eligible_search`, `is_eligible_checkout`
+- Delivery is an SFTP **push** of full snapshots (parquet or `jsonl.gz`, at least daily; [file upload overview](https://developers.openai.com/commerce/specs/file-upload/overview)) after onboarding with OpenAI. There's no pull-URL mode. So `/feed.json` serves the spec's rows over HTTP for any agent or crawler; we don't push to OpenAI (README says so, with the ACP deviations)
+
+Facts from the code (Nov 4, before building):
+- No shared sellable predicate: `searchProducts` inlines five SQL conditions (`lib/shop/catalog.ts:70-80`), `findSellableProduct` checks one row in JS, `canReceive` (`lib/policy/seller.ts`) works on rows
+- `toSummary` and `photoIds` (photos by `position, createdAt`) aren't exported. `getProductBySlug` returns `{ detail, seller }` without shipping (no buyer country)
+- `lib/policy/shipping.ts` regions: `domestic`, `north_america` (US, CA, MX), `eu` (27), `rest_of_world` (anything shippable, no list). `NORTH_AMERICA`, `EU`, `NO_SHIP` aren't exported
+- MCP tools are registered inline (`ping` in `lib/mcp/server.ts`, six shop tools in `lib/mcp/tools.ts`); no exported list. `LIMITS` (`lib/mcp/rate-limit.ts`) and `MAX_OFFERS` (`lib/shop/offers.ts`) are exported
+- `/p/[slug]` has static `metadata`, data inside `<Suspense>`, no `<script>`; unavailable → "isn't for sale" text
+- No `'use cache'` anywhere yet. Route handlers start with `connection()` (env read at request time). Next 16 docs: `'use cache'` can't sit in a route handler body, only in a helper, and revalidates per `cacheLife` on the next request
+- Seed products have no photos (`seed/photos/` holds only the README, §5.7). `image_url` is required, so the feed stays near-empty until real photos land (§8.1 long-lead)
+
+**Shared** (`lib/shop/catalog.ts`, `lib/policy/shipping.ts`)
+- [ ] Export `sellableConditions()` (the five predicates) and use it in `searchProducts` and the feed; export `photoIds`
+- [ ] Export `NORTH_AMERICA`, `EU` and `regionCountries(sellerCountry, region)`: `domestic` = maker country, `north_america` / `eu` minus the maker country, `rest_of_world` = none listed (agents get that quote from `get_product(buyerCountry)`)
+
+**Feed** (`lib/schemas/feed.ts`, `lib/shop/feed.ts`, `app/feed.json/route.ts`)
+- [ ] `lib/schemas/feed.ts`: Zod row schema from the spec above (money `^\d+\.\d{2} [A-Z]{3}$`, availability enum, absolute `https` URLs, title/description lengths, dimensions with ≥ 2 sides)
+- [ ] `productFeed(db)`: one query with `sellableConditions()` + photos. Mapping:
+  - `item_id` = product id; `title`, `description`, `material` = EN listing; `url` = absolute `productUrl(slug)`
+  - `brand` = `seller_name` = maker name (Counter is the marketplace; the maker is the PayPal payee)
+  - `image_url` = first photo, the rest → `additional_image_urls`
+  - `availability` from `stock - reserved`; `price` from `list_price` + `currency`; `condition: "new"`; `product_category` = `Handmade > <category label>`; `dimensions` from `listing.dimensions` in cm
+  - `shipping` = one entry per country from `regionCountries` × `shippingQuote`, service class `Standard`
+  - `is_eligible_search: true`, `is_eligible_checkout: false` (no OpenAI checkout integration; a human approves on PayPal)
+- [ ] Rows without a photo are skipped (the spec rejects them), counted in the response's `skipped` and a log line. Sold-out products stay in as `out_of_stock`
+- [ ] Body `{ spec: <spec URL>, generated_at, skipped, items: [...] }`. Route: `connection()` → cached helper (`'use cache'`, `cacheLife("minutes")`) → `Response.json` with `Cache-Control: public, max-age=300`. A paused or flagged product can linger ~5 min; accepted, since `get_product` and checkout re-check everything
+
+**JSON-LD** (`lib/shop/jsonld.ts`, `app/p/[slug]/page.tsx`)
+- [ ] `productJsonLd(detail, seller)`: `Product` with `name`, `description`, `image[]` (absolute), `sku` (id), `brand` `{ "@type": "Brand", name: maker }`, `material`, and one `Offer`: `price` (decimal string), `priceCurrency`, `availability` (`https://schema.org/InStock` | `OutOfStock`), `itemCondition` `NewCondition`, `url`, `shippingDetails[]` = one `OfferShippingDetails` per listed region (`shippingRate`, `shippingDestination` `DefinedRegion { addressCountry: [...] }`)
+- [ ] `serializeJsonLd(obj)`: `JSON.stringify`, then `<` → `<` (Next JSON-LD guide) plus U+2028/U+2029. Listing text is model- and maker-written, so a `</script>` in it would otherwise inject markup
+- [ ] Rendered in the `Product` component as `<script type="application/ld+json">`, only when the product is sellable (not on the "isn't for sale" branch)
+- [ ] After deploy: Google Rich Results Test + validator.schema.org on a Render product URL; screenshot for the README. A missing `hasMerchantReturnPolicy` is a warning, not an error (no return policy exists; leave it out)
+
+**`/llms.txt`** (`lib/shop/llms.ts`, `app/llms.txt/route.ts`)
+- [ ] Export `TOOL_INFO` (`{ name, title, description }` in registration order) from `lib/mcp/tools.ts` and register the tools from it, so the text can't drift from the server. `ping` stays out of `llms.txt`
+- [ ] llmstxt.org shape, `text/plain; charset=utf-8`, `connection()` first so URLs come from `APP_BASE_URL`: `# Counter`, a one-paragraph summary, the MCP URL (`/api/mcp`, Streamable HTTP, stateless, no sign-in), one line per tool (title + first sentence of its description), the buy flow (search → `get_product` → ask/offer → `create_checkout` → **a human approves every payment on PayPal** → `get_order_status`), USD only with `buyerCountry` required, limits from `LIMITS` + `MAX_OFFERS`, links to `/feed.json` and a sample `/p/[slug]`. ACP endpoint lines only if §7.6 ships
+
+**Tests** (`lib/shop/feed.test.ts`, `lib/shop/jsonld.test.ts`, `lib/shop/llms.test.ts`; DB tests with `seedProduct` / `seedPhoto` and `stubPayPalEnv`)
+- [ ] Every feed row parses against the Zod schema. Absent: `draft`, `review`, `paused`, live + `restricted_flag`, maker not receivable, consent revoked, no photo. Sold out → `out_of_stock`. Shipping for an MX maker matches `shippingQuote` (MX domestic, US/CA north_america, DE eu, no rest-of-world rows)
+- [ ] `searchProducts` with no query returns the same ids as the feed (shared predicate)
+- [ ] JSON-LD: a title containing `</script><script>alert(1)</script>` serializes with no `<` and round-trips through `JSON.parse`; no floor, stock count or maker email in the output
+- [ ] `llms.txt` lists every `TOOL_INFO` tool except `ping`, the absolute MCP URL and the PayPal approval line
+
+**Exit (on Render):** `/feed.json` rows validate (test + one manual spot check); Rich Results Test detects a Product on `/p/<slug>`; `/llms.txt` shows the Render MCP URL and all six tools
+
+Decided (Nov 4, planning):
+- The feed is the spec's rows over HTTP, not an OpenAI SFTP integration (that needs onboarding, and ChatGPT is cut)
+- `brand` = `seller_name` = maker. No `seller_url` (no maker page) and no return-policy fields (we have no policy)
+- `is_eligible_checkout: false` even if §7.6 ships: those endpoints are ACP-shaped, not an OpenAI checkout integration
+- No per-product `generateMetadata` this round (under Cache Components it needs the dynamic-marker pattern); revisit in §8.4
 
 ### 7.6 ACP-shaped checkout (cut #3)
 
