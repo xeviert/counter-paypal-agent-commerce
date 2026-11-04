@@ -5,9 +5,9 @@ import type { Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { SellerNotReceivableError } from "@/lib/paypal/orders";
 import { PolicyError } from "@/lib/policy/errors";
-import { makeOfferOutput, searchProductsOutput } from "@/lib/schemas/mcp";
+import { createCheckoutOutput, makeOfferOutput, searchProductsOutput } from "@/lib/schemas/mcp";
 import { seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
-import { stubPayPalEnv } from "@/test/paypal";
+import { json, mockPayPal, stubPayPalEnv } from "@/test/paypal";
 import { agentFromRequest } from "./agent";
 import { buildMcpHandler, mcpHandler } from "./handler";
 import { LIMITS, limitsFor, RateLimiter } from "./rate-limit";
@@ -179,6 +179,9 @@ describe.skipIf(!testDatabaseUrl)("shop tools over MCP", () => {
     expect(result.isError).toBeFalsy();
     const output = searchProductsOutput.parse(result.structuredContent);
     expect(output.products.map((p) => p.productId)).toEqual([product.id]);
+    expect(result.content).toEqual([
+      { type: "text", text: `1 product. 1. Handwoven wool rug, 150.00 USD, by Ana in Mexico.\nproductIds: 1 ${product.id}` },
+    ]);
     const [logged] = await db.select().from(events).where(eq(events.type, "mcp.search_products"));
     expect(logged).toMatchObject({ source: "mcp", payload: { outcome: "ok", count: 1, productIds: [product.id] } });
     expect(logged!.actor).toMatch(/^agt_/);
@@ -241,6 +244,35 @@ describe.skipIf(!testDatabaseUrl)("shop tools over MCP", () => {
     await client.callTool({ name: "create_checkout", arguments: { offerId: output.offerId, buyerCountry: "IR" } });
     const [checkout] = await db.select().from(events).where(eq(events.type, "mcp.create_checkout"));
     expect(checkout!.payload).toMatchObject({ args: { offerId: "[redacted]" }, code: "UNSUPPORTED_COUNTRY" });
+    await client.close();
+  });
+
+  it("ends the checkout text with the statusToken and keeps it out of events", async () => {
+    const { product } = await seedProduct(db);
+    mockPayPal(() =>
+      json(200, {
+        id: "7FP370406R848663Y",
+        status: "PAYER_ACTION_REQUIRED",
+        links: [{ href: "https://www.sandbox.paypal.com/checkoutnow?token=7FP370406R848663Y", rel: "payer-action" }],
+      }),
+    );
+    const client = await connect("modern", "test-agent/1.0", handler());
+    const result = await client.callTool({
+      name: "create_checkout",
+      arguments: { productId: product.id, buyerCountry: "US" },
+    });
+    expect(result.isError).toBeFalsy();
+    const output = createCheckoutOutput.parse(result.structuredContent);
+    const text = (result.content as { text: string }[])[0]!.text;
+    expect(text.split("\n").at(-1)).toBe(
+      `statusToken: ${output.statusToken} (pass it to get_order_status; keep it private)`,
+    );
+    expect(text).toContain(output.approvalUrl);
+    const [logged] = await db.select().from(events).where(eq(events.type, "mcp.create_checkout"));
+    expect(JSON.stringify(logged!.payload)).not.toContain(output.statusToken);
+
+    const status = await client.callTool({ name: "get_order_status", arguments: { statusToken: output.statusToken } });
+    expect((status.content as { text: string }[])[0]!.text).toMatch(/^Status CheckoutCreated\. Waiting for the buyer/);
     await client.close();
   });
 });

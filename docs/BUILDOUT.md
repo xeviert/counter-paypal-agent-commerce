@@ -384,6 +384,8 @@ Bugs found:
    - Test in `lib/mcp/server.test.ts`: first `create_checkout` success over MCP, using `mockPayPal` (`test/paypal.ts`) and `seedProduct`; assert the text contains `statusToken: ${output.statusToken}` and `events` still logs no token
    - Sweep the other tool texts for any handle the next call needs that only `structuredContent` has (`search_products`, `get_product` already carry `productId`)
    - Re-run on the claude.ai connector: checkout → approve → "is it paid?" → `get_order_status` answers without the buyer pasting the URL
+
+   **Fixed Nov 4 (§7.7):** the `create_checkout` text's last line is `statusToken: <token> (pass it to get_order_status; keep it private)`; `lib/mcp/server.test.ts` checks it over MCP with a mocked PayPal, that `events` never holds the token, and that `get_order_status` with it answers. Sweep: `search_products` and `get_product` now also put their ids on the last line; `make_offer` already had `offerId`. Open: the connector re-run
 6. Before the video, not blocking P3: real seed + eval photos (§5.7, §6.2), dispute / consent-revoked webhook fixtures (§6.3), fresh-maker onboarding run (§6.1), native-speaker pass (§6.1, §6.4)
 
 ---
@@ -660,11 +662,12 @@ With the ChatGPT purchase cut, no demo client calls these endpoints; they exist 
 
 - [x] ~~ChatGPT developer mode: full purchase~~ **Cut Nov 1** (user decision)
 - [x] Route: Claude mobile voice mode reaches the connector (Nov 3, §10 #7); no `/voice` page
-- [ ] Needs §6 bug 4 (`statusToken` in the text) and the §6.4 negotiated re-run first. Then record on Render: "find a Zapotec rug under $250 that ships to Germany" → question → offer → checkout → approve on PayPal (the one non-voice step; the README says so) → "did it go through?" → `get_order_status`
-- [ ] Tool texts read aloud well: short sentences, no tables or markdown, ids on the last line
-- [ ] `pnpm a11y` (Playwright + `@axe-core/playwright`, dev deps): `/`, `/p/[slug]`, `/o/[statusToken]`, `/checkout/cancel`, `/s/login`, capture and review screens. Zero serious/critical
+- [ ] Needs §6 bug 4 (`statusToken` in the text, ✅ fixed Nov 4) and the §6.4 negotiated re-run first. Then record on Render: "find a Zapotec rug under $250 that ships to Germany" → question → offer → checkout → approve on PayPal (the one non-voice step; the README says so) → "did it go through?" → `get_order_status`
+- [x] Tool texts read aloud well: short sentences, no tables or markdown, ids on the last line. `searchText`, `checkoutText`, `orderStatusText` in `lib/mcp/tools.ts`: `"2 products. 1. <title>, 150.00 USD, by Ana in Mexico. 2. …"` then `productIds: 1 <id>, 2 <id>`; `get_product` ends `productId:`, `make_offer` `offerId:`, `create_checkout` `statusToken:`; URLs end their line so a trailing period never joins them; `get_order_status` = `Status <code>. <nextStep>` + tracking
+- [x] `pnpm a11y` (`scripts/a11y.ts`, Playwright + `@axe-core/playwright` dev deps): axe with WCAG 2.0/2.1/2.2 A + AA tags at 390×844 touch on `/`, `/p/[slug]`, `/o/[statusToken]`, `/s/login` (demo picker on), and as a demo maker (cookie signed with `SESSION_SECRET`) `/s`, `/s/new` (capture), `/s/drafts/[id]` (review, a temporary `ready` draft removed afterwards), listings, orders, order detail, inbox, copilot. Exit 1 on serious/critical; `--all` prints the rest. `/checkout/cancel` isn't scanned: it cancels the order, then redirects to the `/o` page that is. **Run Nov 4 (prod build, local DB): first run 3 serious** (`/s` home stats were `<dt>/<dd>` inside links → a list of links; review-form price rationale muted text on `bg-muted` failed contrast, same fix on the uploading tile), **then 0 violations of any impact on all 12 pages**
+- [x] Code side of the checklist below: native/English review fields carry their own `lang` (the app's `lang` is the UI locale); capture has a `role="status"` line for recording started / voice note saved (the button's ticking seconds aren't announced) and `role="alert"` on mic/speech errors; photos have alt text (`/p`: title, then "title, photo n"; capture + review: `capture.photoAlt` "Photo n" ×4 catalogs, Claude-drafted → native-speaker pass); `Button` gets `min-h-11 min-w-11` on coarse pointers (44 px). Dialogs are `@base-ui/react/dialog`, which traps and returns focus; not tried by hand yet (no local `PaidHeld` order for the refund dialog)
 - [ ] Manual TalkBack pass on the Pixel 9a (VoiceOver if an iPhone is around): native text carries `lang` (`lang="es"` …) so the reader switches voice; record button has a name and announces its state; draft stage progress and order status use `aria-live`; photos have alt text (listing title); confirm dialogs trap and return focus; 44px targets
-- [ ] README: PayPal's approval page is outside our control
+- [x] README "Voice + accessibility": PayPal's approval page is outside our control; how to run `pnpm a11y`
 
 **Exit (each on the Render URL):**
 - Copilot answers "¿Quién compró hoy?" in Spanish; proposes a refund → card → tap → refunded in sandbox
@@ -694,7 +697,7 @@ With the ChatGPT purchase cut, no demo client calls these endpoints; they exist 
 
 **From P2 (Nov 6 AM)**
 - [ ] `pnpm e2e:release` re-run (§6.3 bug 1)
-- [ ] Negotiated claude.ai purchase re-run (§6.4) and `statusToken` text (bug 4)
+- [ ] Negotiated claude.ai purchase re-run (§6.4) and the `statusToken` connector re-run (bug 4, code fixed Nov 4)
 - [ ] Pixel 9a: voice (bug 2), camera (bug 3), 60s budget over 4G (§6.2) → STT decision (§10 #3). Server-side STT is a feature: it lands by Nov 8 or not at all
 - [ ] `LISTING_RUNNER=workflow` on Render + one confirmed task run (§6.2)
 - [ ] Fresh-maker onboarding through `/s/onboarding` (§6.1); dispute + consent-revoked fixtures (§6.3)

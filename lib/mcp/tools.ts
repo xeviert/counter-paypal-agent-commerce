@@ -1,4 +1,5 @@
 import type { CallToolResult, McpServer } from "@modelcontextprotocol/server";
+import type { z } from "zod";
 import type { Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
 import { log } from "@/lib/log";
@@ -21,11 +22,12 @@ import {
   searchProductsOutput,
   type McpError,
   type McpErrorCode,
+  type ProductSummary,
 } from "@/lib/schemas/mcp";
 import { getProduct, searchProducts } from "@/lib/shop/catalog";
 import { createCheckout } from "@/lib/shop/checkout";
 import { makeOffer } from "@/lib/shop/offers";
-import { getOrderStatus } from "@/lib/shop/order-status";
+import { getOrderStatus, type OrderStatusView } from "@/lib/shop/order-status";
 import { askQuestion } from "@/lib/shop/questions";
 import type { Agent } from "./agent";
 import { limitsFor, type RateLimiter } from "./rate-limit";
@@ -49,7 +51,38 @@ type ToolSuccess = {
   audit?: Record<string, unknown>;
 };
 
+type CreateCheckoutOutput = z.output<typeof createCheckoutOutput>;
+
 const fmt = (m: Money) => `${m.value} ${m.currency}`;
+
+const countryNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+// Tool texts are all claude.ai's model sees (often read aloud in voice mode): plain sentences, no
+// markdown, and every handle the next call needs on the last line.
+
+export function searchText(found: ProductSummary[]): string {
+  if (found.length === 0) return "No products matched. Try broader words.";
+  const items = found.map(
+    (p, i) => `${i + 1}. ${p.title}, ${fmt(p.price)}, by ${p.maker.name} in ${countryNames.of(p.maker.country)}.`,
+  );
+  const ids = found.map((p, i) => `${i + 1} ${p.productId}`).join(", ");
+  return `${found.length} ${found.length === 1 ? "product" : "products"}. ${items.join(" ")}\nproductIds: ${ids}`;
+}
+
+export function checkoutText(output: CreateCheckoutOutput): string {
+  const { totals } = output;
+  return (
+    `Checkout ready. Total ${fmt(totals.total)} (item ${fmt(totals.item)}, shipping ${fmt(totals.shipping)}). ` +
+    `Ask the buyer to open this link and approve the payment on PayPal before ${output.expiresAt}: ${output.approvalUrl}\n` +
+    `Status page for the buyer: ${output.statusUrl}\n` +
+    `statusToken: ${output.statusToken} (pass it to get_order_status; keep it private)`
+  );
+}
+
+export function orderStatusText(view: OrderStatusView): string {
+  const tracking = view.tracking ? ` Tracking: ${view.tracking.carrier} ${view.tracking.number}.` : "";
+  return `Status ${view.status}. ${view.nextStep}${tracking}`;
+}
 
 export function errorResult(code: McpErrorCode, message: string): CallToolResult {
   const structuredContent: McpError = { error: { code, message } };
@@ -202,14 +235,9 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
     (args) =>
       runTool("search_products", args, deps, async () => {
         const found = await searchProducts(deps.db(), args);
-        const lines = found.map(
-          (p) => `- ${p.title}: ${fmt(p.price)} by ${p.maker.name} (${p.maker.country}) [${p.productId}]`,
-        );
         return {
           output: { products: found },
-          text: found.length
-            ? `${found.length} products:\n${lines.join("\n")}`
-            : "No products matched. Try broader words.",
+          text: searchText(found),
           count: found.length,
           productIds: found.map((p) => p.productId),
         };
@@ -227,10 +255,12 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
     (args) =>
       runTool("get_product", args, deps, async () => {
         const product = await getProduct(deps.db(), args);
-        const shipping = product.shipping ? `, shipping ${fmt(product.shipping.amount)}` : "";
+        const shipping = product.shipping ? ` Shipping is ${fmt(product.shipping.amount)}.` : "";
         return {
           output: { product },
-          text: `${product.title}: ${fmt(product.price)} per item${shipping}, ${product.available} available. ${product.url}`,
+          text:
+            `${product.title}, ${fmt(product.price)} per item.${shipping} ${product.available} available. ` +
+            `Page: ${product.url}\nproductId: ${product.productId}`,
           refs: { productId: product.productId },
         };
       }),
@@ -264,10 +294,10 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
         const { output, audit, productId } = await makeOffer(deps.db(), args, { agentId: deps.agent.agentId });
         const price = output.price ? ` at ${fmt(output.price)} per item` : "";
         // claude.ai shows the model only the text, so the handle create_checkout needs must be in it.
-        const handle = output.price ? ` offerId: ${output.offerId}` : "";
+        const handle = output.price ? `\nofferId: ${output.offerId}` : "";
         return {
           output,
-          text: `${output.decision}${price}: "${output.message}" ${output.nextStep}${handle}`,
+          text: `${output.decision}${price}. The maker says: "${output.message}" ${output.nextStep}${handle}`,
           refs: { productId },
           audit,
         };
@@ -287,9 +317,8 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
         const { output, order } = await createCheckout(deps.db(), args, { agentId: deps.agent.agentId });
         return {
           output,
-          text:
-            `Checkout ready: ${fmt(output.totals.total)} (item ${fmt(output.totals.item)} + shipping ${fmt(output.totals.shipping)}). ` +
-            `Ask the buyer to approve on PayPal: ${output.approvalUrl} (expires ${output.expiresAt}). Status page: ${output.statusUrl}`,
+          // claude.ai shows the model only the text, so a later get_order_status needs the token here.
+          text: checkoutText(output),
           refs: { productId: order.productId, orderId: order.id },
         };
       }),
@@ -308,7 +337,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
         const { view, order } = await getOrderStatus(deps.db(), args.statusToken);
         return {
           output: view,
-          text: `${view.status}: ${view.nextStep}`,
+          text: orderStatusText(view),
           refs: { productId: order.productId, orderId: order.id },
         };
       }),

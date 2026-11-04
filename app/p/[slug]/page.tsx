@@ -56,7 +56,7 @@ async function Product({ params }: { params: PageProps<"/p/[slug]">["params"] })
             <img
               key={src}
               src={src}
-              alt={i === 0 ? p.en.title : ""}
+              alt={i === 0 ? p.en.title : `${p.en.title}, photo ${i + 1}`}
               className="aspect-square w-full rounded-lg object-cover"
             />
           ))}

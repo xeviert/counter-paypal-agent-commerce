@@ -141,7 +141,7 @@ export function Capture({
           {photos.map((photo, i) => (
             <li key={photo.id} className="relative aspect-square overflow-hidden rounded-lg bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/photos/${photo.id}`} alt="" className="size-full object-cover" />
+              <img src={`/api/photos/${photo.id}`} alt={t("capture.photoAlt", { n: i + 1 })} className="size-full object-cover" />
               <div className="absolute inset-x-1 top-1 flex justify-between">
                 {i > 0 ? (
                   <Button type="button" size="icon-sm" variant="secondary" onClick={() => void onMoveEarlier(i)} aria-label={t("capture.moveEarlier")}>
@@ -157,7 +157,7 @@ export function Capture({
             </li>
           ))}
           {Array.from({ length: uploading }, (_, i) => (
-            <li key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted text-sm text-muted-foreground" aria-live="polite">
+            <li key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted text-sm" aria-live="polite">
               {t("capture.uploading")}
             </li>
           ))}
@@ -183,9 +183,13 @@ export function Capture({
             {hasVoice ? t("capture.recordAgain") : t("capture.record")}
           </Button>
         )}
-        {voice.state === "denied" && <p className="text-sm text-destructive">{t("capture.micDenied")}</p>}
+        {/* The button's own text ticks every second; this only announces start and stop. */}
+        <p role="status" className="sr-only">
+          {voice.state === "recording" ? t("capture.recordingStarted") : hasVoice ? t("capture.recordingSaved") : ""}
+        </p>
+        {voice.state === "denied" && <p role="alert" className="text-sm text-destructive">{t("capture.micDenied")}</p>}
         {voice.speechError && (
-          <p className="text-sm text-destructive">{t("capture.speechFailed", { error: voice.speechError })}</p>
+          <p role="alert" className="text-sm text-destructive">{t("capture.speechFailed", { error: voice.speechError })}</p>
         )}
         <TextAreaField
           name="transcript"

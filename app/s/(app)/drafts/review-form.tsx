@@ -84,6 +84,8 @@ export function ReviewForm({
                 maxLength: max,
                 error: state.fields?.[`${side}.${name}`],
                 required: name === "title" || name === "description",
+                // The app's lang is the maker's UI locale; the text itself is in this side's language.
+                lang: side === "en" ? "en" : language,
               };
               return long ? <TextAreaField key={name} rows={name === "description" ? 5 : 3} {...props} /> : <TextField key={name} {...props} />;
             })}
@@ -118,7 +120,7 @@ export function ReviewForm({
         {guidance && (
           <p className="rounded-lg bg-muted p-3 text-sm">
             {t("review.guidance", { low: usd(guidance.low), high: usd(guidance.high) })}
-            <span className="block text-xs text-muted-foreground">{guidance.rationale}</span>
+            <span className="block text-xs">{guidance.rationale}</span>
           </p>
         )}
         <TextField

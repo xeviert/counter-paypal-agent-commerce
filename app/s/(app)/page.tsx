@@ -40,11 +40,11 @@ async function Home() {
         </Link>
       )}
 
-      <dl className="grid grid-cols-3 gap-2 text-center">
+      <ul className="grid grid-cols-3 gap-2 text-center">
         <Stat label={t("home.toShip")} value={String(summary.toShip)} href="/s/orders" />
         <Stat label={t("home.held")} value={formatMoney(summary.heldCents, "USD", seller.locale)} href="/s/orders" />
         <Stat label={t("home.live")} value={String(summary.live)} href="/s/listings" />
-      </dl>
+      </ul>
 
       <Link href="/s/new" className={buttonVariants({ size: "lg", className: "h-auto flex-col items-start gap-1 p-4 text-left" })}>
         <span className="flex items-center gap-2 text-base">
@@ -80,9 +80,11 @@ async function Home() {
 
 function Stat({ label, value, href }: { label: string; value: string; href: string }) {
   return (
-    <Link href={href} className="flex flex-col gap-1 rounded-lg border p-3">
-      <dd className="text-lg font-semibold tabular-nums">{value}</dd>
-      <dt className="order-first text-xs text-muted-foreground">{label}</dt>
-    </Link>
+    <li>
+      <Link href={href} className="flex h-full flex-col gap-1 rounded-lg border p-3">
+        <span className="text-xs text-muted-foreground">{label}</span>
+        <span className="text-lg font-semibold tabular-nums">{value}</span>
+      </Link>
+    </li>
   );
 }

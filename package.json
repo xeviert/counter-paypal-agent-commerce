@@ -33,7 +33,8 @@
     "spike:mcp": "tsx scripts/spike-mcp-connector.ts",
     "spike:paypal-mcp": "tsx scripts/spike-paypal-mcp.ts",
     "workflows:start": "tsx workflows/index.ts",
-    "spike:workflows": "tsx scripts/spike-workflows.ts"
+    "spike:workflows": "tsx scripts/spike-workflows.ts",
+    "a11y": "tsx scripts/a11y.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
@@ -58,6 +59,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@modelcontextprotocol/client": "2.4.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^24.19.2",
@@ -67,6 +69,7 @@
     "drizzle-zod": "0.8.3",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
+    "playwright": "^1.64.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "typescript-eslint": "8.72.1",

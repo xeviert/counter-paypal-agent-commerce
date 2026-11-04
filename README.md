@@ -31,6 +31,12 @@ Schema changes: edit `lib/db/schema.ts`, then `pnpm db:generate` and commit the 
 
 The database accepts no external connections by default; add your IP under the database's **Access Control** to connect from a laptop.
 
+## Voice + accessibility
+
+- A buyer can shop by voice through Claude's mobile voice mode with Counter added as a custom connector (`/api/mcp`). Tool replies are plain sentences with ids on the last line, so they read aloud well
+- The one step that isn't voice: the buyer approves the payment on PayPal's own page, which is outside Counter's control
+- `pnpm a11y` runs axe (WCAG 2.2 AA) over the buyer pages and the maker app at phone size and fails on any serious or critical issue. Start the server with the same `SESSION_SECRET` and database as the script (it signs a demo maker's cookie and adds a temporary draft): `pnpm build`, `SESSION_SECRET=… DEMO_LOGIN=true pnpm start`, then `SESSION_SECRET=… pnpm a11y [--base-url …] [--all]`. First run: `pnpm exec playwright install chromium`
+
 ## License
 
 [MIT](LICENSE)

@@ -94,10 +94,10 @@ async function Draft({ params }: { params: PageProps<"/s/drafts/[id]">["params"]
       </header>
       {photos.length > 0 && (
         <ul className="flex gap-2 overflow-x-auto">
-          {photos.map((photo) => (
+          {photos.map((photo, i) => (
             <li key={photo.id} className="size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/api/photos/${photo.id}`} alt="" className="size-full object-cover" />
+              <img src={`/api/photos/${photo.id}`} alt={t("capture.photoAlt", { n: i + 1 })} className="size-full object-cover" />
             </li>
           ))}
         </ul>
