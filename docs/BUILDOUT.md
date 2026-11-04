@@ -1,6 +1,6 @@
 # Counter: Buildout Plan
 
-> Status: **active** · Last updated: 2026-11-04 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
+> Status: **active** · Last updated: 2026-11-05 · Deadline: **Thu Nov 12, 12:00 PM PT** (submit Nov 11)
 > What to build: [ARCHITECTURE.md](ARCHITECTURE.md). Why and sandbox evidence: [info-and-planning.md](info-and-planning.md).
 > This doc replaces planning doc §10 as the schedule. Tick boxes here as work lands.
 
@@ -642,21 +642,38 @@ Decided (Nov 4, planning):
 
 ### 7.6 ACP-shaped checkout (cut #3)
 
-With the ChatGPT purchase cut, no demo client calls these endpoints; they exist for the "ACP-shaped" claim, contract tests and the README. Build only if Nov 5 has ≥ 3h left after §7.5, §7.4 and §7.7; otherwise cut it.
+With the ChatGPT purchase cut, no demo client calls these endpoints; they exist for the "ACP-shaped" claim, contract tests and the README. Built Nov 5.
 
-- [ ] Pin the ACP spec version (`API-Version` value + link, here). List the request headers we honor (`Idempotency-Key`, `Request-Id`) and ignore (auth, signature), for the README
-- [ ] `lib/schemas/acp.ts` from the spec; routes under `app/api/acp/checkout_sessions`: `POST` create, `GET /{id}`, `POST /{id}` update, `POST /{id}/complete`, `POST /{id}/cancel`
-- [ ] `lib/shop/acp.ts` mapping onto `acp_sessions` (`0006`):
+- [x] Pin the ACP spec version (`API-Version` value + link, here). List the request headers we honor (`Idempotency-Key`, `Request-Id`) and ignore (auth, signature), for the README
+- [x] `lib/schemas/acp.ts` from the spec; routes under `app/api/acp/checkout_sessions`: `POST` create, `GET /{id}`, `POST /{id}` update, `POST /{id}/complete`, `POST /{id}/cancel`
+- [x] `lib/shop/acp.ts` mapping onto `acp_sessions` (`0006`):
   - Create/update: re-quote with `quoteOrder` on every read (totals are never stored); no stock reserved, no PayPal call
   - `ready_for_payment` once the product is sellable and the buyer country is set and shippable; `messages[]` explain what's missing
-  - `complete` → `createCheckout(db, …, { source: "acp" })` (reserves stock, creates the PayPal order), stores `order_id`, returns the approval link + `/o/{token}` in `links`. Decide and document what `status` means after that (our order isn't paid until the human approves)
+  - `complete` → `createCheckout(db, …, { source: "acp" })` (reserves stock, creates the PayPal order), stores `order_id`, returns `order.permalink_url` = `/o/{token}` and the approval link in an info message (the spec's `links` types are policy pages only). `completed` = the PayPal order exists and waits for the human; payment state lives on the permalink
   - `cancel` → only while no order exists, or the order is still `CheckoutCreated` (reuse the cancel flow)
   - List price only; ACP has no offer field, so negotiation stays MCP-only (README)
-- [ ] `fulfillment_options`: one flat per-order option from the shipping table. `totals` in the spec's money format
-- [ ] Errors in the spec's error shape, mapped from our codes (`OUT_OF_STOCK`, `UNSUPPORTED_COUNTRY`, `SELLER_NOT_RECEIVABLE`, `PRODUCT_UNAVAILABLE` …)
-- [ ] Idempotency (`idempotency_keys`): insert the key first; same key + same `request_hash` → stored response; same key + different body → the spec's conflict error; still in flight (null response) → 409. Sweep purges keys > 24h
-- [ ] `agentFromRequest`, the shared rate limiter, and `acp.<op>` events (source `acp`)
-- [ ] Contract tests per endpoint: happy path, complete twice, update after complete, replay, mismatched replay, order expired by the sweep → `GET` shows it
+- [x] `fulfillment_options`: one flat per-order option from the shipping table. `totals` in the spec's money format
+- [x] Errors in the spec's error shape, mapped from our codes (`OUT_OF_STOCK`, `UNSUPPORTED_COUNTRY`, `SELLER_NOT_RECEIVABLE`, `PRODUCT_UNAVAILABLE` …)
+- [x] Idempotency (`idempotency_keys`): insert the key first; same key + same `request_hash` → stored response; same key + different body → the spec's conflict error; still in flight (null response) → 409. Sweep purges keys > 24h
+- [x] `agentFromRequest`, the shared rate limiter, and `acp.<op>` events (source `acp`)
+- [x] Contract tests per endpoint: happy path, complete twice, update after complete, replay, mismatched replay, order expired by the sweep → `GET` shows it
+
+**Spec pinned** (read Nov 5): **ACP `2025-09-29`**, the initial release ([OpenAPI](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol/blob/main/spec/2025-09-29/openapi/openapi.agentic_checkout.yaml)). Its status enum is exactly `acp_session_status`. Latest stable is `2026-04-17` (capabilities, payment handlers, fulfillment groups, `pending_approval`): not worth it with no client. OpenAI's docs page still shows `API-Version: 2025-09-12` with a slightly different shape
+- Honored: `Idempotency-Key` (echoed), `Request-Id` (echoed); every response sends `API-Version: 2025-09-29`. Ignored: `Authorization`, `Signature`, `Timestamp` (anonymous like `/api/mcp`); the request's `API-Version` is only logged
+- Amounts in minor units, `currency: "usd"`, `links: []`, no `payment_provider` (its enum is `stripe` only)
+
+**Built** (Nov 5)
+- [x] `lib/schemas/acp.ts` (strict request schemas: an unknown field is a 400), `lib/shop/acp.ts` (sessions), `lib/acp/handler.ts` (`handleAcp`: rate limit, body ≤ 64 KB, JSON + Zod → `param` as JSONPath, idempotency, headers, event), `lib/acp/idempotency.ts`, four thin routes
+- [x] Errors: unknown product / 2+ items / bad body → 400 `invalid_request` with `param`; unknown session → 404; update or cancel a closed session → 405; complete before ready → 422 `not_ready_for_payment`; PolicyError at complete → 422 with the code lowercased; PayPal down → 503 `service_unavailable`. Idempotency: different body → 422 `request_not_idempotent`/`idempotency_conflict`, in flight → 409 + `Retry-After: 1`, replay → stored status + body + `Idempotent-Replayed: true`. Responses ≥ 500 free the key for a retry
+- [x] What blocks payment is a session `messages[]` error, not an HTTP error: no address → `missing`; unshippable → `invalid` on `$.fulfillment_address.country`; stock → `out_of_stock`; paused/flagged product or unpayable maker → `invalid` on `$.line_items[0]`
+- [x] Complete claims the session (`ready_for_payment` → `completed`) before calling PayPal, so two completes make one order; a second complete returns the same session. A failure puts it back to `not_ready_for_payment` (recomputed on the next read)
+- [x] `complete` counts against `create_checkout`'s per-agent limit; other ops only against the agent/IP limits. `acp.<op>` events carry session id, HTTP status, status/code, `ms`, User-Agent; never buyer or address. Sweep purges keys > 24 h (`purgeIdempotencyKeys` in `runSweep`)
+- [x] `/llms.txt` lists the endpoint. Tests: `lib/acp/acp.test.ts` (10: the cases above plus errors, events, purge). Full suite 736 passed (1 skipped). Local run (prod build): create → `missing` → update DE → `ready_for_payment`, 55.00 + 32.00 shipping; replay → `Idempotent-Replayed`; cancel → `canceled`, again → 405. `complete` not run locally (the tests mock PayPal)
+
+Decided (Nov 5):
+- `cancel` on a `completed` session cancels its order while it's still `CheckoutCreated` (the spec says 405 for completed; ours isn't paid yet), else 405
+- `buyer` and `fulfillment_address` are stored in `acp_sessions.buyer` to echo them back; only the address country is used. PayPal's approval page still picks the real ship-to address, checked against the quoted region at capture
+- Idempotency scope is op + session id, not the caller (no auth, and claude.ai-style callers share IPs)
 
 ### 7.7 Voice + accessibility beat
 
@@ -674,7 +691,7 @@ With the ChatGPT purchase cut, no demo client calls these endpoints; they exist 
 - AG Studio dashboard on live data + one agent-built widget
 - Operator copilot answers "fees earned this week" (direct PayPal APIs + DB; PayPal MCP sandbox broken, §7.4)
 - Voice-only purchase through Claude voice mode recorded
-- `/feed.json`, `/llms.txt`, JSON-LD validate; ACP contract tests pass
+- `/feed.json`, `/llms.txt`, JSON-LD validate; ACP contract tests pass ✅ (Nov 5, locally)
 
 ---
 

@@ -3,6 +3,7 @@ import type { Tx } from "@/lib/db";
 import { products, sellers } from "@/lib/db/schema";
 import { TOOL_INFO } from "@/lib/mcp/tools";
 import { LIMITS } from "@/lib/mcp/rate-limit";
+import { ACP_API_VERSION } from "@/lib/schemas/acp";
 import { sellableConditions } from "./catalog";
 import { MAX_OFFERS } from "./offers";
 import { productUrl } from "./urls";
@@ -52,6 +53,11 @@ export function llmsTxt(baseUrl: string, sampleUrl?: string): string {
     "4. create_checkout with productId (list price) or offerId (agreed price)",
     "5. A human approves every payment on PayPal at approvalUrl; nothing is charged before that",
     "6. get_order_status with the statusToken once the buyer says they approved",
+    "",
+    "## ACP checkout",
+    "",
+    `- ${baseUrl}/api/acp/checkout_sessions: Agentic Commerce Protocol checkout (API-Version ${ACP_API_VERSION}), ` +
+      "one product per session at list price. complete returns a PayPal approval link instead of taking a payment token",
     "",
     "## Rules",
     "",

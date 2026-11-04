@@ -1,4 +1,5 @@
 import { and, eq, inArray, isNotNull, lte, notExists, or, sql } from "drizzle-orm";
+import { purgeIdempotencyKeys } from "@/lib/acp/idempotency";
 import type { Tx } from "@/lib/db";
 import { expireStaleCheckouts } from "@/lib/db/orders";
 import { notifications, orders, products } from "@/lib/db/schema";
@@ -84,5 +85,6 @@ export async function runSweep(db: Tx, now = new Date()) {
     "release retry",
   );
   const reminders = await sendShipReminders(db, now);
-  return { expired, staleDrafts, released, retried, reminders };
+  const idempotencyKeys = await purgeIdempotencyKeys(db, now);
+  return { expired, staleDrafts, released, retried, reminders, idempotencyKeys };
 }

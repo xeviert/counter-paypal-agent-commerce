@@ -420,9 +420,12 @@ Agents are anonymous. Built on `@modelcontextprotocol/server` v2 with no session
 
 ### 7.2 ACP-shaped checkout (`/api/acp/checkout_sessions`)
 
-`POST /` create · `POST /{id}` update · `POST /{id}/complete` · `POST /{id}/cancel`, backed by the same `lib` code as the MCP tools.
+`POST /` create · `GET /{id}` · `POST /{id}` update · `POST /{id}/complete` · `POST /{id}/cancel`, ACP `2025-09-29`, backed by the same `lib` code as the MCP tools (`lib/shop/acp.ts`, HTTP layer `lib/acp/`). Anonymous like `/api/mcp`; `Idempotency-Key` replays come from `idempotency_keys`.
 
-Deviation from ACP: `complete` doesn't accept a delegated payment token. It returns the PayPal approval link, because the human must approve on PayPal. Document this in the README.
+Deviations from ACP (also in the README):
+- `complete` ignores `payment_data` (no delegated token): it creates the PayPal order and returns `status: completed`, `order.permalink_url` = `/o/{statusToken}` and the approval link in an info message, because the human must approve on PayPal. `completed` means "PayPal order created", not "paid"
+- One item per session, list price only (negotiation is MCP-only), no `payment_provider`, `links: []`
+- `cancel` of a `completed` session cancels its order while that's still `CheckoutCreated`
 
 ### 7.3 Static discovery
 

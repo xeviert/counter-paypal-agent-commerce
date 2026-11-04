@@ -31,6 +31,18 @@ Schema changes: edit `lib/db/schema.ts`, then `pnpm db:generate` and commit the 
 
 The database accepts no external connections by default; add your IP under the database's **Access Control** to connect from a laptop.
 
+## ACP checkout
+
+`/api/acp/checkout_sessions` speaks the [Agentic Commerce Protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) checkout API, pinned to `2025-09-29`: `POST /` create, `GET /{id}`, `POST /{id}` update, `POST /{id}/complete`, `POST /{id}/cancel`. Same products, prices, shipping and policy checks as the MCP tools.
+
+- Headers: `Idempotency-Key` (replays the stored response; a different body is a 422) and `Request-Id` are honored and echoed; responses carry `API-Version: 2025-09-29`. `Authorization`, `Signature` and `Timestamp` are ignored: like `/api/mcp`, it's anonymous
+- Deviations: `complete` takes no payment token. It creates a PayPal order and returns `status: completed` with `order.permalink_url` (the order status page) and the PayPal approval link in `messages`; a human approves the payment there. One item per session, list price only (negotiation is MCP-only), `links` is empty. A completed session can still be canceled until the buyer approves
+
+```sh
+curl -X POST "$BASE/api/acp/checkout_sessions" -H 'content-type: application/json' -H 'Idempotency-Key: 1' \
+  -d '{"items":[{"id":"<productId>","quantity":1}],"fulfillment_address":{"name":"Sam","line_one":"1 Main St","city":"Berlin","state":"BE","country":"DE","postal_code":"10115"}}'
+```
+
 ## Voice + accessibility
 
 - A buyer can shop by voice through Claude's mobile voice mode with Counter added as a custom connector (`/api/mcp`). Tool replies are plain sentences with ids on the last line, so they read aloud well

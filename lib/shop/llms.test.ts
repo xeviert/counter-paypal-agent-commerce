@@ -15,6 +15,7 @@ describe("llmsTxt", () => {
   it("says a human approves every payment on PayPal", () => {
     expect(text).toContain("A human approves every payment on PayPal");
     expect(text).toContain("https://counter.test/feed.json");
+    expect(text).toContain("https://counter.test/api/acp/checkout_sessions");
     expect(text).not.toContain("Sample product");
   });
 });
