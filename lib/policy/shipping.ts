@@ -31,9 +31,9 @@ export const SHIPPING_USD_CENTS: Record<SellerCountry, Record<ShippingRegion, Re
   },
 };
 
-const NORTH_AMERICA: ReadonlySet<string> = new Set(["US", "CA", "MX"]);
+export const NORTH_AMERICA: ReadonlySet<string> = new Set(["US", "CA", "MX"]);
 
-const EU: ReadonlySet<string> = new Set([
+export const EU: ReadonlySet<string> = new Set([
   "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "GR", "DE", "HU", "IE",
   "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK", "SI", "ES", "SE",
 ]);
@@ -63,6 +63,16 @@ export function shippingRegion(sellerCountry: SellerCountry, buyerCountry: strin
   if (NORTH_AMERICA.has(buyerCountry)) return "north_america";
   if (EU.has(buyerCountry)) return "eu";
   return "rest_of_world";
+}
+
+/**
+ * Countries a feed or JSON-LD can list for one region. Rest of world has no list: agents get that
+ * quote from `get_product(buyerCountry)`.
+ */
+export function regionCountries(sellerCountry: SellerCountry, region: ShippingRegion): string[] {
+  if (region === "domestic") return [sellerCountry];
+  if (region === "rest_of_world") return [];
+  return [...(region === "north_america" ? NORTH_AMERICA : EU)].filter((c) => c !== sellerCountry);
 }
 
 export function shippingQuote(sellerCountry: SellerCountry, buyerCountry: string, weightClass: WeightClass) {

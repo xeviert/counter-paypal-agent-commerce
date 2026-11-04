@@ -42,7 +42,8 @@ function toSummary(
   };
 }
 
-async function photoIds(db: Tx, productIds: string[]): Promise<Map<string, string[]>> {
+/** Photo ids per product, cover first. */
+export async function photoIds(db: Tx, productIds: string[]): Promise<Map<string, string[]>> {
   const byProduct = new Map<string, string[]>();
   if (productIds.length === 0) return byProduct;
   const rows = await db
@@ -61,6 +62,18 @@ async function photoIds(db: Tx, productIds: string[]): Promise<Map<string, strin
 const tsQuery = (query: string) =>
   sql`(websearch_to_tsquery('english', ${query}) || websearch_to_tsquery('simple', ${query}))`;
 
+/** What agents can find and buy, for queries joining `products` with `sellers` (same rules as `findSellableProduct`). */
+export function sellableConditions(): SQL[] {
+  return [
+    eq(products.status, "live"),
+    eq(products.restrictedFlag, false),
+    // Makers PayPal can't pay right now (revoked consent, receiving off) drop out until they reconnect.
+    isNotNull(sellers.merchantId),
+    eq(sellers.paymentsReceivable, true),
+    eq(sellers.consentStatus, "granted"),
+  ];
+}
+
 export async function searchProducts(
   db: Tx,
   input: z.output<typeof searchProductsInput>,
@@ -68,12 +81,7 @@ export async function searchProducts(
   assertShippable(input.buyerCountry);
   const query = tsQuery(input.query);
   const filters: (SQL | undefined)[] = [
-    eq(products.status, "live"),
-    eq(products.restrictedFlag, false),
-    // Makers PayPal can't pay right now (revoked consent, receiving off) drop out until they reconnect.
-    isNotNull(sellers.merchantId),
-    eq(sellers.paymentsReceivable, true),
-    eq(sellers.consentStatus, "granted"),
+    ...sellableConditions(),
     sql`${products.search} @@ ${query}`,
     input.category && eq(products.category, input.category),
     input.maxPrice !== undefined ? lte(products.listPrice, Math.round(input.maxPrice * 100)) : undefined,
@@ -126,7 +134,7 @@ export async function getProduct(db: Tx, input: z.output<typeof getProductInput>
 /** For `/p/[slug]`. Same rules as get_product. */
 export async function getProductBySlug(db: Tx, slug: string) {
   const found = await findSellableProduct(db, { slug });
-  return { detail: await productDetail(db, found), seller: found.seller };
+  return { detail: await productDetail(db, found), seller: found.seller, product: found.product };
 }
 
 async function productDetail(

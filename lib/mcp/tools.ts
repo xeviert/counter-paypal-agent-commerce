@@ -128,16 +128,73 @@ async function runTool(
   return result;
 }
 
+/** Shop tools in registration order. `/llms.txt` lists them from here, so the text matches `tools/list`. */
+export const TOOL_INFO = [
+  {
+    name: "search_products",
+    title: "Search handmade products",
+    description:
+      "Search handmade goods sold directly by makers in Mexico, the Philippines, Kenya and India. " +
+      "The query can be in any language. Pass buyerCountry to get the shipping cost to the buyer. " +
+      "Prices are per item in USD; approxLocalPrice is a reference only. " +
+      "Call get_product next for the full listing before checking out.",
+  },
+  {
+    name: "get_product",
+    title: "Get product details",
+    description:
+      "Full listing for one product: description, materials, care, the maker's provenance story " +
+      "(in English and the maker's language), dimensions, photos, units available, and shipping " +
+      "to buyerCountry. Use it to answer the buyer's questions and confirm the total before create_checkout.",
+  },
+  {
+    name: "ask_question",
+    title: "Ask about a product",
+    description:
+      "Ask a question about one product (size, materials, care, who made it, shipping, stock). " +
+      "Answers come only from the maker's listing; answered is false when the listing doesn't say.",
+  },
+  {
+    name: "make_offer",
+    title: "Make a price offer",
+    description:
+      "Offer the maker a price per item (USD, shipping not included) when get_product shows negotiable. " +
+      "The maker's side answers accept, counter or reject with a message. Both accept and counter come with a " +
+      "binding price: to buy at it, call create_checkout with the returned offerId (single use, expires in 30 " +
+      "minutes). Up to 3 offers per product per day; later offers see your earlier ones. Offers reserve no stock.",
+  },
+  {
+    name: "create_checkout",
+    title: "Create a PayPal checkout",
+    description:
+      "Creates a PayPal checkout plus flat shipping to buyerCountry: pass productId to buy at the listed price, " +
+      "or offerId from make_offer to buy at the agreed price. " +
+      "The totals returned are final: prices come from the listing or the offer, never from arguments. " +
+      "The human buyer must open approvalUrl and approve the payment on PayPal themselves; nothing is " +
+      "charged before that, and the link expires at expiresAt. The shipping address is picked on PayPal " +
+      "and must be in buyerCountry's shipping region. Keep statusToken private and use it with get_order_status.",
+  },
+  {
+    name: "get_order_status",
+    title: "Get order status",
+    description:
+      "Status of an order from create_checkout: payment state, what happens next, tracking once shipped, " +
+      "and whether the maker has been paid. Check after the buyer says they approved; don't poll in a tight loop.",
+  },
+] as const;
+
+export type ShopToolName = (typeof TOOL_INFO)[number]["name"];
+
+function toolMeta(name: ShopToolName) {
+  const { title, description } = TOOL_INFO.find((t) => t.name === name)!;
+  return { title, description };
+}
+
 export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "search_products",
     {
-      title: "Search handmade products",
-      description:
-        "Search handmade goods sold directly by makers in Mexico, the Philippines, Kenya and India. " +
-        "The query can be in any language. Pass buyerCountry to get the shipping cost to the buyer. " +
-        "Prices are per item in USD; approxLocalPrice is a reference only. " +
-        "Call get_product next for the full listing before checking out.",
+      ...toolMeta("search_products"),
       inputSchema: searchProductsInput,
       outputSchema: searchProductsOutput,
       annotations: { readOnlyHint: true, openWorldHint: false },
@@ -162,11 +219,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "get_product",
     {
-      title: "Get product details",
-      description:
-        "Full listing for one product: description, materials, care, the maker's provenance story " +
-        "(in English and the maker's language), dimensions, photos, units available, and shipping " +
-        "to buyerCountry. Use it to answer the buyer's questions and confirm the total before create_checkout.",
+      ...toolMeta("get_product"),
       inputSchema: getProductInput,
       outputSchema: getProductOutput,
       annotations: { readOnlyHint: true, openWorldHint: false },
@@ -186,10 +239,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "ask_question",
     {
-      title: "Ask about a product",
-      description:
-        "Ask a question about one product (size, materials, care, who made it, shipping, stock). " +
-        "Answers come only from the maker's listing; answered is false when the listing doesn't say.",
+      ...toolMeta("ask_question"),
       inputSchema: askQuestionInput,
       outputSchema: askQuestionOutput,
       annotations: { readOnlyHint: true, openWorldHint: false },
@@ -204,12 +254,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "make_offer",
     {
-      title: "Make a price offer",
-      description:
-        "Offer the maker a price per item (USD, shipping not included) when get_product shows negotiable. " +
-        "The maker's side answers accept, counter or reject with a message. Both accept and counter come with a " +
-        "binding price: to buy at it, call create_checkout with the returned offerId (single use, expires in 30 " +
-        "minutes). Up to 3 offers per product per day; later offers see your earlier ones. Offers reserve no stock.",
+      ...toolMeta("make_offer"),
       inputSchema: makeOfferInput,
       outputSchema: makeOfferOutput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
@@ -232,14 +277,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "create_checkout",
     {
-      title: "Create a PayPal checkout",
-      description:
-        "Creates a PayPal checkout plus flat shipping to buyerCountry: pass productId to buy at the listed price, " +
-        "or offerId from make_offer to buy at the agreed price. " +
-        "The totals returned are final: prices come from the listing or the offer, never from arguments. " +
-        "The human buyer must open approvalUrl and approve the payment on PayPal themselves; nothing is " +
-        "charged before that, and the link expires at expiresAt. The shipping address is picked on PayPal " +
-        "and must be in buyerCountry's shipping region. Keep statusToken private and use it with get_order_status.",
+      ...toolMeta("create_checkout"),
       inputSchema: createCheckoutInput,
       outputSchema: createCheckoutOutput,
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
@@ -260,10 +298,7 @@ export function registerShopTools(server: McpServer, deps: ToolDeps): void {
   server.registerTool(
     "get_order_status",
     {
-      title: "Get order status",
-      description:
-        "Status of an order from create_checkout: payment state, what happens next, tracking once shipped, " +
-        "and whether the maker has been paid. Check after the buyer says they approved; don't poll in a tight loop.",
+      ...toolMeta("get_order_status"),
       inputSchema: getOrderStatusInput,
       outputSchema: getOrderStatusOutput,
       annotations: { readOnlyHint: true, openWorldHint: false },

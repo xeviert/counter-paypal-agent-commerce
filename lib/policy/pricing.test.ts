@@ -5,7 +5,7 @@ import { PolicyError } from "./errors";
 import { platformFeeCents } from "./fees";
 import { approxLocal } from "./fx";
 import { MAX_QUANTITY, quoteOrder, type QuoteInput } from "./quote";
-import { isShippableCountry, sameShippingRegion, SHIPPING_USD_CENTS, shippingRegion } from "./shipping";
+import { isShippableCountry, regionCountries, sameShippingRegion, SHIPPING_USD_CENTS, shippingRegion } from "./shipping";
 
 function policyCode(fn: () => unknown): string | undefined {
   try {
@@ -125,6 +125,19 @@ describe("shipping", () => {
     expect(sameShippingRegion("MX", "MX", "US")).toBe(false);
     expect(sameShippingRegion("MX", "US", undefined)).toBe(false);
     expect(sameShippingRegion("MX", "US", "IR")).toBe(false);
+  });
+
+  it("lists region countries that map back to their region", () => {
+    expect(regionCountries("MX", "domestic")).toEqual(["MX"]);
+    expect(regionCountries("MX", "north_america")).toEqual(["US", "CA"]);
+    expect(regionCountries("PH", "north_america")).toEqual(["US", "CA", "MX"]);
+    expect(regionCountries("MX", "eu")).toHaveLength(27);
+    expect(regionCountries("KE", "rest_of_world")).toEqual([]);
+    for (const seller of SELLER_COUNTRIES) {
+      for (const region of SHIPPING_REGIONS) {
+        for (const c of regionCountries(seller, region)) expect(shippingRegion(seller, c)).toBe(region);
+      }
+    }
   });
 });
 

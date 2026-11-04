@@ -572,7 +572,7 @@ Decided (Nov 4):
 
 ### 7.5 Discovery
 
-Planned Nov 4 for the Nov 5 slot (first, cheapest; §7 day table). Budget ~3 h. Three read-only public surfaces over the same sellable-product filter: `/feed.json`, JSON-LD on `/p/[slug]`, `/llms.txt`.
+Planned Nov 4 for the Nov 5 slot (first, cheapest; §7 day table), built Nov 4. Three read-only public surfaces over the same sellable-product filter: `/feed.json`, JSON-LD on `/p/[slug]`, `/llms.txt`.
 
 **Spec pinned** (read Nov 4, [OpenAI Commerce product feed spec](https://developers.openai.com/commerce/specs/file-upload/products); the page shows no version or date):
 - Required per row: `item_id`, `title` (≤ 150), `description` (plain text, ≤ 5,000), `url`, `brand`, `seller_name`, `image_url`, `availability` (`in_stock` | `out_of_stock` | `pre_order` | `backorder` | `unknown`), `price` as `"79.99 USD"`. Unknown optional fields are left out, never `null` / `"n/a"`
@@ -589,36 +589,46 @@ Facts from the code (Nov 4, before building):
 - Seed products have no photos (`seed/photos/` holds only the README, §5.7). `image_url` is required, so the feed stays near-empty until real photos land (§8.1 long-lead)
 
 **Shared** (`lib/shop/catalog.ts`, `lib/policy/shipping.ts`)
-- [ ] Export `sellableConditions()` (the five predicates) and use it in `searchProducts` and the feed; export `photoIds`
-- [ ] Export `NORTH_AMERICA`, `EU` and `regionCountries(sellerCountry, region)`: `domestic` = maker country, `north_america` / `eu` minus the maker country, `rest_of_world` = none listed (agents get that quote from `get_product(buyerCountry)`)
+- [x] Export `sellableConditions()` (the five predicates) and use it in `searchProducts` and the feed; export `photoIds`
+- [x] Export `NORTH_AMERICA`, `EU` and `regionCountries(sellerCountry, region)`: `domestic` = maker country, `north_america` / `eu` minus the maker country, `rest_of_world` = none listed (agents get that quote from `get_product(buyerCountry)`)
 
 **Feed** (`lib/schemas/feed.ts`, `lib/shop/feed.ts`, `app/feed.json/route.ts`)
-- [ ] `lib/schemas/feed.ts`: Zod row schema from the spec above (money `^\d+\.\d{2} [A-Z]{3}$`, availability enum, absolute `https` URLs, title/description lengths, dimensions with ≥ 2 sides)
-- [ ] `productFeed(db)`: one query with `sellableConditions()` + photos. Mapping:
+- [x] `lib/schemas/feed.ts`: Zod row schema from the spec above (money `^\d+\.\d{2} [A-Z]{3}$`, availability enum, absolute `https` URLs, title/description lengths, dimensions with ≥ 2 sides)
+- [x] `productFeed(db)`: one query with `sellableConditions()` + photos. Mapping:
   - `item_id` = product id; `title`, `description`, `material` = EN listing; `url` = absolute `productUrl(slug)`
   - `brand` = `seller_name` = maker name (Counter is the marketplace; the maker is the PayPal payee)
   - `image_url` = first photo, the rest → `additional_image_urls`
   - `availability` from `stock - reserved`; `price` from `list_price` + `currency`; `condition: "new"`; `product_category` = `Handmade > <category label>`; `dimensions` from `listing.dimensions` in cm
   - `shipping` = one entry per country from `regionCountries` × `shippingQuote`, service class `Standard`
   - `is_eligible_search: true`, `is_eligible_checkout: false` (no OpenAI checkout integration; a human approves on PayPal)
-- [ ] Rows without a photo are skipped (the spec rejects them), counted in the response's `skipped` and a log line. Sold-out products stay in as `out_of_stock`
-- [ ] Body `{ spec: <spec URL>, generated_at, skipped, items: [...] }`. Route: `connection()` → cached helper (`'use cache'`, `cacheLife("minutes")`) → `Response.json` with `Cache-Control: public, max-age=300`. A paused or flagged product can linger ~5 min; accepted, since `get_product` and checkout re-check everything
+- [x] Rows without a photo are skipped (the spec rejects them), counted in the response's `skipped` and a log line. Sold-out products stay in as `out_of_stock`
+- [x] Body `{ spec: <spec URL>, generated_at, skipped, items: [...] }`. Route: `connection()` → cached helper (`'use cache'`, `cacheLife("minutes")`) → `Response.json` with `Cache-Control: public, max-age=300`. A paused or flagged product can linger ~5 min; accepted, since `get_product` and checkout re-check everything
 
 **JSON-LD** (`lib/shop/jsonld.ts`, `app/p/[slug]/page.tsx`)
-- [ ] `productJsonLd(detail, seller)`: `Product` with `name`, `description`, `image[]` (absolute), `sku` (id), `brand` `{ "@type": "Brand", name: maker }`, `material`, and one `Offer`: `price` (decimal string), `priceCurrency`, `availability` (`https://schema.org/InStock` | `OutOfStock`), `itemCondition` `NewCondition`, `url`, `shippingDetails[]` = one `OfferShippingDetails` per listed region (`shippingRate`, `shippingDestination` `DefinedRegion { addressCountry: [...] }`)
-- [ ] `serializeJsonLd(obj)`: `JSON.stringify`, then `<` → `<` (Next JSON-LD guide) plus U+2028/U+2029. Listing text is model- and maker-written, so a `</script>` in it would otherwise inject markup
-- [ ] Rendered in the `Product` component as `<script type="application/ld+json">`, only when the product is sellable (not on the "isn't for sale" branch)
+- [x] `productJsonLd(detail, seller)`: `Product` with `name`, `description`, `image[]` (absolute), `sku` (id), `brand` `{ "@type": "Brand", name: maker }`, `material`, and one `Offer`: `price` (decimal string), `priceCurrency`, `availability` (`https://schema.org/InStock` | `OutOfStock`), `itemCondition` `NewCondition`, `url`, `shippingDetails[]` = one `OfferShippingDetails` per listed region (`shippingRate`, `shippingDestination` `DefinedRegion { addressCountry: [...] }`)
+- [x] `serializeJsonLd(obj)`: `JSON.stringify`, then `<` → `\u003c` (Next JSON-LD guide) plus U+2028/U+2029. Listing text is model- and maker-written, so a `</script>` in it would otherwise inject markup
+- [x] Rendered in the `Product` component as `<script type="application/ld+json">`, only when the product is sellable (not on the "isn't for sale" branch)
 - [ ] After deploy: Google Rich Results Test + validator.schema.org on a Render product URL; screenshot for the README. A missing `hasMerchantReturnPolicy` is a warning, not an error (no return policy exists; leave it out)
 
 **`/llms.txt`** (`lib/shop/llms.ts`, `app/llms.txt/route.ts`)
-- [ ] Export `TOOL_INFO` (`{ name, title, description }` in registration order) from `lib/mcp/tools.ts` and register the tools from it, so the text can't drift from the server. `ping` stays out of `llms.txt`
-- [ ] llmstxt.org shape, `text/plain; charset=utf-8`, `connection()` first so URLs come from `APP_BASE_URL`: `# Counter`, a one-paragraph summary, the MCP URL (`/api/mcp`, Streamable HTTP, stateless, no sign-in), one line per tool (title + first sentence of its description), the buy flow (search → `get_product` → ask/offer → `create_checkout` → **a human approves every payment on PayPal** → `get_order_status`), USD only with `buyerCountry` required, limits from `LIMITS` + `MAX_OFFERS`, links to `/feed.json` and a sample `/p/[slug]`. ACP endpoint lines only if §7.6 ships
+- [x] Export `TOOL_INFO` (`{ name, title, description }` in registration order) from `lib/mcp/tools.ts` and register the tools from it, so the text can't drift from the server. `ping` stays out of `llms.txt`
+- [x] llmstxt.org shape, `text/plain; charset=utf-8`, `connection()` first so URLs come from `APP_BASE_URL`: `# Counter`, a one-paragraph summary, the MCP URL (`/api/mcp`, Streamable HTTP, stateless, no sign-in), one line per tool (title + first sentence of its description), the buy flow (search → `get_product` → ask/offer → `create_checkout` → **a human approves every payment on PayPal** → `get_order_status`), USD only with `buyerCountry` required, limits from `LIMITS` + `MAX_OFFERS`, links to `/feed.json` and a sample `/p/[slug]`. ACP endpoint lines only if §7.6 ships
 
 **Tests** (`lib/shop/feed.test.ts`, `lib/shop/jsonld.test.ts`, `lib/shop/llms.test.ts`; DB tests with `seedProduct` / `seedPhoto` and `stubPayPalEnv`)
-- [ ] Every feed row parses against the Zod schema. Absent: `draft`, `review`, `paused`, live + `restricted_flag`, maker not receivable, consent revoked, no photo. Sold out → `out_of_stock`. Shipping for an MX maker matches `shippingQuote` (MX domestic, US/CA north_america, DE eu, no rest-of-world rows)
-- [ ] `searchProducts` with no query returns the same ids as the feed (shared predicate)
-- [ ] JSON-LD: a title containing `</script><script>alert(1)</script>` serializes with no `<` and round-trips through `JSON.parse`; no floor, stock count or maker email in the output
-- [ ] `llms.txt` lists every `TOOL_INFO` tool except `ping`, the absolute MCP URL and the PayPal approval line
+- [x] Every feed row parses against the Zod schema. Absent: `draft`, `review`, `paused`, live + `restricted_flag`, maker not receivable, consent revoked, no photo. Sold out → `out_of_stock`. Shipping for an MX maker matches `shippingQuote` (MX domestic, US/CA north_america, DE eu, no rest-of-world rows)
+- [x] `searchProducts` with no query returns the same ids as the feed (shared predicate)
+- [x] JSON-LD: a title containing `</script><script>alert(1)</script>` serializes with no `<` and round-trips through `JSON.parse`; no floor, stock count or maker email in the output
+- [x] `llms.txt` lists every `TOOL_INFO` tool except `ping`, the absolute MCP URL and the PayPal approval line
+
+**Built** (Nov 4)
+- [x] `sellableConditions()` is the one SQL predicate for search and the feed; `getProductBySlug` also returns the product row (weight class for the JSON-LD shipping rates)
+- [x] `TOOL_INFO` holds the six tools' names, titles and descriptions; `registerShopTools` spreads `toolMeta(name)` from it
+- [x] `/llms.txt` links one sellable product (`sampleProductUrl`) and sends `Cache-Control: public, max-age=300`
+- [x] Tests: `lib/shop/feed.test.ts` (also covers `sampleProductUrl`), `jsonld.test.ts`, `llms.test.ts`, `regionCountries` in `lib/policy/pricing.test.ts`. Full suite 725 passed (1 skipped)
+- [x] Local run (prod build, local DB): `/feed.json` 200 with `skipped: 30, items: []` (seed has no photos, expected); `/llms.txt` lists the six tools; `/p/lidded-rattan-basket` has the JSON-LD script (PH maker: 1 + 3 + 27 shipping countries)
+
+**Open**
+- [ ] On Render: exit checks below. The feed stays empty until real photos land (§8.1); one photo on a seeded product via `/s` is enough for the spot check
 
 **Exit (on Render):** `/feed.json` rows validate (test + one manual spot check); Rich Results Test detects a Product on `/p/<slug>`; `/llms.txt` shows the Render MCP URL and all six tools
 

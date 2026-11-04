@@ -7,8 +7,9 @@ import { PolicyError } from "@/lib/policy/errors";
 import type { Money } from "@/lib/schemas/common";
 import type { ListingText } from "@/lib/schemas/listing";
 import { getProductBySlug } from "@/lib/shop/catalog";
+import { productJsonLd, serializeJsonLd } from "@/lib/shop/jsonld";
 
-// Plain product page for humans; JSON-LD lands in P3 (BUILDOUT §7.5). Buying happens through an agent.
+// Plain product page for humans, with schema.org JSON-LD for crawlers (BUILDOUT §7.5). Buying happens through an agent.
 
 export const metadata: Metadata = { title: "Handmade on Counter" };
 
@@ -38,11 +39,15 @@ async function Product({ params }: { params: PageProps<"/p/[slug]">["params"] })
     }
     throw err;
   }
-  const { detail: p, seller } = found;
+  const { detail: p, seller, product } = found;
   const where = [seller.locality, regionNames.of(p.maker.country)].filter(Boolean).join(", ");
 
   return (
     <article className="flex flex-col gap-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(productJsonLd(p, product.weightClass)) }}
+      />
       {p.photoUrls.length > 0 && (
         <div className="grid grid-cols-2 gap-2">
           {p.photoUrls.map((src, i) => (
