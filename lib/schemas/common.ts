@@ -61,6 +61,8 @@ export const NOTIFICATION_KINDS = [
   "ship_reminder",
   "refunded",
   "dispute_resolved",
+  "listing_approved",
+  "listing_rejected",
 ] as const;
 
 /** A negotiation outcome (ARCHITECTURE §5.2). Lives in `offers`, never in the order state machine. */

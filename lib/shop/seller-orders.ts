@@ -21,7 +21,7 @@ export const MAKER_VISIBLE: readonly OrderStatus[] = [
 ];
 
 /** Funds PayPal is holding for the maker until release. */
-const HELD: readonly OrderStatus[] = ["PaidHeld", "Shipped", "Disputed"];
+export const HELD: readonly OrderStatus[] = ["PaidHeld", "Shipped", "Disputed"];
 
 export type SellerOrder = { order: Order; title: string };
 
@@ -112,7 +112,11 @@ const TRUNC_UNIT: Record<SalesPeriod, string> = { today: "day", week: "week", mo
 
 /** Start of the current day, week (Monday) or month at the maker's midnight. */
 export async function periodStart(db: Tx, country: string, period: SalesPeriod): Promise<Date> {
-  const tz = SELLER_TIME_ZONES[sellerCountry.parse(country)];
+  return periodStartIn(db, SELLER_TIME_ZONES[sellerCountry.parse(country)], period);
+}
+
+/** Same, in any IANA time zone (`"UTC"` for the operator console). */
+export async function periodStartIn(db: Tx, tz: string, period: SalesPeriod): Promise<Date> {
   const [start] = await db.execute<{ since: string | Date }>(
     sql`select date_trunc(${TRUNC_UNIT[period]}, now() at time zone ${tz}) at time zone ${tz} as since`,
   );

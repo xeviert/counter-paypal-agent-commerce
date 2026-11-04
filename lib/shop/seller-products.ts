@@ -20,6 +20,7 @@ export async function listSellerProducts(db: Tx, sellerId: string) {
       stock: products.stock,
       reserved: products.reserved,
       autoNegotiate: products.autoNegotiate,
+      restrictedFlag: products.restrictedFlag,
     })
     .from(products)
     .where(eq(products.sellerId, sellerId))
@@ -39,7 +40,10 @@ export type ProductAction = "pause" | "resume";
 
 type Seller = Parameters<typeof canPublish>[0] & { id: string };
 
-/** Pause hides a live listing from agents; resume (or first publish of a draft) needs a payable maker. */
+/**
+ * Pause hides a live listing from agents; resume (or first publish of a draft) needs a payable maker.
+ * A listing an operator rejected stays paused with its flag set; only /ops can bring it back.
+ */
 export async function setProductStatus(db: Tx, seller: Seller, productId: string, action: ProductAction): Promise<boolean> {
   if (!uuid.safeParse(productId).success) return false;
   const from = action === "pause" ? (["live"] as const) : (["paused", "draft"] as const);
@@ -48,7 +52,14 @@ export async function setProductStatus(db: Tx, seller: Seller, productId: string
   const [row] = await db
     .update(products)
     .set({ status: to, publishedAt: sql`coalesce(${products.publishedAt}, now())` })
-    .where(and(eq(products.id, productId), eq(products.sellerId, seller.id), inArray(products.status, [...from])))
+    .where(
+      and(
+        eq(products.id, productId),
+        eq(products.sellerId, seller.id),
+        inArray(products.status, [...from]),
+        eq(products.restrictedFlag, false),
+      ),
+    )
     .returning({ id: products.id });
   if (!row) return false;
   await db.insert(events).values({

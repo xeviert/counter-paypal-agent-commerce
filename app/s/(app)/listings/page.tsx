@@ -79,7 +79,7 @@ async function Listings() {
                       <StatusButton productId={p.id} action="pause" label={t("listings.pause")} />
                     </>
                   )}
-                  {(p.status === "paused" || p.status === "draft") && publishable && (
+                  {(p.status === "paused" || p.status === "draft") && publishable && !p.restrictedFlag && (
                     <StatusButton
                       productId={p.id}
                       action="resume"
@@ -98,6 +98,9 @@ async function Listings() {
                   {t(p.autoNegotiate ? "listings.negotiateDisable" : "listings.negotiateEnable")}
                 </Button>
               </form>
+              {p.status === "paused" && p.restrictedFlag && (
+                <p className="text-xs text-destructive">{t("listings.rejected")}</p>
+              )}
               {p.reserved > 0 && <p className="text-xs text-muted-foreground">{t("listings.reserved", { count: p.reserved })}</p>}
             </li>
           ))}

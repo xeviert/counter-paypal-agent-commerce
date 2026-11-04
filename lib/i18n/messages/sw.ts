@@ -192,6 +192,7 @@ export const sw: Messages = {
     negotiateOff: "Bei maalum: mawakala hulipa bei iliyoorodheshwa.",
     negotiateEnable: "Pokea ofa",
     negotiateDisable: "Bei maalum",
+    rejected: "Counter haikuidhinisha bidhaa hii. Sababu iko kwenye Ujumbe.",
   },
   orders: {
     title: "Oda",
@@ -262,6 +263,8 @@ export const sw: Messages = {
     ship_reminder: "{product} ililipwa siku {days} zilizopita. Weka namba ya ufuatiliaji ili PayPal iachilie pesa zako.",
     refunded: "{product}: {amount} zimerejeshwa kwa mnunuzi kupitia PayPal.",
     dispute_resolved: "{product}: mgogoro umefungwa. {outcome}",
+    listing_approved: "{product} imepita ukaguzi wa Counter. Kama bado haijaonekana, ichapishe kutoka kwenye bidhaa zako.",
+    listing_rejected: "{product} haiwezi kuuzwa kwenye Counter: {reason}",
     outcomeMaker: "Umeamuliwa kwa faida yako; pesa zako zitaachiliwa kama kawaida.",
     outcomeBuyer: "Umeamuliwa kwa faida ya mnunuzi, aliyerejeshewa pesa.",
   },

@@ -193,6 +193,7 @@ export const en = {
     negotiateOff: "Fixed price: agents pay the list price.",
     negotiateEnable: "Allow offers",
     negotiateDisable: "Fixed price",
+    rejected: "Counter didn't approve this listing. The reason is in your inbox.",
   },
   orders: {
     title: "Orders",
@@ -263,6 +264,8 @@ export const en = {
     ship_reminder: "{product} was paid {days} days ago. Add tracking so PayPal can release your money.",
     refunded: "{product}: {amount} was refunded to the buyer through PayPal.",
     dispute_resolved: "{product}: the dispute is closed. {outcome}",
+    listing_approved: "{product} passed Counter's review. If it isn't live yet, publish it from your listings.",
+    listing_rejected: "{product} can't be sold on Counter: {reason}",
     outcomeMaker: "It was resolved in your favor; your money will be released as usual.",
     outcomeBuyer: "It was resolved for the buyer, who was refunded.",
   },

@@ -31,7 +31,10 @@ const envSchema = z.object({
   SESSION_SECRET: required.min(32).optional(),
   /** Shows one-tap sign-in as a seeded demo maker on /s/login. For judges; sandbox only. */
   DEMO_LOGIN: z.stringbool().default(false),
-  OPS_PASSWORD: later, // P3 operator console
+  /** Operator console /ops (BUILDOUT §7.4). Unset = /ops 404s. */
+  OPS_PASSWORD: later,
+  /** Read-only /ops login for judges: no actions, no copilot, no buyer details. */
+  OPS_JUDGE_PASSWORD: later,
   /** AG Studio license (BUILDOUT §7.3). Sent to the browser: Studio checks it client-side. Unset = trial watermark. */
   AG_STUDIO_LICENSE_KEY: later,
 });

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import type { Tx } from "@/lib/db";
 import { transition, type EventSource, type Order, type OrderPatch } from "@/lib/db/orders";
-import { orders, products, sellers } from "@/lib/db/schema";
+import { events, orders, products, sellers } from "@/lib/db/schema";
 import { log } from "@/lib/log";
 import { captureDetails, captureOrder, getOrder, shipToCountry } from "@/lib/paypal/orders";
 import { stockState } from "@/lib/policy/lifecycle";
@@ -97,6 +97,16 @@ export async function recordCapture(
       // Money moved for an order we already closed unpaid (expired, canceled). Needs a refund by hand.
       if (target !== "Denied" && stockState(current.status) === "released") {
         log.error("capture on a closed order", fields);
+        // The /ops "needs attention" list reads this row (BUILDOUT §7.4).
+        await tx.insert(events).values({
+          type: "order.capture_on_closed",
+          source: trigger.source,
+          actor: trigger.actor,
+          orderId,
+          sellerId: current.sellerId,
+          productId: current.productId,
+          payload: { status: current.status, captureId: capture.id, captureStatus: capture.status },
+        });
       } else {
         log.info("capture ignored: order already moved on", fields);
       }

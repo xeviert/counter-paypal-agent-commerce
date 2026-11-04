@@ -28,8 +28,10 @@
     "eval:negotiator": "tsx scripts/eval-negotiator.ts",
     "eval:copilot": "tsx scripts/eval-copilot.ts",
     "eval:answerer": "tsx scripts/eval-answerer.ts",
+    "eval:operator": "tsx scripts/eval-operator.ts",
     "spike:webhooks": "tsx scripts/spike-webhooks.ts",
     "spike:mcp": "tsx scripts/spike-mcp-connector.ts",
+    "spike:paypal-mcp": "tsx scripts/spike-paypal-mcp.ts",
     "workflows:start": "tsx workflows/index.ts",
     "spike:workflows": "tsx scripts/spike-workflows.ts"
   },

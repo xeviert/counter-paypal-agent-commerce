@@ -192,6 +192,7 @@ export const fil: Messages = {
     negotiateOff: "Fixed na presyo: babayaran ng mga agent ang nakalistang presyo.",
     negotiateEnable: "Tumanggap ng alok",
     negotiateDisable: "Fixed na presyo",
+    rejected: "Hindi inaprubahan ng Counter ang listing na ito. Nasa inbox mo ang dahilan.",
   },
   orders: {
     title: "Mga order",
@@ -262,6 +263,8 @@ export const fil: Messages = {
     ship_reminder: "Nabayaran ang {product} {days} araw na ang nakalipas. Ilagay ang tracking para mai-release ng PayPal ang pera mo.",
     refunded: "{product}: na-refund sa buyer ang {amount} sa PayPal.",
     dispute_resolved: "{product}: sarado na ang dispute. {outcome}",
+    listing_approved: "Pumasa ang {product} sa review ng Counter. Kung hindi pa ito live, i-publish ito mula sa Mga produkto mo.",
+    listing_rejected: "Hindi puwedeng ibenta ang {product} sa Counter: {reason}",
     outcomeMaker: "Napagpasyahan ito pabor sa iyo; mare-release ang pera mo gaya ng dati.",
     outcomeBuyer: "Napagpasyahan ito pabor sa buyer, na na-refund na.",
   },

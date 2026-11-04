@@ -192,6 +192,7 @@ export const es: Messages = {
     negotiateOff: "Precio fijo: los agentes pagan el precio de lista.",
     negotiateEnable: "Aceptar ofertas",
     negotiateDisable: "Precio fijo",
+    rejected: "Counter no aprobó este producto. El motivo está en tus avisos.",
   },
   orders: {
     title: "Pedidos",
@@ -262,6 +263,8 @@ export const es: Messages = {
     ship_reminder: "{product} se pagó hace {days} días. Agrega la guía para que PayPal libere tu dinero.",
     refunded: "{product}: se reembolsaron {amount} al comprador por PayPal.",
     dispute_resolved: "{product}: la disputa se cerró. {outcome}",
+    listing_approved: "{product} pasó la revisión de Counter. Si aún no está publicado, publícalo desde tus productos.",
+    listing_rejected: "{product} no se puede vender en Counter: {reason}",
     outcomeMaker: "Se resolvió a tu favor; tu dinero se liberará como siempre.",
     outcomeBuyer: "Se resolvió a favor del comprador, que recibió su reembolso.",
   },

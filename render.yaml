@@ -57,6 +57,9 @@ services:
       # Operator console /ops login (BUILDOUT §7.4).
       - key: OPS_PASSWORD
         sync: false
+      # Read-only /ops login for judges (BUILDOUT §10 #8). Optional.
+      - key: OPS_JUDGE_PASSWORD
+        sync: false
       # AG Studio license for /s/dashboard (BUILDOUT §7.3). Unset = trial watermark.
       - key: AG_STUDIO_LICENSE_KEY
         sync: false
