@@ -29,6 +29,8 @@ export const fil: Messages = {
     tooMany: "Masyadong maraming subok. Maghintay ng isang minuto.",
     notFound: "Hindi nahanap",
     paypal: "Hindi ito tinanggap ng PayPal. Subukan ulit pagkalipas ng isang minuto.",
+    pageFailed: "Hindi nag-load ang pahinang ito.",
+    retry: "Subukan ulit",
   },
   auth: {
     loginTitle: "Mag-sign in",
@@ -93,6 +95,9 @@ export const fil: Messages = {
     moveEarlier: "Iusog pauna",
     uploading: "Ina-upload…",
     photoFailed: "Hindi na-upload ang litratong iyan. Subukan ang iba.",
+    offline: "Offline ka. Nandito pa rin ang naidagdag mo; ituloy pagbalik ng koneksyon.",
+    slowUpload: "Nag-a-upload pa. Mabagal ang koneksyon, huwag isara ang pahinang ito.",
+    voiceFailed: "Hindi na-upload ang voice note. Mag-record ulit o mag-type sa ibaba.",
     maxPhotos: "Hanggang 4 na litrato",
     voice: "Ikuwento mo ito",
     voiceHint: "Ano ito, saan gawa, paano mo ginawa, at magkano mo gustong ibenta?",

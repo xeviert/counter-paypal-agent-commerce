@@ -741,16 +741,26 @@ Code items done Nov 5 (a day early); the rest need Render, PayPal's dashboard or
 
 ### 8.3 Demo + judge data
 
-- [ ] Final seed: 3 personas, ~30 products with real photos, §7.3 history (terminal states only)
-- [ ] `scripts/demo-reset.ts`: restore stock, remove filming orders, keep history. Run before each take and after submit
+Code items done Nov 5; the final seed waits on real photos (§8.1 long-lead).
+
+- [ ] Final seed: 3 personas, ~30 products with real photos, §7.3 history (terminal states only). Personas, 30 products and the history exist; waiting on the real photos (§8.1). After photos: `pnpm seed --photos-only`, then `pnpm seed:activity` on Render
+- [x] `scripts/demo-reset.ts` (`pnpm demo:reset [--yes]`, logic in `lib/shop/demo.ts`): demo makers only (no email, same rule as the login picker). Removes orders without a `SEED-` PayPal id (their events + refunds), all offers on their products (so per-agent offer caps reset between takes), drafts, voice notes, unattached photos, copilot chats + proposed actions, inbox notifications, ACP sessions, and products whose slug isn't in `seed/catalog.ts` (listings made on camera). Restores catalog `stock`, `reserved = 0`, `live` for publishable makers; logs one `demo.reset` event. Keeps `seed:activity` history, `seller_dashboards`, MCP events. Dry run (rolled-back transaction) unless `--yes`; prints the DB host. Listing text/prices edited on camera: `pnpm seed`. Tested (`demo.test.ts`); local run removed 1 stale checkout, 1 filmed listing, 1 offer, 2 drafts, 8 copilot messages, restocked 30; second run all zeros
+- [ ] Run `pnpm demo:reset --yes` against Render before each take and after submit (you: needs your IP on the DB allow list)
 - [ ] Judge access: sandbox buyer login, demo makers (`DEMO_LOGIN=true` on Render), `/ops` judge login if §10 #8 says yes
-- [ ] Judging settings: `RELEASE_AFTER_DAYS` (14, or short so judges see a release; decide), `AI_DAILY_CALL_CAP` from the §8.5 cost pass, sweep cron `* * * * *`
+- [x] Judging settings, decided Nov 5: `RELEASE_AFTER_DAYS` stays 14 (judges see a release right away by tapping "I received it" on `/o` after tracking; filming sets 0.002 per §8b.1 and puts 14 back). Sweep cron is already `* * * * *`, `DEMO_LOGIN=true` already in `render.yaml`. `AI_DAILY_CALL_CAP` (300 now) gets sized in the §8.5 cost pass
+- Known: `seed:activity` history is dated relative to the run, so the dashboard's 30-day window thins out over judging. Re-run it weekly against Render (added to §8.6)
 
 ### 8.4 Design pass
 
 - [ ] Maker app at 390px, loading + empty + error on every screen: `/s` home, capture, review, listings, orders, order detail, inbox, copilot, dashboard. Slow-upload and offline messages on capture
-- [ ] `/` explains Counter to a judge on the root URL (it's a one-line stub): what it is, connector URL, links to a product page and the demo maker login
-- [ ] `/p`, `/o`, `/checkout/cancel` match the maker app; EN copy pass; no missing i18n keys
+  - [x] Loading: the 8 maker pages and login/signup had `<Suspense>` with no fallback (blank screen while the DB answered). Now `PageLoading` (`components/maker/page-loading.tsx`): skeleton + `role=status` with `common.loading` in the maker's language. Dashboard and `/p`, `/o` already had one
+  - [x] Error: there was no `error.tsx` or `not-found.tsx` anywhere, so a thrown server error showed Next's default page. Now `app/s/(app)/error.tsx` (maker's language, Try again = Next 16 `retry()`, Home), `app/error.tsx` + `app/global-error.tsx` (EN), `app/not-found.tsx` (EN, for bad `/p` slugs, `/o` tokens and stray URLs)
+  - [x] Capture: offline banner (`online`/`offline` events), photo picker hidden and "Make listing" disabled while offline; an upload tile switches to "Still uploading. Slow connection…" after 8 s; a failed voice upload shows `capture.voiceFailed` instead of an unhandled rejection. New keys `errors.pageFailed`, `errors.retry`, `capture.offline|slowUpload|voiceFailed`; es/fil/sw are Claude-drafted (→ §8.1 native pass)
+  - [ ] Offline + slow upload on the Pixel over real 4G (you; DevTools offline only simulates it)
+  - [x] Review screen (`/s/drafts/[id]` ready state), inbox, copilot, orders, listings: in the scan and screenshots below, nothing to fix. Dashboard at 390 px stays yours (§7.3)
+- [x] `/` explains Counter to a judge on the root URL (was a one-line stub): what it is in 3 lines + "sandbox only"; **buy as an agent** (connector URL from `APP_BASE_URL`, the 4 claude.ai steps, a sample prompt, link to a live product via `sampleProductUrl`); **sell as a maker** (button to `/s/login`); **for agents** (`/llms.txt`, `/feed.json`, ACP endpoint); `/ops` link. The sandbox buyer login stays in README/Devpost, not on a public page
+- [x] `/p`, `/o`, `/checkout/cancel` match the maker app; EN copy pass; no missing i18n keys. Done Nov 5: `/checkout/cancel` is a redirect to `/o`, so it has no screen; `/p` prices now read `$55.00 USD` like `/o`; EN catalog and buyer page copy read through, nothing to change; `i18n.test.ts` already fails on a missing or empty key in any locale
+- 390 px check, Nov 5 (`pnpm a11y --screenshots <dir>`, new flag: full-page PNG per page; `/no-such-page` added to the list): 13 pages, 0 serious/critical axe issues. Fixed: the ACP URL on `/` overflowed the screen; **every `/o` link for a `seed:activity` order was a 404** (seeded tokens were `seed-` + 24 hex, but `statusToken` is exactly 22 chars), now 22-char tokens, so re-run `pnpm seed:activity` on Render. Known, left: `/p/<bad slug>` returns HTTP 200 with the not-found page (Next streams before `notFound()`; it adds `noindex`). Listing titles truncate to one line on `/s/listings` (full title on tap). The dashboard (AG Studio) isn't in the scan
 
 ### 8.5 Docs + fresh clone
 
@@ -764,7 +774,7 @@ Code items done Nov 5 (a day early); the rest need Render, PayPal's dashboard or
 - [x] Anthropic Console spend limit (Nov 3)
 - [ ] Render credits cover web + Postgres + cron + workflows through Dec 15 (check the billing page)
 - [ ] PayPal sandbox app and maker accounts stay active through Dec 15. AG Studio trial ✅ expires ~Dec 18 (§7.3)
-- [ ] Weekly calendar reminder until Dec 15: Console usage, `/api/health`, stock
+- [ ] Weekly calendar reminder until Dec 15: Console usage, `/api/health`, stock (the sweep restocks demo products itself since §8.2), `pnpm seed:activity` against Render so the dashboard keeps 30 days of history
 
 **Freeze gate (Nov 8 EOD):** never-cut path on Render from a clean browser; `e2e:purchase`, `e2e:release`, `e2e:refund`, `eval:injection` pass; CI green. Then `git tag freeze`. After it: fixes, copy, video only.
 

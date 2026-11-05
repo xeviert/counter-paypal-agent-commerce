@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { requireSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
 import { translator } from "@/lib/i18n";
@@ -16,7 +17,7 @@ import { StageProgress } from "../stage-progress";
 
 export default function DraftPage({ params }: PageProps<"/s/drafts/[id]">) {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Draft params={params} />
     </Suspense>
   );

@@ -122,7 +122,7 @@ await db.transaction(async (tx) => {
       const releasedAt = new Date(Math.min(now, capturedAt.getTime() + (2 + rand() * 5) * 86_400_000));
       const ref = hex(17);
       orderRows.push({
-        statusToken: `seed-${hex(24)}`,
+        statusToken: hex(22),
         paypalOrderId: `SEED-${ref}`,
         captureId: `SEED-C${ref}`,
         sellerId: persona.id,

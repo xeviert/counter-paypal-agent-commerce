@@ -30,6 +30,8 @@ export const en = {
     tooMany: "Too many tries. Wait a minute and try again.",
     notFound: "Not found",
     paypal: "PayPal didn't accept this. Try again in a minute.",
+    pageFailed: "This page didn't load.",
+    retry: "Try again",
   },
   auth: {
     loginTitle: "Sign in",
@@ -94,6 +96,9 @@ export const en = {
     moveEarlier: "Move earlier",
     uploading: "Uploading…",
     photoFailed: "That photo didn't upload. Try another.",
+    offline: "You're offline. What you added stays here; add more when you're back online.",
+    slowUpload: "Still uploading. Slow connection, keep this page open.",
+    voiceFailed: "The voice note didn't upload. Record again or type below.",
     maxPhotos: "Up to 4 photos",
     voice: "Tell us about it",
     voiceHint: "What is it, what is it made of, how did you make it, and what price do you want?",

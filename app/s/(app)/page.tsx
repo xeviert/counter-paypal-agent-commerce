@@ -1,6 +1,7 @@
 import { ArrowRightIcon, ChartColumnIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { buttonVariants } from "@/components/ui/button";
 import { requireSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
@@ -10,7 +11,7 @@ import { salesSummary, sellerSummary, type SalesTotals } from "@/lib/shop/seller
 
 export default function MakerHome() {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Home />
     </Suspense>
   );

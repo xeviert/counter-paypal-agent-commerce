@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { Badge } from "@/components/ui/badge";
 import { requireSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
@@ -8,7 +9,7 @@ import { listSellerOrders, makerNet, orderRef } from "@/lib/shop/seller-orders";
 
 export default function OrdersPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Orders />
     </Suspense>
   );

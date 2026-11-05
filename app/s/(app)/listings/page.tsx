@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { changeNegotiation, changeStatus, changeStock } from "./actions";
 
 export default function ListingsPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Listings />
     </Suspense>
   );

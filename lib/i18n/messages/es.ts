@@ -29,6 +29,8 @@ export const es: Messages = {
     tooMany: "Demasiados intentos. Espera un minuto.",
     notFound: "No encontrado",
     paypal: "PayPal no lo aceptó. Inténtalo en un minuto.",
+    pageFailed: "Esta página no cargó.",
+    retry: "Intentar de nuevo",
   },
   auth: {
     loginTitle: "Entrar",
@@ -93,6 +95,9 @@ export const es: Messages = {
     moveEarlier: "Mover antes",
     uploading: "Subiendo…",
     photoFailed: "Esa foto no se subió. Prueba otra.",
+    offline: "No tienes conexión. Lo que agregaste se queda aquí; sigue cuando vuelvas a tener señal.",
+    slowUpload: "Todavía se está subiendo. La conexión es lenta; no cierres esta página.",
+    voiceFailed: "La nota de voz no se subió. Graba otra vez o escribe abajo.",
     maxPhotos: "Hasta 4 fotos",
     voice: "Cuéntanos de tu pieza",
     voiceHint: "¿Qué es, de qué está hecha, cómo la hiciste y en cuánto la quieres vender?",

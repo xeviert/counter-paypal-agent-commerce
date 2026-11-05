@@ -1,5 +1,6 @@
 import { CheckCircle2Icon, CircleIcon } from "lucide-react";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { Button } from "@/components/ui/button";
 import { requireSeller } from "@/lib/auth/seller";
 import { translator } from "@/lib/i18n";
@@ -8,7 +9,7 @@ import { checkOnboarding, connectPayPal } from "./actions";
 
 export default function OnboardingPage({ searchParams }: PageProps<"/s/onboarding">) {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Onboarding searchParams={searchParams} />
     </Suspense>
   );

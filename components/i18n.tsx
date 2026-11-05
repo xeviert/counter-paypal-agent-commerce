@@ -19,3 +19,8 @@ export function useI18n(): I18n {
   if (!value) throw new Error("useI18n must be used inside I18nProvider");
   return value;
 }
+
+/** For UI that also renders outside the maker app, e.g. a loading fallback above the provider. */
+export function useOptionalI18n(): I18n | null {
+  return use(I18nContext);
+}

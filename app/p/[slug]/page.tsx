@@ -14,7 +14,7 @@ import { productJsonLd, serializeJsonLd } from "@/lib/shop/jsonld";
 export const metadata: Metadata = { title: "Handmade on Counter" };
 
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-const fmt = (m: Money) => `${m.value} ${m.currency}`;
+const fmt = (m: Money) => (m.currency === "USD" ? `$${m.value} USD` : `${m.value} ${m.currency}`);
 
 export default function ProductPage({ params }: PageProps<"/p/[slug]">) {
   return (

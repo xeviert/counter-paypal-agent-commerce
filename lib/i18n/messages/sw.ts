@@ -29,6 +29,8 @@ export const sw: Messages = {
     tooMany: "Majaribio mengi mno. Subiri dakika moja.",
     notFound: "Haikupatikana",
     paypal: "PayPal haikukubali hili. Jaribu tena baada ya dakika moja.",
+    pageFailed: "Ukurasa huu haukupakia.",
+    retry: "Jaribu tena",
   },
   auth: {
     loginTitle: "Ingia",
@@ -93,6 +95,9 @@ export const sw: Messages = {
     moveEarlier: "Sogeza mbele",
     uploading: "Inapakia…",
     photoFailed: "Picha hiyo haikupakiwa. Jaribu nyingine.",
+    offline: "Huna mtandao. Ulichoongeza kinabaki hapa; endelea mtandao ukirudi.",
+    slowUpload: "Bado inapakia. Mtandao ni wa polepole, usifunge ukurasa huu.",
+    voiceFailed: "Ujumbe wa sauti haukupakiwa. Rekodi tena au andika hapa chini.",
     maxPhotos: "Hadi picha 4",
     voice: "Tuambie kuhusu bidhaa",
     voiceHint: "Ni nini, imetengenezwa kwa nini, uliitengeneza vipi, na unataka kuiuza kwa bei gani?",

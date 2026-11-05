@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { requireSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
 import { formatDateTime, translator } from "@/lib/i18n";
@@ -9,7 +10,7 @@ import { notificationText } from "./notification-text";
 
 export default function InboxPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Inbox />
     </Suspense>
   );

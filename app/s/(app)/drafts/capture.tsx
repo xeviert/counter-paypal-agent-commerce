@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeftIcon, MicIcon, SquareIcon, XIcon } from "lucide-react";
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { useI18n } from "@/components/i18n";
 import { FormError, TextAreaField } from "@/components/maker/field";
 import { useVoice, type Recording } from "@/components/maker/use-voice";
@@ -12,6 +12,20 @@ import { AddPhotoTiles } from "./photo-inputs";
 
 const MAX_PHOTOS = 4;
 const MAX_SIDE = 1280;
+const SLOW_UPLOAD_MS = 8000;
+
+function subscribeOnline(onChange: () => void) {
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
+  return () => {
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
+  };
+}
+
+function useOnline() {
+  return useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true);
+}
 
 /**
  * Re-encodes on the phone before upload: fits 1280px, JPEG (iOS Safari can't encode WebP), and the
@@ -47,6 +61,8 @@ export function Capture({
   const draftRef = useRef(initial?.draftId);
   const [photos, setPhotos] = useState<Photo[]>(initial?.photos ?? []);
   const [uploading, setUploading] = useState(0);
+  const [slow, setSlow] = useState(false);
+  const online = useOnline();
   const [error, setError] = useState<MessageKey>();
   const [transcript, setTranscript] = useState(initial?.transcript ?? "");
   const [hasVoice, setHasVoice] = useState(initial?.hasVoice ?? false);
@@ -64,10 +80,12 @@ export function Capture({
     // Cleared now so picking the same photo again still fires onChange.
     input.value = "";
     if (!files.length) return;
+    if (!navigator.onLine) return setError("capture.offline");
     setError(undefined);
     // One at a time: the first upload creates the draft the rest attach to.
     for (const file of files.slice(0, MAX_PHOTOS - photos.length)) {
       setUploading((n) => n + 1);
+      const timer = setTimeout(() => setSlow(true), SLOW_UPLOAD_MS);
       try {
         const form = new FormData();
         form.set("photo", await resizeToJpeg(file), "photo.jpg");
@@ -82,6 +100,8 @@ export function Capture({
       } catch {
         setError("capture.photoFailed");
       } finally {
+        clearTimeout(timer);
+        setSlow(false);
         setUploading((n) => n - 1);
       }
     }
@@ -108,16 +128,21 @@ export function Capture({
     form.set("audio", new File([recording.blob], "voice", { type: recording.mime }));
     form.set("durationMs", String(recording.durationMs));
     if (draftRef.current) form.set("draftId", draftRef.current);
-    const result = await uploadVoice(form);
-    if (!result.ok) return setError(result.error);
-    adoptDraft(result.draftId);
-    setHasVoice(true);
+    try {
+      const result = await uploadVoice(form);
+      if (!result.ok) return setError(result.error);
+      adoptDraft(result.draftId);
+      setHasVoice(true);
+    } catch {
+      setError("capture.voiceFailed");
+    }
   }
 
   const voice = useVoice({ lang: LOCALE_TAGS[locale], onTranscript: setTranscript, onRecorded: (r) => void onRecorded(r) });
 
   function onSubmit() {
     setError(undefined);
+    if (!navigator.onLine) return setError("capture.offline");
     if (!draftRef.current || photos.length === 0) return setError("capture.needPhoto");
     if (!transcript.trim() && !hasVoice) return setError("capture.needWords");
     const draftId = draftRef.current;
@@ -130,7 +155,12 @@ export function Capture({
   return (
     <div className="flex flex-col gap-6">
       <h1 className="font-heading text-2xl font-semibold tracking-tight">{t("capture.title")}</h1>
-      <FormError error={error} />
+      {!online && (
+        <p role="status" className="rounded-lg bg-muted p-3 text-sm">
+          {t("capture.offline")}
+        </p>
+      )}
+      <FormError error={error === "capture.offline" && !online ? undefined : error} />
 
       <section className="flex flex-col gap-3">
         <div>
@@ -157,11 +187,11 @@ export function Capture({
             </li>
           ))}
           {Array.from({ length: uploading }, (_, i) => (
-            <li key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted text-sm" aria-live="polite">
-              {t("capture.uploading")}
+            <li key={`uploading-${i}`} className="flex aspect-square items-center justify-center rounded-lg bg-muted p-2 text-center text-sm" aria-live="polite">
+              {slow ? t("capture.slowUpload") : t("capture.uploading")}
             </li>
           ))}
-          {photos.length + uploading < MAX_PHOTOS && <AddPhotoTiles onFiles={(input) => void onFiles(input)} />}
+          {online && photos.length + uploading < MAX_PHOTOS && <AddPhotoTiles onFiles={(input) => void onFiles(input)} />}
         </ul>
       </section>
 
@@ -202,7 +232,7 @@ export function Capture({
         />
       </section>
 
-      <Button type="button" size="lg" className="h-12 text-base" onClick={onSubmit} disabled={submitting || uploading > 0 || voice.state === "recording"}>
+      <Button type="button" size="lg" className="h-12 text-base" onClick={onSubmit} disabled={!online || submitting || uploading > 0 || voice.state === "recording"}>
         {t("capture.makeListing")}
       </Button>
     </div>

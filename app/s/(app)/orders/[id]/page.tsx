@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { Badge } from "@/components/ui/badge";
 import { requireSeller, type SessionSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
@@ -15,7 +16,7 @@ import { TrackingForm } from "../tracking-form";
 
 export default function OrderPage({ params }: PageProps<"/s/orders/[id]">) {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <OrderDetail params={params} />
     </Suspense>
   );

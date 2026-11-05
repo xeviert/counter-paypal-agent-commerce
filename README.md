@@ -35,6 +35,8 @@ Schema changes: edit `lib/db/schema.ts`, then `pnpm db:generate` and commit the 
 
 The database accepts no external connections by default; add your IP under the database's **Access Control** to connect from a laptop.
 
+Demo data: `pnpm seed` (makers + products), `pnpm seed:activity` (30 days of dashboard history), `pnpm demo:reset [--yes]` (before a demo or filming take: removes test orders, offers, drafts, chats and listings made on camera, restores stock; demo makers only, dry run without `--yes`). The root URL `/` explains Counter to visitors and links the connector URL, a product page and the demo maker login.
+
 ## ACP checkout
 
 `/api/acp/checkout_sessions` speaks the [Agentic Commerce Protocol](https://github.com/agentic-commerce-protocol/agentic-commerce-protocol) checkout API, pinned to `2025-09-29`: `POST /` create, `GET /{id}`, `POST /{id}` update, `POST /{id}/complete`, `POST /{id}/cancel`. Same products, prices, shipping and policy checks as the MCP tools.

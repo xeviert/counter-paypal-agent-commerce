@@ -1,11 +1,12 @@
 // axe-core scan of the buyer pages and the maker app at phone size (BUILDOUT §7.7).
-// Usage: pnpm a11y [--base-url http://localhost:3000] [--all]
+// Usage: pnpm a11y [--base-url http://localhost:3000] [--all] [--screenshots <dir>]
 //
 // Run against a server on the same database and SESSION_SECRET as this script: it signs a demo maker's
 // cookie itself and adds a throwaway `ready` draft for the review screen, removed at the end.
 // Exits 1 on any serious or critical violation (--all also prints moderate/minor ones).
 // /checkout/cancel isn't scanned: it cancels the order, then redirects to the /o page scanned here.
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
+import { join } from "node:path";
 import { parseArgs } from "node:util";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
@@ -23,6 +24,7 @@ const { values } = parseArgs({
   options: {
     "base-url": { type: "string", default: "http://localhost:3000" },
     all: { type: "boolean", default: false },
+    screenshots: { type: "string" },
   },
 });
 const base = values["base-url"].replace(/\/+$/, "");
@@ -74,6 +76,7 @@ const pages = [
   { path: `/p/${product.slug}`, maker: false },
   { path: `/o/${order.statusToken}`, maker: false },
   { path: "/s/login", maker: false },
+  { path: "/no-such-page", maker: false },
   { path: "/s", maker: true },
   { path: "/s/new", maker: true },
   { path: `/s/drafts/${draft!.id}`, maker: true },
@@ -84,6 +87,7 @@ const pages = [
   { path: "/s/copilot", maker: true },
 ];
 
+if (values.screenshots) mkdirSync(values.screenshots, { recursive: true });
 const browser = await chromium.launch();
 let blocking = 0;
 try {
@@ -105,6 +109,10 @@ try {
     for (const v of shown) {
       console.log(`     ${v.impact} ${v.id}: ${v.help}`);
       for (const node of v.nodes.slice(0, 5)) console.log(`       ${node.target.join(" ")}`);
+    }
+    if (values.screenshots) {
+      const name = path === "/" ? "root" : path.slice(1).replace(/[^\w-]+/g, "_").slice(0, 40);
+      await page.screenshot({ path: join(values.screenshots, `${name}.png`), fullPage: true });
     }
     await page.close();
   }

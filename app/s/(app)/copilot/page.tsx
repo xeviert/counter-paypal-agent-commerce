@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { requireSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
 import { COPILOT_TURN_LIMIT, latestConversation } from "@/lib/shop/copilot";
@@ -6,7 +7,7 @@ import { CopilotChat } from "./copilot-chat";
 
 export default function CopilotPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<PageLoading />}>
       <Copilot />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PageLoading } from "@/components/maker/page-loading";
 import { Button } from "@/components/ui/button";
 import { getDb } from "@/lib/db";
 import { getEnv } from "@/lib/env";
@@ -15,7 +16,7 @@ export default function LoginPage({ searchParams }: PageProps<"/s/login">) {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 p-6">
       <p className="text-sm font-medium text-muted-foreground">Counter</p>
-      <Suspense>
+      <Suspense fallback={<PageLoading />}>
         <PublicShell searchParams={searchParams} path="/s/login">
           {({ locale, t }) => (
             <>
