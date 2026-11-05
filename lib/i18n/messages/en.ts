@@ -367,6 +367,7 @@ export const en = {
       orderList: "Orders",
       agentsByProduct: "Agent activity by product",
       agentsByDay: "Agent activity by week",
+      payoutTimeline: "When you get paid",
     },
     fields: {
       day: "Day",
@@ -388,12 +389,27 @@ export const en = {
       stage: "Agent step",
       stageOrder: "Step order",
       count: "Times",
+      payoutDay: "Payout day",
     },
     payout: {
       pending: "Payment pending",
       held: "Held by PayPal",
       released: "Paid to you",
       refunded: "Refunded",
+    },
+    timeline: {
+      order: "Order",
+      start: "Buyer paid",
+      end: "Payout day",
+      value: "Amount",
+      status: "Payout",
+      paid: "Paid to you",
+      scheduled: "Release date set",
+      waiting: "Waiting for tracking",
+      paidOn: "Paid {date}",
+      releasesOn: "PayPal releases {date}",
+      today: "Today",
+      empty: "No payouts in this period.",
     },
     stages: {
       search: "Found in search",
@@ -416,6 +432,10 @@ export const en = {
         questions: {
           label: "Agent questions",
           prompt: "Which of my products do shopping agents ask about most?",
+        },
+        payday: {
+          label: "When do I get paid?",
+          prompt: "When will PayPal pay me for my recent orders?",
         },
       },
       errors: {

@@ -54,6 +54,25 @@ describe.skipIf(!testDatabaseUrl)("maker dashboard (DB)", () => {
       for (const secret of ["Jane", "jane@example.com", "Main St", "statusToken", seller.merchantId!]) expect(json).not.toContain(secret);
     });
 
+    it("dates each payout: release day when paid, ETA while held, none before shipping or after a refund", async () => {
+      const { seller, product } = await seedProduct(db);
+      const sale = (hour: number, patch: Partial<typeof orders.$inferInsert>) =>
+        db.insert(orders).values({ ...orderValues(seller.id, product.id), capturedAt: new Date(Date.UTC(2026, 9, 20, hour)), ...patch });
+      // 02:00 UTC on Nov 1 is still Oct 31 in Mexico City.
+      await sale(11, { status: "Released", releasedAt: new Date("2026-11-01T02:00:00Z"), releaseDueAt: new Date("2026-11-03T12:00:00Z") });
+      await sale(12, { status: "Shipped", releaseDueAt: new Date("2026-11-09T12:00:00Z") });
+      await sale(13, { status: "PaidHeld" });
+      await sale(14, { status: "Refunded", releaseDueAt: new Date("2026-11-09T12:00:00Z") });
+
+      const data = await dashboardDataset(db, seller, { now: new Date("2026-11-04T12:00:00Z") });
+      expect(data.orders.map((o) => [o.payout, o.payoutDay])).toEqual([
+        ["released", "2026-10-31"],
+        ["held", "2026-11-09"],
+        ["held", null],
+        ["refunded", null],
+      ]);
+    });
+
     it("counts agent steps per product, including search results, and only the maker's", async () => {
       const { seller, product } = await seedProduct(db);
       const { product: theirs } = await seedProduct(db);

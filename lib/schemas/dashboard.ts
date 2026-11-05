@@ -19,6 +19,8 @@ export type DashboardOrder = {
   productId: string;
   buyerCountry: string;
   payout: PayoutState;
+  /** Day PayPal released the money, or the release ETA while held, `YYYY-MM-DD` in the maker's time zone. Null before shipping and for refunds. */
+  payoutDay: string | null;
   currency: string;
   units: number;
   grossCents: number;

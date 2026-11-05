@@ -1,5 +1,6 @@
 import type { AgPageState, AgReportState, AgWidgetLayoutState } from "ag-studio";
 import type { T } from "@/lib/i18n/core";
+import { payoutTimelineWidget } from "./payout-timeline";
 
 // The dashboard a maker starts with, and goes back to on reset: a Sales page (what they earned,
 // what PayPal still holds, who bought) and an Agents page (what shopping agents did with their
@@ -48,6 +49,16 @@ export function defaultReport(t: T): AgReportState {
         sort: [{ field: sum("orders.net"), direction: "desc" }],
         format: titled(t("dashboard.widgets.topProducts")),
       },
+      timeline: payoutTimelineWidget({
+        dataMapping: {
+          order: [{ id: "orders.ref" }],
+          start: [{ id: "orders.day" }],
+          end: [{ id: "orders.payoutDay" }],
+          value: [sum("orders.net")],
+          status: [{ id: "orders.payout" }],
+        },
+        format: titled(t("dashboard.widgets.payoutTimeline")),
+      }),
       "order-list": {
         type: "grid",
         dataMapping: {
@@ -75,7 +86,8 @@ export function defaultReport(t: T): AgReportState {
       payouts: at(16, 7, 8, 16),
       countries: at(0, 23, 12, 16),
       "top-products": at(12, 23, 12, 16),
-      "order-list": at(0, 39, 24, 20),
+      timeline: at(0, 39, 24, 18),
+      "order-list": at(0, 57, 24, 20),
     },
   };
 

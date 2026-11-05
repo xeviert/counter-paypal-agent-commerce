@@ -449,8 +449,9 @@ flowchart LR
   studio -- "saveReport (server action)" --> db[("seller_dashboards")]
 ```
 
-- **Data:** `lib/shop/analytics.ts` builds three flat tables for the session maker only, last 90 days: paid orders (ref, day in the maker's time zone, buyer country, payout state, gross, refunded, fees, net), products, and agent activity (MCP event counts per day × product × step; searches via `payload.productIds`). No buyer names, emails, addresses or agent message text.
+- **Data:** `lib/shop/analytics.ts` builds three flat tables for the session maker only, last 90 days: paid orders (ref, day in the maker's time zone, buyer country, payout state, payout day (released, or the release ETA while held), gross, refunded, fees, net), products, and agent activity (MCP event counts per day × product × step; searches via `payload.productIds`). No buyer names, emails, addresses or agent message text.
 - **Agents:** Studio runs its five built-in agents and their tools in the browser. Counter implements only the LLM boundary (`app/s/(wide)/dashboard/studio/adapter.ts` → `/s/api/studio-ai` → `lib/ai/studio.ts`): Studio's conversation items become Messages API blocks, Claude's stream becomes Studio's AG-UI events. The model can only read and rearrange the rows on the page: no SQL, no PayPal, no other maker.
+- **Custom widget:** Counter registers one widget type next to Studio's own, `payout-timeline` (`app/s/(wide)/dashboard/studio/payout-timeline.tsx`): one bar per order from the day the buyer paid to the payout day, colored paid / release date set / waiting for tracking, with today marked. It has `ai` metadata and its own menu group, so Studio's agents can place and map it ("when do I get paid?").
 - **Limits:** one `ai.call` (role `studio`) per turn, counted in `AI_DAILY_CALL_CAP`, plus 150 turns per maker per UTC day. Model allowlist (Opus, Sonnet), `max_tokens` 32k, 120 s per turn.
 
 ---

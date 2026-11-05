@@ -366,6 +366,7 @@ export const fil: Messages = {
       orderList: "Mga order",
       agentsByProduct: "Gawain ng agent kada produkto",
       agentsByDay: "Gawain ng agent kada linggo",
+      payoutTimeline: "Kailan ka mababayaran",
     },
     fields: {
       day: "Araw",
@@ -387,12 +388,27 @@ export const fil: Messages = {
       stage: "Hakbang ng agent",
       stageOrder: "Ayos ng hakbang",
       count: "Beses",
+      payoutDay: "Araw ng bayad",
     },
     payout: {
       pending: "Hinihintay ang bayad",
       held: "Hawak ng PayPal",
       released: "Naibayad na sa iyo",
       refunded: "Na-refund",
+    },
+    timeline: {
+      order: "Order",
+      start: "Nagbayad ang buyer",
+      end: "Araw ng bayad",
+      value: "Halaga",
+      status: "Bayad",
+      paid: "Naibayad na sa iyo",
+      scheduled: "May petsa na ng release",
+      waiting: "Hinihintay ang tracking",
+      paidOn: "Nabayaran noong {date}",
+      releasesOn: "Ire-release ng PayPal sa {date}",
+      today: "Ngayon",
+      empty: "Walang bayad sa panahong ito.",
     },
     stages: {
       search: "Lumabas sa search",
@@ -415,6 +431,10 @@ export const fil: Messages = {
         questions: {
           label: "Tanong ng agent",
           prompt: "Aling produkto ko ang pinakamadalas itanong ng mga shopping agent?",
+        },
+        payday: {
+          label: "Kailan ako mababayaran?",
+          prompt: "Kailan ako babayaran ng PayPal para sa mga bago kong order?",
         },
       },
       errors: {

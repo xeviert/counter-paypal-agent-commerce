@@ -66,7 +66,7 @@ Prompt injection: `pnpm eval:injection` sends hostile offers and questions throu
 
 ## AG Studio dashboard
 
-`/s/dashboard` is an AG Studio report over the maker's own orders, products and agent activity (searches, questions, offers, checkouts per day). Studio's built-in agents run in the browser and call Claude through Counter's `/s/api/studio-ai` proxy, so the model sees only the rows on the page. Each maker's edits are saved.
+`/s/dashboard` is an AG Studio report over the maker's own orders, products and agent activity (searches, questions, offers, checkouts per day). Studio's built-in agents run in the browser and call Claude through Counter's `/s/api/studio-ai` proxy, so the model sees only the rows on the page. Each maker's edits are saved. Counter adds one custom widget, a payout timeline (when each order's money reaches the maker: paid out, release date set, or waiting for tracking), which Studio's agents can place too: ask "When do I get paid?".
 
 ## ACP checkout
 

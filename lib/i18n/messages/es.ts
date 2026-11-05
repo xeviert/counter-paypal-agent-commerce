@@ -366,6 +366,7 @@ export const es: Messages = {
       orderList: "Pedidos",
       agentsByProduct: "Actividad de agentes por producto",
       agentsByDay: "Actividad de agentes por semana",
+      payoutTimeline: "Cuándo te pagan",
     },
     fields: {
       day: "Día",
@@ -387,12 +388,27 @@ export const es: Messages = {
       stage: "Paso del agente",
       stageOrder: "Orden del paso",
       count: "Veces",
+      payoutDay: "Día de pago",
     },
     payout: {
       pending: "Pago pendiente",
       held: "Retenido por PayPal",
       released: "Pagado a ti",
       refunded: "Reembolsado",
+    },
+    timeline: {
+      order: "Pedido",
+      start: "El comprador pagó",
+      end: "Día de pago",
+      value: "Monto",
+      status: "Pago",
+      paid: "Pagado a ti",
+      scheduled: "Fecha de liberación fijada",
+      waiting: "Esperando el número de rastreo",
+      paidOn: "Pagado el {date}",
+      releasesOn: "PayPal libera el {date}",
+      today: "Hoy",
+      empty: "No hay pagos en este periodo.",
     },
     stages: {
       search: "Apareció en una búsqueda",
@@ -415,6 +431,10 @@ export const es: Messages = {
         questions: {
           label: "Preguntas de agentes",
           prompt: "¿Sobre cuáles de mis productos preguntan más los agentes de compra?",
+        },
+        payday: {
+          label: "¿Cuándo me pagan?",
+          prompt: "¿Cuándo me va a pagar PayPal por mis pedidos recientes?",
         },
       },
       errors: {

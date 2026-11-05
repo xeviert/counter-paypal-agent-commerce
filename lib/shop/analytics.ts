@@ -54,6 +54,8 @@ export async function dashboardDataset(
     .select({
       id: orders.id,
       day: localDay(orders.capturedAt, tz),
+      releasedDay: localDay(orders.releasedAt, tz),
+      releaseDueDay: localDay(orders.releaseDueAt, tz),
       productId: orders.productId,
       buyerCountry: orders.buyerCountry,
       status: orders.status,
@@ -107,6 +109,7 @@ export async function dashboardDataset(
     productId: o.productId,
     buyerCountry: o.buyerCountry,
     payout: payoutState(o.status),
+    payoutDay: o.status === "Refunded" ? null : (o.releasedDay ?? o.releaseDueDay),
     currency: o.currency,
     units: o.quantity,
     grossCents: o.itemAmount + o.shippingAmount,

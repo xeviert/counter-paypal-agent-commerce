@@ -13,6 +13,7 @@ import { DASHBOARD_DAYS } from "@/lib/schemas/dashboard";
 import type { DashboardDataset } from "@/lib/schemas/dashboard";
 import { resetReport, saveReport } from "./actions";
 import { claudeAdapter } from "./studio/adapter";
+import { counterWidgets } from "./studio/payout-timeline";
 import { buildStudioData } from "./studio/data";
 import { defaultReport, pageTitle } from "./studio/report";
 import { counterStudioLayout, counterStudioTheme } from "./studio/theme";
@@ -49,11 +50,13 @@ export default function Studio({
   const [refreshing, startRefresh] = useTransition();
 
   const data = useMemo(() => buildStudioData(dataset, t, locale), [dataset, t, locale]);
+  // Studio rebuilds its widget registry whenever this changes identity.
+  const widgets = useMemo(() => counterWidgets({ t, locale, today: dataset.to }), [t, locale, dataset.to]);
   // Read once, when Studio is created.
   const [initialState] = useState(() => saved ?? defaultReport(t));
   const [ai] = useState(() => {
     const adapter = claudeAdapter();
-    const promptStarters = (["country", "week", "questions"] as const).map((k) => ({
+    const promptStarters = (["payday", "country", "week", "questions"] as const).map((k) => ({
       label: t(`dashboard.ai.starters.${k}.label`),
       prompt: t(`dashboard.ai.starters.${k}.prompt`),
     }));
@@ -138,6 +141,7 @@ export default function Studio({
             theme={counterStudioTheme}
             layout={counterStudioLayout}
             data={data}
+            widgets={widgets}
             ai={ai}
             initialState={initialState}
             mode={mode}

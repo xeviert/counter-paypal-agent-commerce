@@ -366,6 +366,7 @@ export const sw: Messages = {
       orderList: "Maagizo",
       agentsByProduct: "Shughuli za mawakala kwa bidhaa",
       agentsByDay: "Shughuli za mawakala kwa wiki",
+      payoutTimeline: "Utalipwa lini",
     },
     fields: {
       day: "Siku",
@@ -387,12 +388,27 @@ export const sw: Messages = {
       stage: "Hatua ya wakala",
       stageOrder: "Mpangilio wa hatua",
       count: "Mara",
+      payoutDay: "Siku ya malipo",
     },
     payout: {
       pending: "Malipo yanasubiri",
       held: "Inashikiliwa na PayPal",
       released: "Umelipwa",
       refunded: "Imerudishwa",
+    },
+    timeline: {
+      order: "Oda",
+      start: "Mnunuzi alilipa",
+      end: "Siku ya malipo",
+      value: "Kiasi",
+      status: "Malipo",
+      paid: "Umelipwa",
+      scheduled: "Tarehe ya kutolewa imewekwa",
+      waiting: "Inasubiri namba ya ufuatiliaji",
+      paidOn: "Ulilipwa {date}",
+      releasesOn: "PayPal itatoa {date}",
+      today: "Leo",
+      empty: "Hakuna malipo katika kipindi hiki.",
     },
     stages: {
       search: "Ilionekana kwenye utafutaji",
@@ -415,6 +431,10 @@ export const sw: Messages = {
         questions: {
           label: "Maswali ya mawakala",
           prompt: "Ni bidhaa zangu zipi mawakala wa ununuzi huuliza zaidi?",
+        },
+        payday: {
+          label: "Nitalipwa lini?",
+          prompt: "PayPal itanilipa lini kwa oda zangu za karibuni?",
         },
       },
       errors: {
