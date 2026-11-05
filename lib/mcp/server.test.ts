@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
 import { events } from "@/lib/db/schema";
+import { PayPalError } from "@/lib/paypal/client";
 import { SellerNotReceivableError } from "@/lib/paypal/orders";
 import { PolicyError } from "@/lib/policy/errors";
 import { createCheckoutOutput, makeOfferOutput, searchProductsOutput } from "@/lib/schemas/mcp";
@@ -142,6 +143,11 @@ describe("toMcpError", () => {
     const internal = toMcpError(new Error("connect ECONNREFUSED 10.0.0.5:5432"));
     expect(internal.code).toBe("INTERNAL_ERROR");
     expect(internal.message).not.toContain("ECONNREFUSED");
+    const paypal = toMcpError(
+      new PayPalError("orders.create", new Response(null, { status: 503 }), { name: "SERVICE_UNAVAILABLE", debug_id: "dbg-secret-1" }),
+    );
+    expect(paypal.code).toBe("PAYMENT_PROVIDER_ERROR");
+    expect(paypal.message).not.toMatch(/dbg-secret-1|SERVICE_UNAVAILABLE|orders\.create/);
   });
 });
 

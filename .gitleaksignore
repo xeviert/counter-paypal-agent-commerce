@@ -1,0 +1,4 @@
+# Fake status token "q8Vb3xYz0123456789_-AB" used in tests (BUILDOUT §8.2 gitleaks run, Nov 5)
+32223db80ab287217445a2192a9938c985ad1316:lib/mcp/server.test.ts:generic-api-key:201
+32223db80ab287217445a2192a9938c985ad1316:lib/shop/order-status.test.ts:generic-api-key:11
+c7311c69c17c9db3e6d59e91e7a3deaf2bdebe86:lib/schemas/mcp.test.ts:generic-api-key:28

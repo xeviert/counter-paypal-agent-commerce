@@ -1,8 +1,8 @@
-import { and, eq, inArray, isNotNull, lte, notExists, or, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, lte, notExists, or, sql } from "drizzle-orm";
 import { purgeIdempotencyKeys } from "@/lib/acp/idempotency";
 import type { Tx } from "@/lib/db";
 import { expireStaleCheckouts } from "@/lib/db/orders";
-import { notifications, orders, products } from "@/lib/db/schema";
+import { events, notifications, orders, products, sellers } from "@/lib/db/schema";
 import { log } from "@/lib/log";
 import { MAX_HOLD_DAYS, SHIP_REMINDER_DAYS } from "@/lib/policy/release";
 import { failStalePipelines } from "./listing-pipeline";
@@ -62,6 +62,40 @@ export async function sendShipReminders(db: Tx, now = new Date()): Promise<numbe
   return rows.length;
 }
 
+/** Units a sold-out demo product gets back. */
+export const DEMO_RESTOCK = 3;
+
+/**
+ * Judges buy the seeded demo products in the sandbox for weeks, so a sold-out one gets stock back.
+ * Demo makers are the seeded ones without a login (`listDemoSellers`); real makers are never touched.
+ */
+export async function restockDemoProducts(db: Tx): Promise<number> {
+  const restocked = await db
+    .update(products)
+    .set({ stock: sql`${products.reserved} + ${DEMO_RESTOCK}` })
+    .where(
+      and(
+        eq(products.status, "live"),
+        sql`${products.stock} - ${products.reserved} < 1`,
+        inArray(products.sellerId, db.select({ id: sellers.id }).from(sellers).where(isNull(sellers.email))),
+      ),
+    )
+    .returning({ id: products.id, sellerId: products.sellerId, stock: products.stock });
+  if (restocked.length > 0) {
+    await db.insert(events).values(
+      restocked.map((p) => ({
+        type: "product.restocked",
+        source: "cron" as const,
+        actor: "system",
+        productId: p.id,
+        sellerId: p.sellerId,
+        payload: { stock: p.stock },
+      })),
+    );
+  }
+  return restocked.length;
+}
+
 async function each(ids: string[], fn: (id: string) => Promise<unknown>, label: string): Promise<number> {
   let done = 0;
   for (const id of ids) {
@@ -86,5 +120,6 @@ export async function runSweep(db: Tx, now = new Date()) {
   );
   const reminders = await sendShipReminders(db, now);
   const idempotencyKeys = await purgeIdempotencyKeys(db, now);
-  return { expired, staleDrafts, released, retried, reminders, idempotencyKeys };
+  const restocked = await restockDemoProducts(db);
+  return { expired, staleDrafts, released, retried, reminders, idempotencyKeys, restocked };
 }

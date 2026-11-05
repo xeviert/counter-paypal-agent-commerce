@@ -60,13 +60,20 @@ const TOOL_LIMITS: Record<string, keyof typeof LIMITS> = {
   ask_question: "question",
 };
 
-export function limitsFor(tool: string, agent: Pick<Agent, "agentId" | "ip">): Limit[] {
+/**
+ * Per-agent limits are this many times higher for shared agents: every claude.ai or ChatGPT user is
+ * one `agentId`, so judges would otherwise use up one bucket together.
+ */
+export const SHARED_FACTOR = 10;
+
+export function limitsFor(tool: string, agent: Pick<Agent, "agentId" | "ip"> & { shared?: boolean }): Limit[] {
+  const scale = (l: { max: number; windowMs: number }) => ({ ...l, max: agent.shared ? l.max * SHARED_FACTOR : l.max });
   const limits: Limit[] = [
-    { key: `agent:${agent.agentId}`, ...LIMITS.agent },
+    { key: `agent:${agent.agentId}`, ...scale(LIMITS.agent) },
     { key: `ip:${agent.ip}`, ...LIMITS.ip },
   ];
   const extra = TOOL_LIMITS[tool];
-  if (extra) limits.push({ key: `${extra}:${agent.agentId}`, ...LIMITS[extra] });
+  if (extra) limits.push({ key: `${extra}:${agent.agentId}`, ...scale(LIMITS[extra]) });
   return limits;
 }
 

@@ -20,6 +20,12 @@ describe("agentFromRequest", () => {
     expect(agentFromRequest(request({ "x-forwarded-for": "203.0.113.9" })).ip).toBe("203.0.113.9");
   });
 
+  it("marks hosted assistants that share their vendor's IPs", () => {
+    expect(agentFromRequest(request({ "user-agent": "Claude-User (claude-code/2.0; +https://support.anthropic.com/)" })).shared).toBe(true);
+    expect(agentFromRequest(request({ "user-agent": "Mozilla/5.0 AppleWebKit/537.36; compatible; ChatGPT-User/1.0" })).shared).toBe(true);
+    expect(agentFromRequest(request({ "user-agent": "my-agent/1.0" })).shared).toBe(false);
+  });
+
   it("gives callers behind the same edge different agentIds", () => {
     const a = agentFromRequest(request({ "x-forwarded-for": "198.51.100.1, 104.22.72.29", "user-agent": "x" }));
     const b = agentFromRequest(request({ "x-forwarded-for": "198.51.100.2, 104.22.72.29", "user-agent": "x" }));

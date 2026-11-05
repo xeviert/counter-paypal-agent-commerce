@@ -34,7 +34,9 @@
     "spike:paypal-mcp": "tsx scripts/spike-paypal-mcp.ts",
     "workflows:start": "tsx workflows/index.ts",
     "spike:workflows": "tsx scripts/spike-workflows.ts",
-    "a11y": "tsx scripts/a11y.ts"
+    "a11y": "tsx scripts/a11y.ts",
+    "eval:injection": "tsx scripts/eval-injection.ts",
+    "e2e:replay": "tsx scripts/e2e-replay.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { asc, eq } from "drizzle-orm";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
-import { events, notifications, orders, refunds, sellers } from "@/lib/db/schema";
+import { events, notifications, orders, products, refunds, sellers } from "@/lib/db/schema";
 import { clearTokenCache } from "@/lib/paypal/client";
 import { webhookEnvelope } from "@/lib/schemas/paypal";
 import { searchProductsInput } from "@/lib/schemas/mcp";
@@ -11,7 +11,7 @@ import { json, mockPayPal, paypalIssue, stubPayPalEnv } from "@/test/paypal";
 import { searchProducts } from "./catalog";
 import { refundOrder } from "./fulfillment";
 import { releaseOrder } from "./release";
-import { dueReleases, runSweep, sendShipReminders } from "./sweep";
+import { DEMO_RESTOCK, dueReleases, restockDemoProducts, runSweep, sendShipReminders } from "./sweep";
 import { handlePayPalEvent } from "./webhook-handlers";
 
 // Real spike-11 deliveries: capture 2DH54088UW786173Y, $2.00 refund 7Y691978HT5381453, payout of it.
@@ -257,6 +257,23 @@ describe.skipIf(!testDatabaseUrl)("post-sale money", () => {
         capturedAt: new Date(Date.now() - 27 * DAY),
       });
       expect(await dueReleases(db)).toEqual([order.id]);
+    });
+
+    it("restocks sold-out demo products only", async () => {
+      const demo = await seedProduct(db, { stock: 1, product: { reserved: 1 } });
+      const paused = await seedProduct(db, { stock: 0, product: { status: "paused" } });
+      const real = await seedProduct(db, { stock: 0, seller: { email: "maker@example.com" } });
+      const inStock = await seedProduct(db, { stock: 2 });
+
+      expect(await restockDemoProducts(db)).toBe(1);
+      expect(await restockDemoProducts(db)).toBe(0);
+      const stock = async (id: string) => (await db.select().from(products).where(eq(products.id, id)))[0]!;
+      expect(await stock(demo.product.id)).toMatchObject({ stock: 1 + DEMO_RESTOCK, reserved: 1 });
+      expect((await stock(paused.product.id)).stock).toBe(0);
+      expect((await stock(real.product.id)).stock).toBe(0);
+      expect((await stock(inStock.product.id)).stock).toBe(2);
+      const logged = await db.select().from(events).where(eq(events.type, "product.restocked"));
+      expect(logged).toMatchObject([{ productId: demo.product.id, source: "cron" }]);
     });
   });
 });

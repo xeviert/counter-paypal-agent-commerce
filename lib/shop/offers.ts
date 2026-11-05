@@ -7,6 +7,7 @@ import { offers } from "@/lib/db/schema";
 import { AiCapError, assertUnderCap, recordAiCall } from "@/lib/ai/client";
 import { negotiate, NEGOTIATOR_MODEL, type NegotiatorOutcome } from "@/lib/ai/negotiator";
 import { log } from "@/lib/log";
+import { SHARED_FACTOR } from "@/lib/mcp/rate-limit";
 import {
   clampOffer,
   effectiveFloor,
@@ -149,7 +150,7 @@ async function askNegotiator(
 export async function makeOffer(
   db: Tx,
   input: z.output<typeof makeOfferInput>,
-  caller: { agentId: string },
+  caller: { agentId: string; shared?: boolean },
   deps: MakeOfferDeps = {},
 ): Promise<OfferResult> {
   const now = deps.now ?? new Date();
@@ -169,8 +170,9 @@ export async function makeOffer(
       ),
     )
     .orderBy(asc(offers.createdAt));
-  if (prior.length >= MAX_OFFERS) {
-    throw new PolicyError("OFFER_LIMIT", `At most ${MAX_OFFERS} offers per product per day. Buy at list price instead`);
+  const maxOffers = caller.shared ? MAX_OFFERS * SHARED_FACTOR : MAX_OFFERS;
+  if (prior.length >= maxOffers) {
+    throw new PolicyError("OFFER_LIMIT", `At most ${maxOffers} offers per product per day. Buy at list price instead`);
   }
 
   const policy = { listCents: product.listPrice, floorCents: product.floorPrice, maxDiscountBps: product.maxDiscountBps };
@@ -203,7 +205,7 @@ export async function makeOffer(
   });
 
   const money = (cents: number) => toMoney(cents, product.currency);
-  const offersLeft = MAX_OFFERS - prior.length - 1;
+  const offersLeft = maxOffers - prior.length - 1;
   const price = result.agreedCents === null ? undefined : money(result.agreedCents);
   return {
     productId: product.id,

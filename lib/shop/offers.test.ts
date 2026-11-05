@@ -41,10 +41,10 @@ describe.skipIf(!testDatabaseUrl)("makeOffer", () => {
     vi.restoreAllMocks();
   });
 
-  function offer(productId: string, price: number, reply: FakeReply | FakeReply[], extra: { message?: string; agentId?: string; at?: Date } = {}) {
+  function offer(productId: string, price: number, reply: FakeReply | FakeReply[], extra: { message?: string; agentId?: string; shared?: boolean; at?: Date } = {}) {
     const fake = fakeAnthropic(reply, NEGOTIATOR_MODEL);
     const input = makeOfferInput.parse({ productId, price, message: extra.message });
-    const run = makeOffer(db, input, { agentId: extra.agentId ?? "agt_test" }, { client: fake.client, now: extra.at ?? now });
+    const run = makeOffer(db, input, { agentId: extra.agentId ?? "agt_test", shared: extra.shared }, { client: fake.client, now: extra.at ?? now });
     return { run, requests: fake.requests };
   }
 
@@ -163,6 +163,13 @@ describe.skipIf(!testDatabaseUrl)("makeOffer", () => {
     // The window rolls: a day later the agent can offer again.
     const later = new Date(now.getTime() + 25 * 3600_000);
     await expect(offer(product.id, 131, proposal("accept", null), { at: later }).run).resolves.toBeDefined();
+  });
+
+  it("gives a shared agent (claude.ai, ChatGPT) ten times the offers", async () => {
+    const { product } = await seedProduct(db);
+    for (let i = 0; i < 3; i++) await offer(product.id, 100 + i, proposal("counter", 145), { shared: true }).run;
+    const fourth = await offer(product.id, 110, proposal("counter", 145), { shared: true }).run;
+    expect(fourth.output.offersLeft).toBe(26);
   });
 
   it("refuses sold-out and unavailable products before asking Claude", async () => {

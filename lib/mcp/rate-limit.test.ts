@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIMITS, limitsFor, RateLimiter } from "./rate-limit";
+import { LIMITS, limitsFor, RateLimiter, SHARED_FACTOR } from "./rate-limit";
 
 const agent = { agentId: "agt_a", ip: "203.0.113.9" };
 
@@ -61,6 +61,13 @@ describe("limitsFor", () => {
     }
     expect(limiter.check(limitsFor("create_checkout", agent)).ok).toBe(false);
     expect(limiter.check(limitsFor("search_products", agent)).ok).toBe(true);
+  });
+
+  it("scales per-agent limits for shared agents but not the IP limit", () => {
+    const shared = limitsFor("make_offer", { ...agent, shared: true });
+    expect(shared.find((l) => l.key === "agent:agt_a")!.max).toBe(LIMITS.agent.max * SHARED_FACTOR);
+    expect(shared.find((l) => l.key === "offer:agt_a")!.max).toBe(LIMITS.offer.max * SHARED_FACTOR);
+    expect(shared.find((l) => l.key.startsWith("ip:"))!.max).toBe(LIMITS.ip.max);
   });
 
   it("adds per-agent limits for offers and questions", () => {

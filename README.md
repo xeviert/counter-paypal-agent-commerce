@@ -19,6 +19,10 @@ pnpm dev
 
 Checks: `pnpm typecheck`, `pnpm lint`, `pnpm test`. DB tests run when `TEST_DATABASE_URL` is set.
 
+Real-model and sandbox checks: `pnpm eval:injection` (hostile agent text through the MCP server on the test DB; needs `ANTHROPIC_API_KEY`), the other `pnpm eval:*` scripts, and `pnpm e2e:purchase|release|refund|replay` (sandbox PayPal; a human approves as the sandbox buyer).
+
+Rate limits are per caller (IP + User-Agent). Hosted assistants that call from their vendor's IPs (`Claude-User`, `ChatGPT-User`, `Perplexity-User`) are one caller for all their users, so their per-caller limits are 10× higher.
+
 Schema changes: edit `lib/db/schema.ts`, then `pnpm db:generate` and commit the new file in `drizzle/`.
 
 ## Deploy (Render)

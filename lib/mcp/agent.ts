@@ -5,7 +5,11 @@ export type Agent = {
   agentId: string;
   ip: string;
   userAgent: string;
+  /** One `agentId` for many people: hosted assistants call from their vendor's IPs (BUILDOUT §8.2). */
+  shared: boolean;
 };
+
+const SHARED_EGRESS_UA = /\b(Claude-User|ChatGPT-User|Perplexity-User)\b/i;
 
 // MCP 2026-07-28 removed Mcp-Session-Id, so callers are keyed by network identity instead.
 // Render sits behind Cloudflare (checked Oct 31): X-Forwarded-For arrives as
@@ -22,5 +26,5 @@ export function agentFromRequest(request: Request | undefined): Agent {
   const ip = clientIp(request?.headers);
   const userAgent = request?.headers.get("user-agent") ?? "unknown";
   const digest = createHash("sha256").update(`${ip}|${userAgent}`).digest("base64url");
-  return { agentId: `agt_${digest.slice(0, 16)}`, ip, userAgent };
+  return { agentId: `agt_${digest.slice(0, 16)}`, ip, userAgent, shared: SHARED_EGRESS_UA.test(userAgent) };
 }
