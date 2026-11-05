@@ -526,7 +526,7 @@ Facts from the code (Nov 4, before building):
 - [x] §10 #8 **yes**: optional `OPS_JUDGE_PASSWORD` (env, `.env.example`, `render.yaml` `sync: false`) → role `judge`: same views, no Approve/Reject (actions refuse), no copilot, no buyer name/email (`toOpsOrderView`), no webhook bodies, PII keys hidden in other payloads (`redactPii`). Address and payer id are never selected for either role
 - [x] `OPS_PASSWORD` already set on `counter` in Render (same value as local `.env`)
 - [ ] `OPS_JUDGE_PASSWORD` on Render, only if judges get `/ops` access (optional; unset = no judge login)
-- [ ] The login rate limit and "judge can't approve" are in the code paths but not under test (server actions need the Next runtime)
+- [x] The login rate limit and "judge can't approve" are in the code paths but not under test (server actions need the Next runtime). **Done Nov 5:** `app/ops/actions.test.ts` runs the real actions and the copilot route on the test DB with `next/headers` (cookie jar + fixed `true-client-ip`), `next/navigation` (`notFound`/`redirect` throw), `next/server`, `next/cache` and React `cache` mocked; the limiter gets a fake clock through `globalThis.opsLoginLimiter`. Cases: operator/judge login + hashed IP only; 5 wrong tries → 6th refused even with the right password, no event, no cookie; another IP still allowed; allowed again after 10 min; judge approve/reject → not found, product stays `review`, no event or notification; signed out → login redirect; operator approve works; copilot 401 signed out, 403 judge. Mutation check: dropping the judge guard or raising the limit fails the tests. Full suite 753 passed (1 skipped)
 
 **Views** (`app/ops/(console)`, server components, English, all times UTC)
 - [x] **Needs attention** `/ops` (`needsAttention` in `lib/shop/ops.ts`), count + 20 oldest per bucket: captures on closed orders, chargebacks (`PAYMENT.CAPTURE.REVERSED`), releases failed or `requested` > 15 min, refunds failed or pending > 15 min, disputes, `Approved` > 1 h, `PaidPending` > 24 h, `PaidHeld` past `SHIP_REMINDER_DAYS`, webhooks with an error or unprocessed > 5 min (bad-signature forgeries stay in the audit log only). Plus a makers table (PayPal status, live/review listings, held orders)
@@ -721,7 +721,7 @@ Decided (Nov 5):
 - [x] Every unchecked P3 box: finish, or move it into §9 as cut, explicitly. Pass on Nov 5, after §7.5–7.7 shipped:
   - **Yours, on Render / a phone / a browser** (no code left): §7.1 copilot exit beat; §7.3 Render run + watermark check, the Opus vs Sonnet browser eval, 390 px check, demo prompt, README screenshots; §7.4 Render exit checks, `OPS_JUDGE_PASSWORD` (optional), re-run `spike:paypal-mcp` before filming; §7.5 Render exit + Rich Results Test; §7.6 none; §7.7 voice purchase recording + TalkBack pass; §6 bug 4 connector re-run + §6.4 negotiated re-run
   - **Native-speaker strings** (copilot, dashboard, capture, listings): folded into the §8.1 long-lead pass above
-  - **Code still open:** §7.3 custom widget (sponsor criterion "custom widgets"; not the same as cut #5), §7.4 tests for the login rate limit and judge refusal (need the Next runtime)
+  - **Code still open:** §7.3 custom widget (sponsor criterion "custom widgets"; not the same as cut #5). ~~§7.4 tests for the login rate limit and judge refusal~~ done Nov 5 (§7.4)
   - **Cut:** §7.2 question forwarding (cut #1, skipped Nov 3); §7.3 upstream report of AG Charts `-1` warnings (harmless)
 
 ### 8.2 Harden
