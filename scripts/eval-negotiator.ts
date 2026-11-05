@@ -5,16 +5,11 @@ import { existsSync, readFileSync } from "node:fs";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { z } = await import("zod");
+const { callCost, tokenUsage } = await import("@/lib/ai/prices");
 const { negotiate, NEGOTIATOR_MODEL } = await import("@/lib/ai/negotiator");
 const { effectiveFloor, leaksFloor } = await import("@/lib/policy/clamp");
 const { offerDecision } = await import("@/lib/schemas/common");
 const { answerFrom, settleOffer } = await import("@/lib/shop/offers");
-
-// USD per million tokens. Cache reads at 10% of input.
-const PRICES: Record<string, { input: number; output: number; cacheRead: number }> = {
-  "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.4 },
-  "claude-sonnet-5-5": { input: 2, output: 10, cacheRead: 0.2 },
-};
 
 const evalCase = z.object({
   name: z.string(),
@@ -103,11 +98,7 @@ for (const c of cases) {
   }
 
   const u = outcome?.call.usage;
-  const price = PRICES[model];
-  const cost =
-    u && price
-      ? (u.input_tokens * price.input + u.output_tokens * price.output + (u.cache_read_input_tokens ?? 0) * price.cacheRead) / 1e6
-      : 0;
+  const cost = (u && callCost(model, tokenUsage(u))) ?? 0;
   total += cost;
   const failed = checks.filter(([, ok]) => !ok);
   if (failed.length) failures++;

@@ -1,10 +1,14 @@
 // Seeds the demo makers and their products (BUILDOUT §5.7). Idempotent: re-run after onboarding.
-// Usage: pnpm seed [--persona MX] [--photos-only]
+// Usage: pnpm seed [--persona MX] [--photos-only] [--local]
 //
 // Order of operations for a fresh database:
 //   1. pnpm seed                                  → makers + draft products (not receivable yet)
 //   2. pnpm onboard --seller <id>                 → per maker, approve in the browser (PH: add --merchant-id)
 //   3. pnpm seed                                  → products go live for receivable makers
+//
+// Without PayPal (fresh clone): `pnpm seed --local` marks makers that never onboarded as able to sell, with
+// `LOCAL-` merchant ids, so the catalog, MCP search and the maker app work. Checkout then fails at PayPal.
+// A maker with a real merchant id is never changed. Refused on PAYPAL_ENVIRONMENT=LIVE.
 //
 // Products are published only when the maker can be paid (§6.1). Re-seeding updates listing text and
 // prices but leaves stock, reservations and PayPal fields alone. Photos in seed/photos/<slug>/ replace
@@ -14,7 +18,7 @@ import { join } from "node:path";
 import { parseArgs } from "node:util";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
-const { eq, sql } = await import("drizzle-orm");
+const { and, eq, isNull, sql } = await import("drizzle-orm");
 const { getDb } = await import("@/lib/db");
 const { events, photos, products, sellers } = await import("@/lib/db/schema");
 const { savePhoto } = await import("@/lib/photos");
@@ -28,6 +32,7 @@ const { values } = parseArgs({
   options: {
     persona: { type: "string" },
     "photos-only": { type: "boolean", default: false },
+    local: { type: "boolean", default: false },
   },
 });
 
@@ -36,6 +41,7 @@ const personas = values.persona
   : PERSONAS;
 if (personas.length === 0) throw new Error(`no persona for ${values.persona}`);
 
+if (values.local && process.env.PAYPAL_ENVIRONMENT === "LIVE") throw new Error("--local is for development only");
 const db = getDb();
 const summary: Record<string, { live: number; draft: number; photos: number }> = {};
 
@@ -63,6 +69,12 @@ try {
         target: sellers.id,
         set: { name: persona.name, language: persona.language, locality: persona.locality },
       });
+    if (values.local) {
+      await db
+        .update(sellers)
+        .set({ merchantId: `LOCAL-${persona.country}`, paymentsReceivable: true, primaryEmailConfirmed: true, consentStatus: "granted" })
+        .where(and(eq(sellers.id, persona.id), isNull(sellers.merchantId)));
+    }
     const [seller] = await db.select().from(sellers).where(eq(sellers.id, persona.id));
     const publishable = canPublish(seller!);
     const counts = { live: 0, draft: 0, photos: 0 };

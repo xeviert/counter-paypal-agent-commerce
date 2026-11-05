@@ -6,14 +6,9 @@ import { existsSync, readFileSync } from "node:fs";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { z } = await import("zod");
+const { callCost } = await import("@/lib/ai/prices");
 const { buildOperatorTools, OPERATOR_MODEL, OperatorToolError, runOperatorTurn } = await import("@/lib/ai/operator");
 const { wrapUntrusted } = await import("@/lib/ai/untrusted");
-
-// USD per million tokens. Cache reads at 10% of input, writes at 125%.
-const PRICES: Record<string, { input: number; output: number }> = {
-  "claude-opus-5-5": { input: 4, output: 20 },
-  "claude-sonnet-5-5": { input: 2, output: 10 },
-};
 
 const evalCase = z.object({
   name: z.string(),
@@ -191,10 +186,7 @@ for (const c of cases) {
   checks.push([`replied in ${c.lang}`, reply.trim() !== "" && detectLang(reply) === c.lang]);
   checks.push(["plain text (no ** or #)", !/\*\*|^#/m.test(reply)]);
 
-  const price = PRICES[model];
-  const cost = price
-    ? (usage.input * price.input + usage.output * price.output + usage.cacheRead * price.input * 0.1 + usage.cacheWrite * price.input * 1.25) / 1e6
-    : 0;
+  const cost = callCost(model, usage) ?? 0;
   total += cost;
   const failed = checks.filter(([, ok]) => !ok);
   if (failed.length) failures++;

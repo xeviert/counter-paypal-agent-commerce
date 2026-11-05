@@ -102,18 +102,22 @@ export function buildUserContent(input: ListingInput): Anthropic.Beta.BetaConten
 
 export type BuildListingDeps = {
   client?: Anthropic;
+  /** Eval override; production always uses LISTING_MODEL. */
+  model?: string;
   /** Fires once when generation moves from the native text to the English translation. */
   onTranslating?: () => void;
 };
 
 export async function buildListing(input: ListingInput, deps: BuildListingDeps = {}): Promise<ListingOutcome> {
   const client = deps.client ?? anthropic();
+  const model = deps.model ?? LISTING_MODEL;
+  // Haiku 5.5 has no server-side fallback.
+  const fallback = model.startsWith("claude-haiku") ? {} : { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const };
   const stream = client.beta.messages.stream(
     {
-      model: LISTING_MODEL,
+      model,
       max_tokens: MAX_TOKENS,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
+      ...fallback,
       thinking: { type: "adaptive" },
       output_config: { effort: "low", format: betaZodOutputFormat(listingBuilderOutput) },
       system: [{ type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } }],
@@ -131,7 +135,7 @@ export async function buildListing(input: ListingInput, deps: BuildListingDeps =
   });
   // The SDK parses structured output at message_stop and throws if it doesn't match (a refusal has
   // no JSON at all), so the stop reason is taken from the stream events, before parsing.
-  const call: ListingCallInfo = { model: LISTING_MODEL, stopReason: null };
+  const call: ListingCallInfo = { model, stopReason: null };
   stream.on("streamEvent", (event) => {
     if (event.type === "message_start") call.model = event.message.model;
     if (event.type === "message_delta") call.stopReason = event.delta.stop_reason ?? null;

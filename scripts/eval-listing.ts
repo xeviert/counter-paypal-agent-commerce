@@ -1,5 +1,5 @@
 // Listing builder eval (BUILDOUT §6.2): real Claude calls against test/fixtures/listing-eval/.
-// Re-run after every prompt change. Usage: pnpm eval:listing [case-name ...]
+// Re-run after every prompt change. Usage: pnpm eval:listing [--model claude-haiku-5-5] [case-name ...]
 // Needs ANTHROPIC_API_KEY; uses DATABASE_URL for live catalog prices when set.
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -7,6 +7,7 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { z } = await import("zod");
 const { buildListing, LISTING_MODEL } = await import("@/lib/ai/listing");
+const { callCost, tokenUsage } = await import("@/lib/ai/prices");
 const { processPhoto } = await import("@/lib/photos");
 const { LOCAL_CURRENCY } = await import("@/lib/policy/currency");
 const { RATES_PER_USD } = await import("@/lib/policy/fx");
@@ -14,8 +15,6 @@ const { category, language, sellerCountry } = await import("@/lib/schemas/common
 
 const ROOT = "test/fixtures/listing-eval";
 const PHOTO = /\.(jpe?g|png|webp)$/i;
-// claude-sonnet-5-5, USD per million tokens.
-const PRICE = { input: 2, output: 10, cacheRead: 0.2 };
 
 const evalCase = z.object({
   country: sellerCountry,
@@ -39,7 +38,10 @@ async function catalogPrices() {
   }
 }
 
-const only = process.argv.slice(2);
+const args = process.argv.slice(2);
+const modelAt = args.indexOf("--model");
+const model = modelAt >= 0 ? args.splice(modelAt, 2)[1]! : LISTING_MODEL;
+const only = args;
 const names = readdirSync(ROOT, { withFileTypes: true })
   .filter((d) => d.isDirectory() && (only.length === 0 || only.includes(d.name)))
   .map((d) => d.name);
@@ -72,7 +74,7 @@ for (const name of names) {
       categoryPrices: prices,
       fx: { currency, perUsd: (RATES_PER_USD[currency] ?? 10_000) / 10_000 },
     },
-    { onTranslating: () => (translatingAt = Date.now()) },
+    { model, onTranslating: () => (translatingAt = Date.now()) },
   );
   const seconds = (Date.now() - started) / 1000;
 
@@ -92,9 +94,8 @@ for (const name of names) {
   }
 
   const u = outcome.call.usage;
-  const cost = u
-    ? ((u.input_tokens * PRICE.input + u.output_tokens * PRICE.output + (u.cache_read_input_tokens ?? 0) * PRICE.cacheRead) / 1e6).toFixed(4)
-    : "?";
+  const usd = u && callCost(outcome.call.model, tokenUsage(u));
+  const cost = usd === undefined ? "?" : usd.toFixed(4);
   const failed = checks.filter(([, ok]) => !ok);
   if (failed.length) failures++;
   rows.push({
@@ -106,6 +107,6 @@ for (const name of names) {
   });
 }
 
-console.log(`\nmodel ${LISTING_MODEL}`);
+console.log(`\nmodel ${model}`);
 console.table(rows);
 process.exitCode = failures ? 1 : 0;

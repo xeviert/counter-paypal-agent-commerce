@@ -9,6 +9,8 @@ if (existsSync(".env")) process.loadEnvFile(".env");
 process.env.AI_DAILY_CALL_CAP = "1000";
 
 const { Client, StreamableHTTPClientTransport } = await import("@modelcontextprotocol/client");
+const { callCost } = await import("@/lib/ai/prices");
+type TokenUsage = import("@/lib/ai/prices").TokenUsage;
 const { like } = await import("drizzle-orm");
 const { events, products } = await import("@/lib/db/schema");
 const { buildMcpHandler } = await import("@/lib/mcp/handler");
@@ -145,19 +147,10 @@ if (unaudited.length) {
   console.log(`PASS  audit: all ${logged.length} mcp events carry payload.audit`);
 }
 
-// USD per million tokens; cache reads at 10% of input, writes at 125%.
-const PRICES: Record<string, { input: number; output: number }> = {
-  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
-  "claude-sonnet-5-5": { input: 2, output: 10 },
-  "claude-opus-5-5": { input: 4, output: 20 },
-};
-type Usage = { input: number; output: number; cacheRead: number; cacheWrite: number };
 const aiCalls = await db.select().from(events).where(like(events.type, "ai.call"));
 const cost = aiCalls.reduce((sum, e) => {
-  const { model, usage: u } = e.payload as { model: string; usage?: Usage };
-  const p = PRICES[model];
-  if (!p || !u) return sum;
-  return sum + (u.input * p.input + u.cacheRead * p.input * 0.1 + u.cacheWrite * p.input * 1.25 + u.output * p.output) / 1e6;
+  const { model, usage } = e.payload as { model: string; usage?: TokenUsage };
+  return sum + ((usage && callCost(model, usage)) ?? 0);
 }, 0);
 
 await client.close();

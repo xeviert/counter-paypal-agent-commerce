@@ -645,20 +645,9 @@ flowchart LR
 
 ---
 
-## 10. Build plan (full scope · Oct 24 → Nov 12, 12:00 PM PT)
+## 10. Build plan
 
-| Dates | Goal | Done when |
-|---|---|---|
-| **Oct 24–25** | Setup + spikes | Devpost and Discord joined · sandbox business accounts (US buyer; MX, IN, KE seller country settings) · Anthropic key + spend limit · repo with MIT LICENSE · Next.js skeleton **live on Render** · spikes 1–5 from §8 pass or have fallbacks chosen · **idea locked** |
-| **Oct 26–29** | Buyer path end to end | Seeded makers (3 personas, about 30 products) · MCP tools · Connect PayPal (ISU) for 3 makers · Orders v2 with `payee` + platform fee + `DELAYED` + approval + capture + webhook · Claude buyer agent completes a real sandbox purchase |
-| **Oct 30 – Nov 2** | Seller path | Mobile seller onboarding (photos + voice → listing in under 60s) · Render Workflow pipeline · translations · seller policy UI · negotiator with clamps · shipment tracking → PayPal |
-| **Nov 3–5** | Copilot + analytics + openness | Seller copilot (PayPal MCP + DB) in any language · AG Studio dashboard with custom widgets and an agent-built widget · ACP-shaped endpoints · ChatGPT buying through MCP · voice-only purchase (accessibility beat) |
-| **Nov 6–8** | Polish + harden | Design pass on both surfaces · error and empty states · prompt-injection tests · audit log · fresh-clone README test · test credentials · **feature freeze Nov 8 EOD** |
-| **Nov 9–10** | Video | Script → record → edit, under 2:50 → public YouTube upload |
-| **Nov 11** | Submit | Description, tools section, architecture image. **Submit a complete entry on Nov 11** |
-| Nov 12, by 12:00 PM PT | Buffer only | Repo public, license visible, video public, demo live |
-
-**Cut order if behind:** ChatGPT demo → ACP endpoints → accessibility beat → AG Studio agent widget (keep the static dashboard) → negotiation. **Never cut:** voice note → listing → agent purchase → seller paid → tracking, all with real sandbox calls.
+Superseded by [BUILDOUT.md](BUILDOUT.md), the day-by-day plan and status (phases, exit checks, cut order, decisions). The original Oct 24 plan here said the seller copilot would use PayPal's MCP server; it uses Counter's own REST tools with `PayPal-Auth-Assertion` instead (ARCHITECTURE §5.1, §11 #8).
 
 ---
 

@@ -18,7 +18,9 @@ export function anthropic(): Anthropic {
 
 /** `AI_DAILY_CALL_CAP`: Claude calls per UTC day across every role. */
 export function dailyCap(): number {
-  const raw = Number(process.env.AI_DAILY_CALL_CAP);
+  // Blank (`AI_DAILY_CALL_CAP=` from .env.example) is unset, not 0: Number("") would turn Claude off.
+  const value = process.env.AI_DAILY_CALL_CAP?.trim();
+  const raw = value ? Number(value) : NaN;
   return Number.isInteger(raw) && raw >= 0 ? raw : DEFAULT_DAILY_CAP;
 }
 

@@ -5,19 +5,13 @@ import { existsSync, readFileSync } from "node:fs";
 if (existsSync(".env")) process.loadEnvFile(".env");
 
 const { z } = await import("zod");
+const { callCost, tokenUsage } = await import("@/lib/ai/prices");
 const { answerQuestion, ANSWERER_MODEL } = await import("@/lib/ai/answerer");
 const { leaksFloor } = await import("@/lib/policy/clamp");
 const { listingContent } = await import("@/lib/schemas/listing");
 const { category } = await import("@/lib/schemas/common");
 const { routeQuestion } = await import("@/lib/shop/questions");
 type Product = import("@/lib/shop/catalog").Product;
-
-// USD per million tokens (Haiku's ≤100K-token card). Cache reads at 10% of input, writes at 125%.
-const PRICES: Record<string, { input: number; output: number }> = {
-  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
-  "claude-sonnet-5-5": { input: 2, output: 10 },
-  "claude-opus-5-5": { input: 4, output: 20 },
-};
 
 const LANGS = ["en", "es", "fil", "sw"] as const;
 type Lang = (typeof LANGS)[number];
@@ -108,16 +102,8 @@ for (const c of cases.filter((x) => only.length === 0 || only.includes(x.name)))
   checks.push(["no floor leak", !leaksFloor(answer, policy, { offeredCents: l.listCents, agreedCents: null })]);
   if (answer.trim()) checks.push([`replied in ${c.lang} (got ${detectLang(answer)})`, detectLang(answer) === c.lang]);
 
-  const price = PRICES[model];
   const cacheWrite = usage?.cache_creation_input_tokens ?? 0;
-  const cost =
-    usage && price
-      ? (usage.input_tokens * price.input +
-          usage.output_tokens * price.output +
-          (usage.cache_read_input_tokens ?? 0) * price.input * 0.1 +
-          cacheWrite * price.input * 1.25) /
-        1e6
-      : 0;
+  const cost = (usage && callCost(model, tokenUsage(usage))) ?? 0;
   total += cost;
   const failed = checks.filter(([, ok]) => !ok);
   if (failed.length) failures++;
