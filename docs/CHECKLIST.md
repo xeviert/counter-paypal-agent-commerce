@@ -18,6 +18,7 @@ Everything else below is skippable or happens during rehearsal. Work these, then
   2. "Take photo" opens the camera; "Choose photos" opens the gallery
   3. Make listing → review → publish → it's live on `/s/listings`
   - Nov 10 run 1: **voice FAIL**, nothing in "Lo que dijiste", no error code (bug 2 again). Fix: on Android, Web Speech now runs without the audio recorder (both can't share the mic). Deploy, then re-test. Still failing → the video types the description
+  - Nov 10 run 2: transcribes, but every word repeated ~6× (Android continuous mode re-sends results). Fix: Android runs one utterance per session, restarted on pause, keeping only the last cumulative result. Re-test after deploy; last try before falling back to typing
 - [x] **Render feature looks** (§8, desktop, ~10 min). Nov 10: copilot, dashboard timeline ("Cuándo te pagan"), both `/ops` logins all pass
   1. Copilot as Lucía: "¿Quién compró hoy?" → Spanish answer
   2. `/s/dashboard`: "Restablecer panel" → "Cuándo te pagan" timeline on Ventas; no "Trial Period Expired" watermark

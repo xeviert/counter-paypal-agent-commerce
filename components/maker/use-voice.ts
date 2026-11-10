@@ -40,6 +40,16 @@ export function speechErrorAction(error: string, speechOnly: boolean): "ignore" 
   return "show";
 }
 
+/**
+ * Text heard in one recognition session. The result list is the whole session, so it's rebuilt each
+ * event instead of appended to (Android repeats `resultIndex` and re-sends finals). Android results
+ * are cumulative ("es", "es un", "es un tapete"): only the last one counts there.
+ */
+export function sessionTranscript(results: readonly { transcript: string }[], cumulative: boolean): string {
+  const parts = cumulative ? results.slice(-1) : results;
+  return parts.map((r) => r.transcript.trim()).filter(Boolean).join(" ");
+}
+
 export type VoiceState = "idle" | "recording" | "denied" | "unsupported";
 
 export type Recording = { blob: Blob; mime: string; durationMs: number };
@@ -125,21 +135,22 @@ export function useVoice(opts: {
     if (!Ctor) return;
     const speech = new Ctor();
     speech.lang = callbacks.current.lang;
-    speech.continuous = true;
+    // Android's continuous mode duplicates words; one utterance per session, restarted on end, doesn't.
+    const android = isAndroid();
+    speech.continuous = !android;
     speech.interimResults = true;
-    let finals = "";
+    let committed = "";
+    let current = "";
     let failed = false;
     speech.onresult = (event) => {
-      let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i]!;
-        if (result.isFinal) finals += `${result[0]!.transcript.trim()} `;
-        else interim += result[0]!.transcript;
-      }
-      callbacks.current.onTranscript(`${finals}${interim}`.trim());
+      const results = Array.from({ length: event.results.length }, (_, i) => ({ transcript: event.results[i]![0]!.transcript }));
+      current = sessionTranscript(results, android);
+      callbacks.current.onTranscript(`${committed} ${current}`.trim());
     };
     // Chrome ends recognition after a pause, and after an error; keep listening while recording.
     speech.onend = () => {
+      committed = `${committed} ${current}`.trim();
+      current = "";
       if (!recording.current || failed) return;
       // Give Android a moment to hand over the mic the recorder just let go of.
       setTimeout(

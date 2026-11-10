@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { speechErrorAction } from "./use-voice";
+import { sessionTranscript, speechErrorAction } from "./use-voice";
 
 describe("speechErrorAction", () => {
   it("ignores the pauses Chrome reports as errors", () => {
@@ -15,5 +15,21 @@ describe("speechErrorAction", () => {
     expect(speechErrorAction("audio-capture", true)).toBe("show");
     expect(speechErrorAction("not-allowed", false)).toBe("show");
     expect(speechErrorAction("network", false)).toBe("show");
+  });
+});
+
+describe("sessionTranscript", () => {
+  const r = (...texts: string[]) => texts.map((transcript) => ({ transcript }));
+
+  it("joins a desktop session's results in order", () => {
+    expect(sessionTranscript(r("Es un tapete ", " de lana"), false)).toBe("Es un tapete de lana");
+  });
+
+  it("keeps only the last cumulative result on Android, so words don't repeat", () => {
+    expect(sessionTranscript(r("es", "es un", "es un tapete de lana"), true)).toBe("es un tapete de lana");
+  });
+
+  it("is empty for an empty session", () => {
+    expect(sessionTranscript([], true)).toBe("");
   });
 });
