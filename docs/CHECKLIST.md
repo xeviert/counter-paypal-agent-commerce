@@ -73,7 +73,7 @@ Scripts print PASS/FAIL. When one prints a PayPal link, approve it as the sandbo
 - [ ] `pnpm e2e:release` → ALL PASSED [§6.3 bug 1, §8.1]
   - Nov 10: ALL PASSED, capture `8KJ76676LU8109347`; fixture committed
   - On Render `/ops` → Audit log: the `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` webhook for that capture arrived
-- [ ] `pnpm e2e:replay` → passes: one `PaidHeld`, one capture id, at most one release [§8.2]
+- [ ] Stop `pnpm dev` first (otherwise it captures on the return URL and the script waits forever), then `pnpm e2e:replay` → passes: one `PaidHeld`, one capture id, at most one release [§8.2]
 - [ ] **Fresh-maker onboarding** on Render [§6.1, §8.1]
   1. PayPal developer dashboard → Sandbox accounts → Create account → Business, country Mexico
   2. Render app `/s/signup` with a new email → Connect PayPal → log in as the new sandbox business account → back on `/s/onboarding/return`, "Check again" until ready

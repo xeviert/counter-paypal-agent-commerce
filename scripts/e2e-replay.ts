@@ -50,7 +50,10 @@ console.log(`\nAPPROVE AS THE SANDBOX BUYER:\n${output.approvalUrl}\n`);
 const deadline = Date.now() + 15 * 60_000;
 for (;;) {
   const raw = await paypalRequest<unknown>("orders.get", `/v2/checkout/orders/${created.paypalOrderId}`);
-  if (orderSchema.parse(raw).status === "APPROVED") break;
+  const status = orderSchema.parse(raw).status;
+  if (status === "APPROVED") break;
+  // The return URL is APP_BASE_URL; a running `pnpm dev` captures before this script can.
+  if (status === "COMPLETED") throw new Error("order already captured: stop the local dev server (port 3000) and re-run");
   if (Date.now() > deadline) throw new Error("timed out waiting for approval");
   await new Promise((resolve) => setTimeout(resolve, 5_000));
 }
