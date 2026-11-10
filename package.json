@@ -38,6 +38,7 @@
     "eval:injection": "tsx scripts/eval-injection.ts",
     "e2e:replay": "tsx scripts/e2e-replay.ts",
     "demo:reset": "tsx scripts/demo-reset.ts",
+    "map:build": "tsx scripts/build-world-map.ts",
     "cost:report": "tsx scripts/cost-report.ts"
   },
   "dependencies": {
@@ -66,18 +67,25 @@
     "@axe-core/playwright": "^4.14.0",
     "@modelcontextprotocol/client": "2.4.0",
     "@tailwindcss/turbopack": "^4",
+    "@types/d3-geo": "^3.1.1",
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "d3-geo": "^3.1.2",
     "drizzle-kit": "0.31.11",
     "drizzle-zod": "0.8.3",
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "playwright": "^1.64.1",
     "tailwindcss": "^4",
+    "topojson-client": "^3.1.0",
     "typescript": "^5",
     "typescript-eslint": "8.72.1",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "world-atlas": "^2.0.2",
+    "world-countries": "^5.1.0"
   },
   "packageManager": "pnpm@12.15.0",
   "engines": {

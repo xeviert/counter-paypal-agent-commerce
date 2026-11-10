@@ -30,8 +30,11 @@ async function MakerShell({ children }: { children: React.ReactNode }) {
   return (
     <I18nProvider locale={seller.locale} messages={messagesFor(seller.locale)}>
       <div lang={seller.locale} className="mx-auto flex w-full max-w-md flex-1 flex-col">
-        <header className="flex items-center justify-between px-4 pt-4">
-          <span className="text-sm font-medium text-muted-foreground">Counter · {seller.name}</span>
+        <header className="flex items-baseline justify-between gap-3 px-4 pt-4">
+          <span className="flex min-w-0 items-baseline gap-2">
+            <span className="font-heading text-lg font-semibold text-primary">Counter</span>
+            <span className="truncate text-sm text-muted-foreground">{seller.name}</span>
+          </span>
           <form action={logOut}>
             <button type="submit" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
               {t("common.signOut")}

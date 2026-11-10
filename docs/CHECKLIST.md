@@ -217,17 +217,21 @@ After this: bug fixes, copy and video only.
 - [ ] Shot list per beat: device, URL, account, data state, settings [§8b.1]
 - [x] **Ship-to:** decided Nov 10: prompts say "ships to the US" (the sandbox buyer `TEST_PERSONAL_EMAIL` has a US address). A Germany quote with a US PayPal address cancels on approval (`ship_to_region_mismatch`)
 - [ ] Rehearse every beat on Render the day before; against Render `pnpm demo:reset --yes` between takes
-- [ ] Timer beat: `RELEASE_AFTER_DAYS=0.002` on **both** `counter` and `counter-sweep`; put **14** back on both right after
+- [ ] **Timer beat**, only while recording it:
+  1. Render → `counter` → Environment → `RELEASE_AFTER_DAYS` = `0.002` (~3 min) → Save. Same on `counter-sweep`. Wait for both to redeploy
+  2. Record the beat: ship → release fires on its own
+  3. **Right after:** set `RELEASE_AFTER_DAYS` back to `14` on **both** services → Save. Leaving 0.002 releases every judge's order in minutes
 - [ ] Record: Pixel screen for maker + voice beats; desktop 1080p, zoomed UI, large font for agent + dashboard beats; voiceover recorded separately
 - [ ] Edit: cut every wait, captions, royalty-free or no music, **under 2:50**
 - [ ] YouTube, public; check it plays logged out; send me the link for the README
+- [ ] **After recording:** Render → `counter-db` → Access Control / Inbound IP Rules → remove your IP (added back Nov 10 for `demo:reset` between takes). Then confirm `RELEASE_AFTER_DAYS` = `14` on `counter` and `counter-sweep`
 
 ---
 
 ## 13. Submit (Nov 11) · Nov 12 buffer only
 
 - [x] Replace `app/favicon.ico` with a Counter icon (Nov 10: terracotta tile, stepped-fret "C"; favicon, `app/icon.svg`, PWA + Apple icons)
-- [ ] GitHub repo → public (secret scan done in §8.2); the About sidebar shows MIT [§8b.2]
+- [ ] GitHub repo → public (secret scan re-run Nov 10: 71 commits, no leaks); the About sidebar shows MIT [§8b.2]
 - [ ] Devpost: description, tools, `docs/architecture.png`, video link, demo URL, testing instructions from §9
 - [ ] After submitting: `pnpm e2e:purchase` once more, one manual never-cut run on Render, then against Render `pnpm demo:reset --yes`
 - [ ] No deploys after submit except fixes for a broken demo

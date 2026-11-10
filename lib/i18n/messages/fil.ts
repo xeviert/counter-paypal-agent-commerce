@@ -62,6 +62,8 @@ export const fil: Messages = {
     dashboardHint: "Benta, bayad at ginawa ng mga shopping agent. Mas maganda sa tablet o computer.",
     today: "Ngayon",
     week: "Ngayong linggo",
+    mapTitle: "Saan napunta ang mga gawa mo",
+    mapEmpty: "Makikita rito ang mga benta mo, mula {place} hanggang saan man ito ipadala.",
   },
   onboarding: {
     title: "Mabayaran sa PayPal",

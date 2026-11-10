@@ -1,6 +1,6 @@
 "use client";
 
-import { HomeIcon, InboxIcon, PackageIcon, PlusIcon, SparklesIcon, TagIcon } from "lucide-react";
+import { HomeIcon, InboxIcon, MessageCircleIcon, PackageIcon, PlusIcon, TagIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/components/i18n";
@@ -11,7 +11,7 @@ const ITEMS: { href: string; label: MessageKey; icon: typeof HomeIcon }[] = [
   { href: "/s/listings", label: "nav.listings", icon: TagIcon },
   { href: "/s/new", label: "nav.new", icon: PlusIcon },
   { href: "/s/orders", label: "nav.orders", icon: PackageIcon },
-  { href: "/s/copilot", label: "nav.copilot", icon: SparklesIcon },
+  { href: "/s/copilot", label: "nav.copilot", icon: MessageCircleIcon },
   { href: "/s/inbox", label: "nav.inbox", icon: InboxIcon },
 ];
 
@@ -28,7 +28,7 @@ export function BottomNav({ unread }: { unread: number }) {
               <Link
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className="relative flex flex-col items-center gap-0.5 py-2 text-xs text-muted-foreground aria-[current=page]:text-foreground"
+                className="relative flex flex-col items-center gap-0.5 py-2 text-xs text-muted-foreground aria-[current=page]:font-medium aria-[current=page]:text-primary"
               >
                 <Icon className="size-5" aria-hidden />
                 {t(label)}

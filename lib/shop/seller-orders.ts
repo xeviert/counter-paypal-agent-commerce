@@ -173,3 +173,13 @@ export async function sellerSummary(db: Tx, sellerId: string) {
     .where(and(eq(products.sellerId, sellerId), eq(products.status, "live")));
   return { toShip: counts?.toShip ?? 0, heldCents: counts?.heldCents ?? 0, live: live?.n ?? 0 };
 }
+
+/** Paid orders per buyer country, most first: the home screen's map. */
+export async function buyerCountries(db: Tx, sellerId: string): Promise<{ country: string; orders: number }[]> {
+  return db
+    .select({ country: orders.buyerCountry, orders: count() })
+    .from(orders)
+    .where(and(eq(orders.sellerId, sellerId), inArray(orders.status, MAKER_VISIBLE)))
+    .groupBy(orders.buyerCountry)
+    .orderBy(desc(count()), orders.buyerCountry);
+}

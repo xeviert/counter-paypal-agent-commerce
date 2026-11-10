@@ -63,6 +63,8 @@ export const en = {
     dashboardHint: "Sales, payouts and what shopping agents did. Best on a tablet or computer.",
     today: "Today",
     week: "This week",
+    mapTitle: "Where your pieces went",
+    mapEmpty: "Your sales will show up here, from {place} to wherever they ship.",
   },
   onboarding: {
     title: "Get paid with PayPal",

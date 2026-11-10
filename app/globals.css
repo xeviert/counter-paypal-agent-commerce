@@ -9,7 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -24,6 +24,9 @@
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
   --color-chart-6: var(--chart-6);
+  --color-status-wait: var(--status-wait);
+  --color-status-moving: var(--status-moving);
+  --color-status-done: var(--status-done);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -50,24 +53,29 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Warm paper and ink, with a madder-red accent: the colors of the makers' dyes, not a tech brand. */
+  --background: oklch(0.982 0.008 85);
+  --foreground: oklch(0.23 0.02 50);
+  --card: oklch(0.995 0.004 85);
+  --card-foreground: oklch(0.23 0.02 50);
+  --popover: oklch(0.995 0.004 85);
+  --popover-foreground: oklch(0.23 0.02 50);
+  --primary: oklch(0.5 0.16 32);
+  --primary-foreground: oklch(0.985 0.006 85);
+  --secondary: oklch(0.945 0.014 80);
+  --secondary-foreground: oklch(0.28 0.02 50);
+  --muted: oklch(0.945 0.014 80);
+  --muted-foreground: oklch(0.49 0.02 60);
+  --accent: oklch(0.93 0.02 75);
+  --accent-foreground: oklch(0.28 0.02 50);
+  --destructive: oklch(0.52 0.19 25);
+  --border: oklch(0.89 0.016 78);
+  --input: oklch(0.86 0.018 78);
+  --ring: oklch(0.6 0.13 32);
+  /* Order states: ochre needs the maker, indigo is on its way, green is paid out. */
+  --status-wait: oklch(0.47 0.1 70);
+  --status-moving: oklch(0.45 0.1 262);
+  --status-done: oklch(0.45 0.1 150);
   /* Categorical chart slots, in order (dataviz palette, validated for CVD in light mode). */
   --chart-1: #2a78d6;
   --chart-2: #eb6834;
@@ -75,15 +83,15 @@
   --chart-4: #eda100;
   --chart-5: #e87ba4;
   --chart-6: #6250d6;
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.375rem;
+  --sidebar: oklch(0.965 0.01 82);
+  --sidebar-foreground: oklch(0.23 0.02 50);
+  --sidebar-primary: oklch(0.5 0.16 32);
+  --sidebar-primary-foreground: oklch(0.985 0.006 85);
+  --sidebar-accent: oklch(0.93 0.02 75);
+  --sidebar-accent-foreground: oklch(0.28 0.02 50);
+  --sidebar-border: oklch(0.89 0.016 78);
+  --sidebar-ring: oklch(0.6 0.13 32);
 }
 
 .dark {

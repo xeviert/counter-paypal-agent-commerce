@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PageLoading } from "@/components/maker/page-loading";
-import { Badge } from "@/components/ui/badge";
+import { OrderMap } from "@/components/maker/order-map";
+import { OrderStatusBadge } from "@/components/maker/order-status";
 import { requireSeller, type SessionSeller } from "@/lib/auth/seller";
 import { getDb } from "@/lib/db";
 import type { Order } from "@/lib/db/orders";
@@ -39,7 +40,7 @@ async function OrderDetail({ params }: { params: PageProps<"/s/orders/[id]">["pa
       <header className="flex flex-col gap-2">
         <p className="text-sm text-muted-foreground">{t("orders.order", { ref: orderRef(order.id) })}</p>
         <h1 className="font-heading text-xl font-semibold tracking-tight">{t("orders.item", { title, quantity: order.quantity })}</h1>
-        <Badge className="w-fit">{t(`orders.status.${order.status}`)}</Badge>
+        <OrderStatusBadge status={order.status} label={t(`orders.status.${order.status}`)} />
       </header>
 
       <Release order={order} seller={seller} t={t} />
@@ -56,9 +57,12 @@ async function OrderDetail({ params }: { params: PageProps<"/s/orders/[id]">["pa
         </p>
       )}
 
-      <ShipTo order={order} seller={seller} t={t} />
+      <section className="overflow-hidden rounded-lg border bg-card">
+        <OrderMap from={seller.country} to={[order.buyerCountry]} className="border-b bg-muted/40 px-2 py-3" />
+        <ShipTo order={order} seller={seller} t={t} />
+      </section>
 
-      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 rounded-lg border p-3 text-sm">
+      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-2 rounded-lg border bg-card p-3 text-sm">
         <dt className="text-muted-foreground">{t("orders.itemTotal")}</dt>
         <dd className="text-right tabular-nums">{money(order.itemAmount)}</dd>
         <dt className="text-muted-foreground">{t("orders.shipping")}</dt>
@@ -110,10 +114,10 @@ function ShipTo({ order, seller, t }: { order: Order; seller: SessionSeller; t: 
     a && countryName(a.country_code, seller.locale),
   ].filter(Boolean);
   return (
-    <section className="flex flex-col gap-1 rounded-lg border p-3 text-sm">
+    <div className="flex flex-col gap-1 p-3 text-sm">
       <h2 className="font-medium">{t("orders.shipTo")}</h2>
       <address className="not-italic whitespace-pre-line select-all">{lines.join("\n")}</address>
       {order.buyerEmail && <p className="text-muted-foreground">{order.buyerEmail}</p>}
-    </section>
+    </div>
   );
 }

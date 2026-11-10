@@ -62,6 +62,8 @@ export const es: Messages = {
     dashboardHint: "Ventas, pagos y lo que hicieron los agentes de compra. Mejor en tableta o computadora.",
     today: "Hoy",
     week: "Esta semana",
+    mapTitle: "A dónde llegaron tus piezas",
+    mapEmpty: "Aquí verás tus ventas, de {place} a donde se envíen.",
   },
   onboarding: {
     title: "Cobra con PayPal",

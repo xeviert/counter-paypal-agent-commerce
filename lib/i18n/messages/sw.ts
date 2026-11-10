@@ -62,6 +62,8 @@ export const sw: Messages = {
     dashboardHint: "Mauzo, malipo na walichofanya mawakala wa ununuzi. Bora kwenye tablet au kompyuta.",
     today: "Leo",
     week: "Wiki hii",
+    mapTitle: "Bidhaa zako zilikoenda",
+    mapEmpty: "Mauzo yako yataonekana hapa, kutoka {place} hadi popote yatakapotumwa.",
   },
   onboarding: {
     title: "Lipwa kupitia PayPal",
