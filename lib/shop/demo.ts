@@ -33,12 +33,16 @@ export async function resetDemo(db: Tx, catalog: { slug: string; stock: number }
     .select({ id: orders.id })
     .from(orders)
     .where(and(inArray(orders.sellerId, sellerIds), or(isNull(orders.paypalOrderId), not(like(orders.paypalOrderId, "SEED-%")))));
-  const orderIds = filmed.map((o) => o.id);
   const extra = await db
     .select({ id: products.id })
     .from(products)
     .where(and(inArray(products.sellerId, sellerIds), slugs.length ? notInArray(products.slug, slugs) : undefined));
   const extraIds = extra.map((p) => p.id);
+  // Seeded history on a product that's about to go would block its delete.
+  const onExtra = extraIds.length
+    ? await db.select({ id: orders.id }).from(orders).where(inArray(orders.productId, extraIds))
+    : [];
+  const orderIds = [...new Set([...filmed, ...onExtra].map((o) => o.id))];
   const productIds = db.select({ id: products.id }).from(products).where(inArray(products.sellerId, sellerIds));
 
   await db.delete(copilotActions).where(inArray(copilotActions.sellerId, sellerIds));

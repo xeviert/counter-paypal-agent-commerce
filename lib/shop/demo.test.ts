@@ -36,6 +36,8 @@ describe.skipIf(!testDatabaseUrl)("resetDemo", () => {
       .values({ ...orderValues(seller.id, product.id), paypalOrderId: "5O190127TN364715T", offerId: offer!.id, status: "PaidHeld" })
       .returning();
     await db.insert(orders).values(orderValues(seller.id, extra!.id));
+    // seed:activity history on a non-catalog product goes with the product
+    await db.insert(orders).values({ ...orderValues(seller.id, extra!.id), paypalOrderId: "SEED-EXTRA", status: "Released" });
     const [history] = await db
       .insert(orders)
       .values({ ...orderValues(seller.id, product.id), paypalOrderId: "SEED-ABC", status: "Released" })
@@ -51,7 +53,7 @@ describe.skipIf(!testDatabaseUrl)("resetDemo", () => {
     await db.insert(orders).values({ ...orderValues(real.seller.id, real.product.id), paypalOrderId: "REAL-1" });
 
     const counts = await resetDemo(db, [{ slug: "zapotec-fret-rug", stock: 3 }]);
-    expect(counts).toMatchObject({ orders: 2, products: 1, offers: 1, drafts: 1, notifications: 1, restocked: 1 });
+    expect(counts).toMatchObject({ orders: 3, products: 1, offers: 1, drafts: 1, notifications: 1, restocked: 1 });
 
     const left = await db.select({ id: orders.id }).from(orders);
     expect(left.map((o) => o.id)).toHaveLength(2);

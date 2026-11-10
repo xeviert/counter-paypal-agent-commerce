@@ -63,7 +63,7 @@ await db.transaction(async (tx) => {
   const catalog = await tx
     .select({ id: products.id, listPrice: products.listPrice, weightClass: products.weightClass })
     .from(products)
-    .where(and(eq(products.sellerId, persona.id), eq(products.status, "live")));
+    .where(and(eq(products.sellerId, persona.id), eq(products.status, "live"), inArray(products.slug, persona.products.map((p) => p.slug))));
   if (!catalog.length) throw new Error("no live products for this maker; onboard and re-run pnpm seed");
 
   // A few products sell well, most a little: a believable "top products" chart.
