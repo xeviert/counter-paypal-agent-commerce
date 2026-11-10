@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import { and, eq } from "drizzle-orm";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Db } from "@/lib/db";
 import { drafts, events, notifications, orders, products, refunds, sellers } from "@/lib/db/schema";
 import { searchProductsInput } from "@/lib/schemas/mcp";
 import { capture as captureSchema } from "@/lib/schemas/paypal";
 import { orderValues, seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
+import { stubPayPalEnv } from "@/test/paypal";
 import { searchProducts } from "./catalog";
 import {
   approveListing,
@@ -32,8 +33,10 @@ describe.skipIf(!testDatabaseUrl)("operator console (DB)", () => {
     db = testDb();
   });
   beforeEach(async () => {
+    stubPayPalEnv();
     await truncateAll(db);
   });
+  afterEach(() => vi.unstubAllEnvs());
   afterAll(async () => {
     await db.$client.end();
   });
