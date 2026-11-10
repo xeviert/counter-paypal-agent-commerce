@@ -82,6 +82,12 @@ describe("nextStep", () => {
       "Estafeta",
     );
   });
+
+  it("says why a ship-to region mismatch canceled the checkout", () => {
+    const canceled = { ...order, status: "Canceled" as const, buyerCountry: "DE", shippingAddress: { address: { country_code: "US" } } };
+    expect(nextStep(canceled)).toMatch(/quoted to DE, but the PayPal address is in US/);
+    expect(nextStep({ ...order, status: "Canceled", shippingAddress: null })).toMatch(/^This checkout was canceled/);
+  });
 });
 
 describe("shipToSummary", () => {

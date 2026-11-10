@@ -12,7 +12,15 @@ export type OrderStatusView = z.output<typeof getOrderStatusOutput>;
 
 type StatusFields = Pick<
   Order,
-  "status" | "expiresAt" | "captureStatusReason" | "carrier" | "carrierNameOther" | "trackingNumber" | "releaseDueAt"
+  | "status"
+  | "expiresAt"
+  | "captureStatusReason"
+  | "carrier"
+  | "carrierNameOther"
+  | "trackingNumber"
+  | "releaseDueAt"
+  | "buyerCountry"
+  | "shippingAddress"
 >;
 
 /** One plain sentence for agents and the `/o` page. */
@@ -41,8 +49,13 @@ export function nextStep(order: StatusFields, now = new Date()): string {
       return "Refunded to the buyer's PayPal account.";
     case "Expired":
       return "This checkout expired before it was approved. Nothing was charged; start a new one with create_checkout.";
-    case "Canceled":
-      return "This checkout was canceled. Nothing was charged; start a new one with create_checkout.";
+    case "Canceled": {
+      // Only a ship-to region mismatch cancels with an address on file (lib/shop/payment.ts).
+      const shipTo = shipToSummary(order.shippingAddress)?.country;
+      return shipTo
+        ? `Canceled: shipping was quoted to ${order.buyerCountry}, but the PayPal address is in ${shipTo}. Nothing was charged; start a new checkout with buyerCountry ${shipTo}, or pick an address in ${order.buyerCountry} on PayPal.`
+        : "This checkout was canceled. Nothing was charged; start a new one with create_checkout.";
+    }
     case "Denied":
       return "PayPal declined the payment. Nothing was charged; the buyer can try again with a new checkout.";
   }

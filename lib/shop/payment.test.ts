@@ -166,7 +166,9 @@ describe.skipIf(!testDatabaseUrl)("payment flow", () => {
       const { calls } = paypal(approvedOrder);
       await returnRedirect(db, PAYPAL_ID);
       expect(calls.some((c) => c.path.endsWith("/capture"))).toBe(false);
-      expect((await current(order.id)).status).toBe("Canceled");
+      const canceled = await current(order.id);
+      expect(canceled.status).toBe("Canceled");
+      expect(canceled.shippingAddress).toEqual({ address: { country_code: "US" } });
       expect(await stock(product.id)).toEqual({ stock: 2, reserved: 0 });
     });
 

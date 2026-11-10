@@ -192,6 +192,8 @@ export async function settleApprovedOrder(db: Tx, order: Order, trigger: Trigger
     const { order: canceled } = await transition(db, order.id, "Canceled", {
       ...trigger,
       from: OPEN,
+      // Country only: the status page says why it was canceled without keeping the buyer's address.
+      ...(shipTo && { patch: { shippingAddress: { address: { country_code: shipTo } } } }),
       payload: { reason: "ship_to_region_mismatch", quoted: order.buyerCountry, shipTo: shipTo ?? null },
     });
     return { kind: "settled", order: canceled };

@@ -103,9 +103,10 @@ In claude.ai: new chat → **+** → Connectors: Counter **on**, Web search **of
 
 - [ ] **Negotiated purchase** (account 1) [§6.4, §6 bug 4, §8.1]
   1. "Find a Zapotec rug under $250 that ships to Germany." → ask it a question about the rug → "Offer $120 for it." (the rug lists at $145, so offer below list)
-  - Nov 10: search works: `zapotec-fret-rug`, $145 + $32 shipping to DE = $177, stock 3
+  - Nov 10: search works: `zapotec-fret-rug`, $145 + $32 shipping to DE = $177, stock 3. Claude said the listing has no dimensions: it only read the search summary. The listing has them (90 × 60 cm); say "Get the full details" so it calls `get_product`
+  - Nov 10 attempt 1: negotiated to $138 + $32 = $170, approved, then **Canceled** (`ship_to_region_mismatch`, quoted DE, PayPal address US). Fix before retrying: give the sandbox buyer a German address (below). The status page now says why (deploy needed)
   2. The reply ends with `offerId: …` → "Buy it at that price." → the checkout reply ends with `statusToken: …`
-  3. Approve on PayPal as the sandbox buyer
+  3. Approve on PayPal as the sandbox buyer (`TEST_PERSONAL_EMAIL`, incognito). The PayPal ship-to must be in the quoted region, here Germany
   4. "Did my payment go through?" → Claude calls `get_order_status` → paid
   - **Pass:** the PayPal total = agreed price + shipping, not list price; `/ops` audit log shows the `mcp.make_offer` row with its policy result
   - Keep this order: §7 ships and releases it
@@ -194,6 +195,7 @@ After this: bug fixes, copy and video only.
 
 - [ ] Update the script in `docs/info-and-planning.md` §11 to what's built: ChatGPT beat → Claude voice mode; "priced in USD and EUR" → USD + approximate local price; injection beat shown in the `/ops` audit log. I can draft this if you want [§8b.1]
 - [ ] Shot list per beat: device, URL, account, data state, settings [§8b.1]
+- [ ] **Sandbox buyer ship-to = Germany** before any agent-purchase take: sandbox.paypal.com (as `TEST_PERSONAL_EMAIL`) → Settings → Addresses → add a German address, make it primary (or pick it under "Ship to" on the approval page). A US address with a Germany quote cancels the order on approval (`ship_to_region_mismatch`). Prompts say "ships to Germany"; or say "ships to the US" and skip this
 - [ ] Rehearse every beat on Render the day before; against Render `pnpm demo:reset --yes` between takes
 - [ ] Timer beat: `RELEASE_AFTER_DAYS=0.002` on **both** `counter` and `counter-sweep`; put **14** back on both right after
 - [ ] Record: Pixel screen for maker + voice beats; desktop 1080p, zoomed UI, large font for agent + dashboard beats; voiceover recorded separately
