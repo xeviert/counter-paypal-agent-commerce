@@ -85,6 +85,7 @@ Scripts print PASS/FAIL. When one prints a PayPal link, approve it as the sandbo
   1. Log in to sandbox.paypal.com as the fresh business account → revoke Counter's permissions
   2. Audit log shows `MERCHANT.PARTNER-CONSENT.REVOKED`; the maker's listing is gone from search; the maker sees a notification
   3. Copy the webhook body to me (or save it in `test/fixtures/webhooks/`)
+  - Nov 10: **skipped**. The sandbox business UI has no revoke for partner permissions (Account access → API access only shows API credentials setup). Revoke handling stays covered by unit tests with a hand-written body
 - [ ] **Dispute fixture** [§6.3]
   1. Log in to sandbox.paypal.com as the sandbox buyer → Activity → a paid Counter order that isn't released → Report a problem
   2. Audit log shows `CUSTOMER.DISPUTE.CREATED`; the order shows as disputed on the maker's `/s/orders`
