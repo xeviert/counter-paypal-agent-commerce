@@ -4,7 +4,7 @@ import { PolicyError } from "@/lib/policy/errors";
 import { getProductOutput, searchProductsInput, searchProductsOutput } from "@/lib/schemas/mcp";
 import { seedPhoto, seedProduct, testDatabaseUrl, testDb, truncateAll } from "@/test/db";
 import { stubPayPalEnv } from "@/test/paypal";
-import { getProduct, searchProducts } from "./catalog";
+import { featuredProducts, getProduct, searchProducts } from "./catalog";
 
 const rug = {
   language: "es" as const,
@@ -126,6 +126,26 @@ describe.skipIf(!testDatabaseUrl)("catalog", () => {
       expect(await policyCode(getProduct(db, { productId: "2f1c6a1e-8a2b-4c3d-9e4f-5a6b7c8d9e0f" }))).toBe(
         "PRODUCT_NOT_FOUND",
       );
+    });
+  });
+
+  describe("featuredProducts", () => {
+    it("returns sellable products with a cover photo, up to the limit", async () => {
+      const withPhoto = async (opts: Parameters<typeof seedProduct>[1]) => {
+        const seeded = await seedProduct(db, opts);
+        return { ...seeded, cover: await seedPhoto(db, seeded.product, 0) };
+      };
+      const { cover } = await withPhoto({ listing: rug });
+      await withPhoto({ listing: basket, product: { status: "paused" } });
+      await withPhoto({ listing: basket, seller: { consentStatus: "revoked" } });
+      await seedProduct(db, { listing: basket });
+
+      const featured = await featuredProducts(db);
+      expect(featured.map((p) => p.title)).toEqual(["Handwoven wool rug"]);
+      expect(featured[0]!.photoUrl).toBe(`https://counter.test/api/photos/${cover.id}`);
+
+      await withPhoto({ listing: basket });
+      expect(await featuredProducts(db, 1)).toHaveLength(1);
     });
   });
 });

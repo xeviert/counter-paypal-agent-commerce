@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, exists, inArray, isNotNull, lte, sql, type SQL } from "drizzle-orm";
 import type { z } from "zod";
 import type { Tx } from "@/lib/db";
 import { photos, products, sellers } from "@/lib/db/schema";
@@ -96,6 +96,21 @@ export async function searchProducts(
   const photosByProduct = await photoIds(db, rows.map((r) => r.product.id));
   return rows.map(({ product, seller }) =>
     toSummary(product, seller, { buyerCountry: input.buyerCountry, photoId: photosByProduct.get(product.id)?.[0] }),
+  );
+}
+
+/** Newest sellable products that have a photo, for the root page. */
+export async function featuredProducts(db: Tx, limit = 4): Promise<ProductSummary[]> {
+  const rows = await db
+    .select({ product: products, seller: { name: sellers.name, country: sellers.country, locality: sellers.locality } })
+    .from(products)
+    .innerJoin(sellers, eq(products.sellerId, sellers.id))
+    .where(and(...sellableConditions(), exists(db.select().from(photos).where(eq(photos.productId, products.id)))))
+    .orderBy(sql`${products.publishedAt} DESC NULLS LAST`)
+    .limit(limit);
+  const photosByProduct = await photoIds(db, rows.map((r) => r.product.id));
+  return rows.map(({ product, seller }) =>
+    toSummary(product, seller, { photoId: photosByProduct.get(product.id)?.[0] }),
   );
 }
 
