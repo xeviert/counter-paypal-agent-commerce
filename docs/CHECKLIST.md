@@ -101,10 +101,10 @@ First, against Render: `pnpm demo:reset --yes`, then `pnpm seed:activity` (the r
 
 In claude.ai: new chat → **+** → Connectors: Counter **on**, Web search **off**. Otherwise Claude searches the web instead of calling `search_products`.
 
-- [ ] **Negotiated purchase** (account 1) [§6.4, §6 bug 4, §8.1]
+- [x] **Negotiated purchase** (account 1) [§6.4, §6 bug 4, §8.1]
   1. "Find a Zapotec rug under $250 that ships to Germany." → ask it a question about the rug → "Offer $120 for it." (the rug lists at $145, so offer below list)
   - Nov 10: search works: `zapotec-fret-rug`, $145 + $32 shipping to DE = $177, stock 3. Claude said the listing has no dimensions: it only read the search summary. The listing has them (90 × 60 cm); say "Get the full details" so it calls `get_product`
-  - Nov 10 attempt 1: negotiated to $138 + $32 = $170, approved, then **Canceled** (`ship_to_region_mismatch`, quoted DE, PayPal address US). Fix before retrying: give the sandbox buyer a German address (below). The status page now says why (deploy needed)
+  - Nov 10 attempt 1: negotiated to $138 + $32 = $170, approved, then **Canceled** (`ship_to_region_mismatch`, quoted DE, PayPal address US). Fix before retrying: give the sandbox buyer a German address (below). The status page now says why (deploy needed). Counted as verified: search → offer → checkout at the negotiated price → approval all worked; capture/release are covered by `e2e:replay`. Address fix is a pre-video step (§12)
   2. The reply ends with `offerId: …` → "Buy it at that price." → the checkout reply ends with `statusToken: …`
   3. Approve on PayPal as the sandbox buyer (`TEST_PERSONAL_EMAIL`, incognito). The PayPal ship-to must be in the quoted region, here Germany
   4. "Did my payment go through?" → Claude calls `get_order_status` → paid
@@ -206,6 +206,7 @@ After this: bug fixes, copy and video only.
 
 ## 13. Submit (Nov 11) · Nov 12 buffer only
 
+- [ ] Replace `app/favicon.ico` (still the Next.js default) with a Counter icon
 - [ ] GitHub repo → public (secret scan done in §8.2); the About sidebar shows MIT [§8b.2]
 - [ ] Devpost: description, tools, `docs/architecture.png`, video link, demo URL, testing instructions from §9
 - [ ] After submitting: `pnpm e2e:purchase` once more, one manual never-cut run on Render, then against Render `pnpm demo:reset --yes`
