@@ -226,7 +226,7 @@ After this: bug fixes, copy and video only.
 
 ## 13. Submit (Nov 11) · Nov 12 buffer only
 
-- [ ] Replace `app/favicon.ico` (still the Next.js default) with a Counter icon
+- [x] Replace `app/favicon.ico` with a Counter icon (Nov 10: terracotta tile, stepped-fret "C"; favicon, `app/icon.svg`, PWA + Apple icons)
 - [ ] GitHub repo → public (secret scan done in §8.2); the About sidebar shows MIT [§8b.2]
 - [ ] Devpost: description, tools, `docs/architecture.png`, video link, demo URL, testing instructions from §9
 - [ ] After submitting: `pnpm e2e:purchase` once more, one manual never-cut run on Render, then against Render `pnpm demo:reset --yes`
