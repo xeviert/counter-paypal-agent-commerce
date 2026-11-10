@@ -4,8 +4,9 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 
 // Voice note capture (BUILDOUT §6.1): MediaRecorder always records the audio, so a paid STT can
 // re-transcribe it later. Web Speech gives a live transcript where the browser has it. Android Chrome
-// won't let both hold the mic (Web Speech fails with `audio-capture`), so there the recorder stops and
-// the live transcript carries on alone.
+// won't let both hold the mic: Web Speech either fails with `audio-capture` or, on the Pixel 9a
+// (Nov 10), hears nothing and never errors. So on Android with Web Speech we skip the recorder and run
+// the live transcript alone; elsewhere `audio-capture` still switches to speech-only mid-take.
 
 // Not in TypeScript's DOM lib yet.
 type Recognition = {
@@ -30,6 +31,7 @@ function recognitionCtor(): RecognitionCtor | undefined {
 
 const noop = () => () => {};
 const canRecord = () => typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 /** What to do with a Web Speech `error` code. */
 export function speechErrorAction(error: string, speechOnly: boolean): "ignore" | "speech-only" | "show" {
@@ -89,28 +91,37 @@ export function useVoice(opts: {
       setState("denied");
       return;
     }
-    const mime = MIME_CANDIDATES.find((m) => MediaRecorder.isTypeSupported(m));
-    const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
-    const chunks: Blob[] = [];
-    const startedAt = Date.now();
+    const Ctor = recognitionCtor();
     const releaseMic = () => stream.getTracks().forEach((track) => track.stop());
-    rec.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
-    rec.onstop = () => {
-      releaseMic();
-      if (speechOnly.current) return;
-      setState("idle");
-      const type = rec.mimeType || mime || "audio/webm";
-      if (chunks.length) callbacks.current.onRecorded({ blob: new Blob(chunks, { type }), mime: type, durationMs: Date.now() - startedAt });
-    };
-    recorder.current = rec;
     recording.current = true;
-    speechOnly.current = false;
+    speechOnly.current = Boolean(Ctor) && isAndroid();
     setSpeechError(undefined);
-    rec.start(1000);
     setSeconds(0);
     setState("recording");
 
-    const Ctor = recognitionCtor();
+    let rec: MediaRecorder | null = null;
+    if (speechOnly.current) {
+      // The permission prompt is done; hand the mic to Web Speech.
+      releaseMic();
+      recorder.current = null;
+    } else {
+      const mime = MIME_CANDIDATES.find((m) => MediaRecorder.isTypeSupported(m));
+      const r = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks: Blob[] = [];
+      const startedAt = Date.now();
+      r.ondataavailable = (e) => e.data.size > 0 && chunks.push(e.data);
+      r.onstop = () => {
+        releaseMic();
+        if (speechOnly.current) return;
+        setState("idle");
+        const type = r.mimeType || mime || "audio/webm";
+        if (chunks.length) callbacks.current.onRecorded({ blob: new Blob(chunks, { type }), mime: type, durationMs: Date.now() - startedAt });
+      };
+      recorder.current = r;
+      rec = r;
+      r.start(1000);
+    }
+
     if (!Ctor) return;
     const speech = new Ctor();
     speech.lang = callbacks.current.lang;
@@ -147,7 +158,7 @@ export function useVoice(opts: {
       if (action === "ignore") return;
       if (action === "speech-only") {
         speechOnly.current = true;
-        rec.stop();
+        rec?.stop();
         releaseMic();
         return;
       }

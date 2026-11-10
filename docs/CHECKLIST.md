@@ -17,7 +17,8 @@ Everything else below is skippable or happens during rehearsal. Work these, then
   1. `/s/new`: record a Spanish voice note → the transcript fills in. If "Live transcript stopped (…)" appears, send me the code
   2. "Take photo" opens the camera; "Choose photos" opens the gallery
   3. Make listing → review → publish → it's live on `/s/listings`
-- [ ] **Render feature looks** (§8, desktop, ~10 min)
+  - Nov 10 run 1: **voice FAIL**, nothing in "Lo que dijiste", no error code (bug 2 again). Fix: on Android, Web Speech now runs without the audio recorder (both can't share the mic). Deploy, then re-test. Still failing → the video types the description
+- [x] **Render feature looks** (§8, desktop, ~10 min). Nov 10: copilot, dashboard timeline ("Cuándo te pagan"), both `/ops` logins all pass
   1. Copilot as Lucía: "¿Quién compró hoy?" → Spanish answer
   2. `/s/dashboard`: "Restablecer panel" → "Cuándo te pagan" timeline on Ventas; no "Trial Period Expired" watermark
   3. `/ops` in incognito: `OPS_PASSWORD` → Audit log loads; sign out → judge password → same pages, no Approve/Reject, no Copilot
