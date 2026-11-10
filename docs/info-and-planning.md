@@ -653,6 +653,8 @@ Superseded by [BUILDOUT.md](BUILDOUT.md), the day-by-day plan and status (phases
 
 ## 11. Demo video plan (under 3 min)
 
+> **Superseded Nov 10 by [VIDEO.md](VIDEO.md)** (script matched to what's built: Claude instead of ChatGPT, USD + approximate pesos, US buyer, injection shown in `/ops`). The table below is the original plan.
+
 | Time | Beat |
 |---|---|
 | 0:00–0:20 | Hook: an agent asked for a handwoven rug buys from a big retailer. The weaver in Oaxaca who made a better one is invisible to agents. |

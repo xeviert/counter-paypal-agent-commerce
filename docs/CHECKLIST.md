@@ -213,8 +213,7 @@ After this: bug fixes, copy and video only.
 
 ## 12. Video (Nov 9–10)
 
-- [ ] Update the script in `docs/info-and-planning.md` §11 to what's built: ChatGPT beat → Claude voice mode; "priced in USD and EUR" → USD + approximate local price; injection beat shown in the `/ops` audit log. I can draft this if you want [§8b.1]
-- [ ] Shot list per beat: device, URL, account, data state, settings [§8b.1]
+- [x] Script + shot list: [VIDEO.md](VIDEO.md) (Nov 10): 9 beats, 2:45, VO lines, prompts, devices, data state, recording order
 - [x] **Ship-to:** decided Nov 10: prompts say "ships to the US" (the sandbox buyer `TEST_PERSONAL_EMAIL` has a US address). A Germany quote with a US PayPal address cancels on approval (`ship_to_region_mismatch`)
 - [ ] Rehearse every beat on Render the day before; against Render `pnpm demo:reset --yes` between takes
 - [ ] **Timer beat**, only while recording it:
