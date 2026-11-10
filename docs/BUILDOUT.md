@@ -232,7 +232,7 @@ Decided (Oct 30):
 
 - [x] `scripts/onboard.ts` for **KE, MX** (user approves each in the browser; **IN dropped Oct 31**, no persona) → store `merchant_id`s. Steps: `pnpm seed` → `pnpm onboard --seller <id>` per maker (ids printed by seed; PH: `--merchant-id MPMWEFYQWQYUA`) → `pnpm seed` again to publish. Oct 31 on local DB: all three linked, receivable, email confirmed, 9 scopes each: MX `2Y6DQGZ4HV2DE`, PH `MPMWEFYQWQYUA` (imported), KE `RWTZ65SJSKYB4` → 26 products live. Another DB (Render) picks them up with `pnpm onboard --seller <id>`, no browser (lookup by `tracking_id`).
 - [x] `scripts/seed.ts` + `seed/catalog.ts`: 3 personas (Lucía Hernández, Teotitlán del Valle MX, 14 rugs/textiles (4 added Oct 31: sarape, hallway runner, dye sampler, coin purse); Rosa Villanueva, Manila PH, 8 baskets; Wanjiru Kamau, Nairobi KE, 8 beadwork pieces; IN dropped) through `lib/schemas/listing.ts`, with category, weight class, stock, floor at 85%. Run Oct 31 on local DB: 30 live
-- [ ] Real photos we own or licensed in `seed/photos/<slug>/` (`seed/photos/README.md`); none yet
+- [ ] Real photos we own or licensed in `seed/photos/<slug>/` (`seed/photos/README.md`). Nov 10: all 14 MX products (15 files, Wikimedia Commons / Unsplash / Pexels, credited). PH (8) and KE (8) still none; maybe Nov 11
 - [x] Photo storage + `/api/photos/[id]` route built now (§10 #2); seed photos go through the same resize + EXIF strip as P2 uploads (`lib/photos.ts`, sharp)
 - [x] Re-check reporting + disputes with assertion (ARCHITECTURE §11 #3): ✅ Oct 30, transactions, balances and disputes list all 200 for the PH maker (`pnpm check:assertion`)
 
@@ -715,7 +715,7 @@ Decided (Nov 5):
 
 **Long-lead (start Nov 3)**
 - [ ] Native-speaker pass (es, fil, sw): seed listings, maker UI catalogs, `listings.negotiate*`, sample copilot replies. Find reviewers now. No fil/sw reviewer by Nov 7 → the video shows Spanish only and the README says the rest is Claude-drafted
-- [ ] Real photos for seed + eval fixtures (§5.7, §6.2), owned or licensed, recorded in `seed/photos/README.md`
+- [ ] Real photos for seed + eval fixtures (§5.7, §6.2), owned or licensed, recorded in `seed/photos/README.md`. Nov 10: MX seed photos done; PH, KE and the 5 eval photos pending (maybe Nov 11)
 
 **From P2 (Nov 6 AM)**
 - [ ] `pnpm e2e:release` re-run (§6.3 bug 1)
@@ -748,7 +748,7 @@ Code items done Nov 5 (a day early); the rest need Render, PayPal's dashboard or
 
 Code items done Nov 5; the final seed waits on real photos (§8.1 long-lead).
 
-- [ ] Final seed: 3 personas, ~30 products with real photos, §7.3 history (terminal states only). Personas, 30 products and the history exist; waiting on the real photos (§8.1). After photos: `pnpm seed --photos-only`, then `pnpm seed:activity` on Render
+- [ ] Final seed: 3 personas, ~30 products with real photos, §7.3 history (terminal states only). Personas, 30 products and the history exist; waiting on the real photos (§8.1). After photos: `pnpm seed --photos-only`, then `pnpm seed:activity` on Render. Nov 10: both run on Render with the MX photos (15 photos; 53 orders, 10 refunds, 1656 MCP events). Re-run both once PH/KE photos land
 - [x] `scripts/demo-reset.ts` (`pnpm demo:reset [--yes]`, logic in `lib/shop/demo.ts`): demo makers only (no email, same rule as the login picker). Removes orders without a `SEED-` PayPal id (their events + refunds), all offers on their products (so per-agent offer caps reset between takes), drafts, voice notes, unattached photos, copilot chats + proposed actions, inbox notifications, ACP sessions, and products whose slug isn't in `seed/catalog.ts` (listings made on camera). Restores catalog `stock`, `reserved = 0`, `live` for publishable makers; logs one `demo.reset` event. Keeps `seed:activity` history, `seller_dashboards`, MCP events. Dry run (rolled-back transaction) unless `--yes`; prints the DB host. Listing text/prices edited on camera: `pnpm seed`. Tested (`demo.test.ts`); local run removed 1 stale checkout, 1 filmed listing, 1 offer, 2 drafts, 8 copilot messages, restocked 30; second run all zeros
 - [ ] Run `pnpm demo:reset --yes` against Render before each take and after submit (you: needs your IP on the DB allow list)
 - [ ] Judge access: sandbox buyer login, demo makers (`DEMO_LOGIN=true` on Render), `/ops` judge login if §10 #8 says yes

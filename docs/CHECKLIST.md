@@ -18,7 +18,7 @@
 1. Render → `counter-db` → Access Control: your current IP is on the allow list
 2. In PowerShell, from the repo:
    ```powershell
-   $env:DATABASE_URL = "<counter-db External Database URL>"
+   $env:DATABASE_URL = "<counter-db External Database URL>?sslmode=require"   # without it: ECONNRESET
    pnpm demo:reset                 # any script; check the DB host it prints
    Remove-Item Env:DATABASE_URL    # back to the local DB when done
    ```
@@ -47,7 +47,7 @@
 - [ ] Uptime check: a free monitor (e.g. UptimeRobot) on `https://counter-2cdt.onrender.com/api/health`, every 5 min, emails you [§8.2]
 - [ ] Anthropic Console → Limits: monthly spend limit ≥ ~$200, so our `AI_DAILY_CALL_CAP` (300/day) stops AI before the Console does. One "add a widget" request on the dashboard costs ~$0.30–0.50 [§8.5]
 - [ ] Render → Billing: credits cover `counter`, `counter-db`, `counter-sweep` and `counter-workflows` through Dec 15 [§8.6]
-- [ ] Against Render: `pnpm seed:activity`. Do it now, before the photos: it fixes the 404 `/o` links on seeded orders (§8.4) and refreshes the dashboard history
+- [x] Against Render: `pnpm seed:activity`. Do it now, before the photos: it fixes the 404 `/o` links on seeded orders (§8.4) and refreshes the dashboard history
 
 ---
 
@@ -58,6 +58,7 @@
   - Send me corrections as a list (key → new text); I apply them
   - **Nov 7 cutoff:** no fil/sw reviewer by then → the video shows Spanish only; tell me and I'll make the README say the rest is Claude-drafted
 - [ ] **Real photos**, owned or licensed [§5.7, §6.2, §8.1]
+  - **Nov 10:** MX (14 products) done, seeded on Render. PH, KE and the 5 eval photos: come back Nov 11 if time. `eye-of-god-rug` and `wool-coaster-set` could use better photos
   - The 30 seed products: `seed/photos/<slug>/`, source and license per photo in `seed/photos/README.md`
   - 5 for the listing eval: the fixture folders in `test/fixtures/listing-eval/` (see their README)
   - Then tell me: I run `pnpm eval:listing` (Sonnet vs Haiku) and record the result
@@ -149,7 +150,7 @@ Signed in as Lucía unless noted.
 
 ## 9. Demo data + judge access (Nov 7, after photos)
 
-- [ ] Against Render: `pnpm seed --photos-only`, then `pnpm seed:activity` [§8.3]
+- [ ] Against Render: `pnpm seed --photos-only`, then `pnpm seed:activity` [§8.3]. Done Nov 10 for MX; re-run after PH/KE photos
 - [ ] `/feed.json` now has items; product pages show photos
 - [ ] Clean browser (incognito, no cookies): `/` loads; `/s/login` shows the demo makers and one tap signs in; the sandbox buyer can log in on a PayPal approval page; the `/ops` judge login works [§8.3]
 - [ ] Draft the Devpost testing instructions (submitted in §13) [§8.5]: connector URL + the 4 claude.ai steps (copy README "Try it"), a sample prompt, sandbox buyer email + password, "demo makers: one tap on `/s/login`", `/ops` judge password
