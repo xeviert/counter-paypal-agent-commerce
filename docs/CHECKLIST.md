@@ -2,6 +2,7 @@
 
 > Status: **active** · Made 2026-11-05 from [BUILDOUT.md](BUILDOUT.md) · Freeze **Sun Nov 8 EOD** · Submit **Wed Nov 11** · Deadline Thu Nov 12, 12:00 PM PT
 > Everything left that needs you: Render, PayPal, a phone, a browser, other people. No code is left.
+> **Progress Nov 10:** §3 push + `seed:activity` done (other §3 settings not checked yet) · §4 MX photos done, PH/KE/eval photos and reviewers pending · §5 done (consent-revoked skipped) · §6 in progress: search step works on claude.ai
 > Work top to bottom. Each item names its BUILDOUT section in brackets: tick the box here and there. If a step fails, paste the output to me; that's a bug for me to fix.
 
 ---
@@ -96,10 +97,13 @@ Scripts print PASS/FAIL. When one prints a PayPal link, approve it as the sandbo
 
 ## 6. claude.ai connector on Render (Nov 6)
 
-First, against Render: `pnpm demo:reset --yes`.
+First, against Render: `pnpm demo:reset --yes`, then `pnpm seed:activity` (the reset removes seeded history on non-catalog products). Nov 10: both done.
+
+In claude.ai: new chat → **+** → Connectors: Counter **on**, Web search **off**. Otherwise Claude searches the web instead of calling `search_products`.
 
 - [ ] **Negotiated purchase** (account 1) [§6.4, §6 bug 4, §8.1]
-  1. "Find a Zapotec rug under $250 that ships to Germany." → ask it a question about the rug → "Offer $200 for it."
+  1. "Find a Zapotec rug under $250 that ships to Germany." → ask it a question about the rug → "Offer $120 for it." (the rug lists at $145, so offer below list)
+  - Nov 10: search works: `zapotec-fret-rug`, $145 + $32 shipping to DE = $177, stock 3
   2. The reply ends with `offerId: …` → "Buy it at that price." → the checkout reply ends with `statusToken: …`
   3. Approve on PayPal as the sandbox buyer
   4. "Did my payment go through?" → Claude calls `get_order_status` → paid
