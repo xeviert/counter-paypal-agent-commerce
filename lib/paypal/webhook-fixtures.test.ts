@@ -66,6 +66,19 @@ describe("parseWebhookResource", () => {
     });
   });
 
+  // Bodies only (Nov 10, copied from the /ops audit log): the signature headers aren't stored.
+  it.each([
+    ["dispute-created", "created", "UNDER_REVIEW"],
+    ["dispute-updated", "updated", "WAITING_FOR_SELLER_RESPONSE"],
+  ])("parses the real %s body and finds the disputed capture", (name, stage, status) => {
+    const body = readFileSync(`test/fixtures/paypal/webhook.${name}.json`, "utf8");
+    expect(parseWebhookResource(webhookEnvelope.parse(JSON.parse(body)))).toMatchObject({
+      kind: "dispute",
+      stage,
+      dispute: { dispute_id: "PP-R-LZL-10198117", status, disputed_transactions: [{ seller_transaction_id: "1DG173080X385283X" }] },
+    });
+  });
+
   it("leaves unsubscribed events alone", () => {
     expect(parse("CHECKOUT.ORDER.COMPLETED").kind).toBe("unhandled");
   });

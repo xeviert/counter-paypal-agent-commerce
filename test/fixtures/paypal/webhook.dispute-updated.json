@@ -1,0 +1,139 @@
+{
+  "id": "WH-4F7104888M076661F-7F271265US213235D",
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-4F7104888M076661F-7F271265US213235D",
+      "method": "GET"
+    },
+    {
+      "rel": "resend",
+      "href": "https://api.sandbox.paypal.com/v1/notifications/webhooks-events/WH-4F7104888M076661F-7F271265US213235D/resend",
+      "method": "POST"
+    }
+  ],
+  "summary": "A dispute was updated with case # PP-R-LZL-10198117",
+  "resource": {
+    "links": [
+      {
+        "rel": "self",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117",
+        "method": "GET",
+        "encType": "application/json"
+      },
+      {
+        "rel": "escalate",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117/escalate",
+        "method": "POST",
+        "encType": "application/json"
+      },
+      {
+        "rel": "accept_claim",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117/accept-claim",
+        "method": "POST",
+        "encType": "application/json"
+      },
+      {
+        "rel": "send_message",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117/send-message",
+        "method": "POST",
+        "encType": "application/json"
+      },
+      {
+        "rel": "provide_evidence",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117/provide-evidence",
+        "method": "POST",
+        "encType": "application/json"
+      },
+      {
+        "rel": "make_offer",
+        "href": "https://api.sandbox.paypal.com/v1/customer/disputes/PP-R-LZL-10198117/make-offer",
+        "method": "POST",
+        "encType": "application/json"
+      }
+    ],
+    "offer": {
+      "buyer_requested_amount": {
+        "value": "60.00",
+        "currency_code": "USD"
+      }
+    },
+    "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+    "status": "WAITING_FOR_SELLER_RESPONSE",
+    "messages": [
+      {
+        "content": "did not receive",
+        "posted_by": "BUYER",
+        "time_posted": "2026-11-10T17:54:57.794Z"
+      }
+    ],
+    "dispute_id": "PP-R-LZL-10198117",
+    "create_time": "2026-11-10T17:54:57.794Z",
+    "update_time": "2026-11-10T17:58:24.031Z",
+    "dispute_amount": {
+      "value": "60.00",
+      "currency_code": "USD"
+    },
+    "fund_movements": [
+      {
+        "type": "DEBIT",
+        "party": "SELLER",
+        "amount": {
+          "value": "54.15",
+          "currency_code": "USD"
+        },
+        "reason": "HOLD_PLACED",
+        "initiated_time": "2026-11-10T17:58:04.000Z"
+      }
+    ],
+    "refund_details": {
+      "allowed_refund_amount": {
+        "value": "60.00",
+        "currency_code": "USD"
+      }
+    },
+    "dispute_channel": "INTERNAL",
+    "disputed_transactions": [
+      {
+        "items": [
+          {
+            "reason": "MERCHANDISE_OR_SERVICE_NOT_RECEIVED",
+            "item_id": "diamond-cushion-cover",
+            "item_name": "Woven wool cushion cover, diamond pattern",
+            "item_type": "PRODUCT",
+            "item_quantity": "1"
+          }
+        ],
+        "custom": "30273c06-adab-4536-bced-24909e14ef7b",
+        "seller": {
+          "name": "Test Store",
+          "merchant_id": "2Y6DQGZ4HV2DE"
+        },
+        "transaction_status": "HELD",
+        "buyer_transaction_id": "07575890N5929942D",
+        "seller_transaction_id": "1DG173080X385283X",
+        "seller_protection_type": "EXPANDED_SELLER_PROTECTION",
+        "seller_protection_eligible": true
+      }
+    ],
+    "allowed_response_options": {
+      "make_offer": {
+        "offer_types": [
+          "REFUND"
+        ]
+      },
+      "accept_claim": {
+        "accept_claim_types": [
+          "PARTIAL_REFUND",
+          "REFUND"
+        ]
+      }
+    },
+    "dispute_life_cycle_stage": "INQUIRY",
+    "seller_response_due_date": "2026-11-30T17:54:57.794Z"
+  },
+  "event_type": "CUSTOMER.DISPUTE.UPDATED",
+  "create_time": "2026-11-10T17:58:33.563Z",
+  "event_version": "1.0",
+  "resource_type": "dispute"
+}
