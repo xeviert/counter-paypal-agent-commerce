@@ -322,7 +322,7 @@ PayPal pays a DELAYED capture to the seller by itself after **28 days** ([Delay 
 - [x] Consent revoked or not receivable: the maker's listings drop out of `search_products`; `get_product` / `create_checkout` return `SELLER_NOT_RECEIVABLE`; `/p/[slug]` says not for sale. Reconnecting restores them (no per-product pause)
 - [x] Buyer "I received it" on `/o/[statusToken]` (confirm dialog) → `buyer_confirmed_at` + release now. No MCP tool for it: agents can't release a maker's money
 - [x] `scripts/e2e-release.ts`, `scripts/e2e-refund.ts` (`pnpm e2e:release`, `pnpm e2e:refund`; MX maker by default, shared `scripts/lib/e2e.ts`)
-- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm). Nov 3: webhook ✅ (§4.5 closed), but the script fails on bug 1 in "P2 exit run (Nov 3)" below; re-run after the fix. Fixed in code Nov 3; re-run pending (the script now saves the raw release response to `test/fixtures/paypal/referenced-payouts.release.json`)
+- [ ] Run `pnpm e2e:release` against the sandbox, then check the deployed `events` for the payout webhook (also closes the §4.5 re-confirm). Nov 3: webhook ✅ (§4.5 closed), but the script fails on bug 1 in "P2 exit run (Nov 3)" below; re-run after the fix. Fixed in code Nov 3. **Nov 10 re-run: ALL PASSED** (capture `8KJ76676LU8109347`, release SUCCESS, repeat release with the same request id returns the same payout); raw response committed as `test/fixtures/paypal/referenced-payouts.release.json`
 - [ ] Capture real `CUSTOMER.DISPUTE.*` and `MERCHANT.PARTNER-CONSENT.REVOKED` deliveries into `test/fixtures/webhooks/` (open a dispute as the sandbox buyer; revoke from a sandbox business account)
 - [x] On Render: set `PLATFORM_CLIENT_ID` / `PLATFORM_CLIENT_SECRET` on `counter-sweep` (same values as `counter`); `RELEASE_AFTER_DAYS=0.002` only while filming the timer beat
 
@@ -718,7 +718,7 @@ Decided (Nov 5):
 - [ ] Real photos for seed + eval fixtures (§5.7, §6.2), owned or licensed, recorded in `seed/photos/README.md`. Nov 10: MX seed photos done; PH, KE and the 5 eval photos pending (maybe Nov 11)
 
 **From P2 (Nov 6 AM)**
-- [ ] `pnpm e2e:release` re-run (§6.3 bug 1)
+- [x] `pnpm e2e:release` re-run (§6.3 bug 1): ALL PASSED Nov 10
 - [ ] Negotiated claude.ai purchase re-run (§6.4) and the `statusToken` connector re-run (bug 4, code fixed Nov 4)
 - [ ] Pixel 9a: voice (bug 2), camera (bug 3), 60s budget over 4G (§6.2) → STT decision (§10 #3). Server-side STT is a feature: it lands by Nov 8 or not at all
 - [ ] `LISTING_RUNNER=workflow` on Render + one confirmed task run (§6.2)

@@ -1,0 +1,26 @@
+{
+  "item_id": "Uie_o8PtuUSg3S1n5hQbC5ppVV4T1CdL0OFH2YBvmFgDMENFX-4zIsvf2HVXC7w=",
+  "processing_state": {
+    "status": "SUCCESS"
+  },
+  "reference_id": "8KJ76676LU8109347",
+  "reference_type": "TRANSACTION_ID",
+  "payout_transaction_id": "5B221248SE4661645",
+  "external_reference_id": "release:edb1c1d2-f9dd-4484-a1bf-baa74f906c05",
+  "payout_amount": {
+    "currency_code": "MXN",
+    "value": "489.29"
+  },
+  "payout_destination": "2Y6DQGZ4HV2DE",
+  "custom": "edb1c1d2-f9dd-4484-a1bf-baa74f906c05",
+  "last_response_code": 0,
+  "time_updated": 0,
+  "links": [
+    {
+      "href": "https://api.sandbox.paypal.com/v1/payments/referenced-payouts-items/Uie_o8PtuUSg3S1n5hQbC5ppVV4T1CdL0OFH2YBvmFgDMENFX-4zIsvf2HVXC7w=",
+      "rel": "self",
+      "method": "GET",
+      "encType": "application/json"
+    }
+  ]
+}

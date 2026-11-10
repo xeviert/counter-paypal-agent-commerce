@@ -71,7 +71,7 @@
 Scripts print PASS/FAIL. When one prints a PayPal link, approve it as the sandbox buyer.
 
 - [ ] `pnpm e2e:release` → ALL PASSED [§6.3 bug 1, §8.1]
-  - It saves `test/fixtures/paypal/referenced-payouts.release.json`: tell me so I commit it
+  - Nov 10: ALL PASSED, capture `8KJ76676LU8109347`; fixture committed
   - On Render `/ops` → Audit log: the `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` webhook for that capture arrived
 - [ ] `pnpm e2e:replay` → passes: one `PaidHeld`, one capture id, at most one release [§8.2]
 - [ ] **Fresh-maker onboarding** on Render [§6.1, §8.1]
