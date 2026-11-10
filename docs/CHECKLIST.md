@@ -76,10 +76,11 @@ Scripts print PASS/FAIL. When one prints a PayPal link, approve it as the sandbo
   - On Render `/ops` → Audit log: the `PAYMENT.REFERENCED-PAYOUT-ITEM.COMPLETED` webhook for that capture arrived (Nov 10: yes)
 - [x] Stop `pnpm dev` first (otherwise it captures on the return URL and the script waits forever), then `pnpm e2e:replay` → passes: one `PaidHeld`, one capture id, at most one release [§8.2]
   - Nov 10: ALL PASSED, capture `8GE65312AT1405719`, release `released/skipped`
-- [ ] **Fresh-maker onboarding** on Render [§6.1, §8.1]
+- [x] **Fresh-maker onboarding** on Render [§6.1, §8.1]
   1. PayPal developer dashboard → Sandbox accounts → Create account → Business, country Mexico
   2. Render app `/s/signup` with a new email → Connect PayPal → log in as the new sandbox business account → back on `/s/onboarding/return`, "Check again" until ready
   3. Publish one listing (a typed description is fine)
+  - Nov 10: done, one listing live. Bug found: the PayPal return bounced to `http://localhost:10000/s/onboarding` (redirect built from Render's internal `request.url`); fixed to use `APP_BASE_URL`. Deploy manually, then re-check on the next onboarding
 - [ ] **Consent-revoked fixture**, with that fresh maker only (revoking pulls the maker's listings; never use MX or PH) [§6.3]
   1. Log in to sandbox.paypal.com as the fresh business account → revoke Counter's permissions
   2. Audit log shows `MERCHANT.PARTNER-CONSENT.REVOKED`; the maker's listing is gone from search; the maker sees a notification
