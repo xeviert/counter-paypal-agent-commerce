@@ -222,7 +222,7 @@ After this: bug fixes, copy and video only.
   3. **Right after:** set `RELEASE_AFTER_DAYS` back to `14` on **both** services → Save. Leaving 0.002 releases every judge's order in minutes
 - [ ] Record: Pixel screen for maker + voice beats; desktop 1080p, zoomed UI, large font for agent + dashboard beats; voiceover recorded separately
 - [ ] Edit: cut every wait, captions, royalty-free or no music, **under 2:50**
-- [ ] YouTube, public; check it plays logged out; send me the link for the README
+- [x] YouTube, public: https://youtu.be/8rpaKf0BuNg (Nov 11; verified signed out, 1080p, description links checked); link in README
 - [ ] **After recording:** Render → `counter-db` → Access Control / Inbound IP Rules → remove your IP (added back Nov 10 for `demo:reset` between takes). Then confirm `RELEASE_AFTER_DAYS` = `14` on `counter` and `counter-sweep`
 
 ---

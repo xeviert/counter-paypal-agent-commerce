@@ -8,6 +8,8 @@ Everything runs on the PayPal sandbox. Design docs: [ARCHITECTURE](docs/ARCHITEC
 
 ## Try it
 
+Demo video (2:05): https://youtu.be/8rpaKf0BuNg
+
 Live demo: https://counter-2cdt.onrender.com (the root page has the same steps).
 
 - **Buy as an agent:** in claude.ai, Settings → Connectors → Add custom connector, URL `https://counter-2cdt.onrender.com/api/mcp`, choose No sign-in. Then ask, e.g. "Find me a handwoven rug from Oaxaca under $200, shipped to the US. Ask the maker how to clean it, then offer a bit less and check out." Approve the payment with the sandbox buyer account from the Devpost testing instructions
