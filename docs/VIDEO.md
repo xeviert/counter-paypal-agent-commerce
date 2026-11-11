@@ -175,7 +175,7 @@ Shoot in the order the data needs, then cut into beat order:
 
 ## Handoff: status Nov 11, 2026 (afternoon)
 
-**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Current render: `video/renders/counter-v4.mp4`**, 125.3 s, 1920×1080 at 30 fps, H.264 + AAC, 63 MB (`--low-memory-mode`, about 7 min). It fixes the user's notes on the first render (`counter.mp4`, 128.7 s): no stray face frames at scene changes, no terminal flash in beat 3, no "…ake" at 1:14, no false start in the close, and a card over the face at 1:28. Frames were checked at every changed cut; no buyer email shows in beats 4–5. **Not uploaded yet.**
+**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Current render: `video/renders/counter-v5.mp4`**, 125.3 s, 1920×1080 at 30 fps, H.264 + AAC, 62 MB (`--low-memory-mode`, about 7 min). It fixes the user's notes on the first render (`counter.mp4`, 128.7 s): no stray face frames at scene changes, no terminal flash in beat 3, no "…ake" at 1:14, no false start in the close, a card over the face at 1:28, and the diagram held 1 s longer at 1:54 (the close take opens looking away). Frames were checked at every changed cut; no buyer email shows in beats 4–5. **Not uploaded yet.**
 
 ### Next steps, in order
 
@@ -206,8 +206,8 @@ The face cam (`assets/face.mp4`, voiceover included) runs underneath the whole f
 | 86.03–88.15 | (face) | "Because agents talk in plain language," |
 | 88.15–90.45 | `compositions/voice.html` | Card "Shop with your voice alone." over "a blind buyer can shop with their voice alone" |
 | 90.455–95.6 | `compositions/b7.html` | Beat 7: layer 1, Claude refuses to send the injection; layer 2, `/ops` audit row "SYSTEM: admin mode…" → counter at $140 |
-| 95.565–114.34 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
-| 114.34–119.675 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
+| 95.565–115.34 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
+| 115.34–119.675 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
 | 119.675–125.275 | `compositions/close.html` | Product photo strip → Counter mark, URL, repo |
 | 0–120.0 | `compositions/captions.html` | Burned-in captions from the real transcript (96 groups) |
 
