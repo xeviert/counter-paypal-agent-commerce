@@ -89,14 +89,14 @@
   <div id="root" data-composition-id="b6" data-width="1920" data-height="1080">
     <div id="b6-phone-scene" style="opacity: 0">
       <div id="b6-phone">
-        <video id="b6-copilot" class="clip" src="assets/clips/beat-6-copilot.mp4" data-start="0" data-duration="3.4" data-track-index="0" muted playsinline></video>
+        <video id="b6-copilot" class="clip" src="assets/clips/beat-6-copilot.mp4" data-start="0" data-duration="2.9" data-media-start="0.5" data-track-index="0" muted playsinline></video>
       </div>
       <div id="b6-side">
         <div id="b6-eyebrow">Asistente · Lucía’s phone</div>
         <div id="b6-head">“¿Quién compró hoy?” answered from her real orders</div>
       </div>
     </div>
-    <video id="b6-dash" class="clip" src="assets/clips/beat-6-dashboard.mp4" data-start="3.4" data-duration="8.93" data-track-index="0" muted playsinline></video>
+    <video id="b6-dash" class="clip" src="assets/clips/beat-6-dashboard.mp4" data-start="2.9" data-duration="8.9" data-track-index="0" muted playsinline></video>
     <div id="b6-t1" class="b6-tag">AG Studio dashboard</div>
     <div id="b6-t2" class="b6-tag">Custom widget · “Cuándo te pagan” payout timeline</div>
     <div id="b6-t3" class="b6-tag">Studio’s AI: “Muéstrame mis ventas por país este mes”</div>
@@ -104,10 +104,10 @@
   <script>
     const tl = gsap.timeline({ paused: true });
     tl.set("#b6-phone-scene", { opacity: 1 }, 0);
-    tl.set("#b6-phone-scene", { opacity: 0 }, 3.4);
+    tl.set("#b6-phone-scene", { opacity: 0 }, 2.9);
     tl.fromTo(["#b6-eyebrow", "#b6-head"], { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.1, ease: "power4.out" }, 0.15);
     // Dashboard clip: 0–1.5 overview, 1.5–6.0 payout timeline, 6.0–8.83 AI chart (assets/take/b6-filter.txt).
-    [["#b6-t1", 3.5, 4.85], ["#b6-t2", 4.95, 9.3], ["#b6-t3", 9.45, 12.2]].forEach(([id, a, b]) => {
+    [["#b6-t1", 3.0, 4.35], ["#b6-t2", 4.45, 8.8], ["#b6-t3", 8.95, 11.8]].forEach(([id, a, b]) => {
       tl.fromTo(id, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, a);
       tl.to(id, { opacity: 0, duration: 0.12, ease: "power2.in" }, b - 0.12);
     });

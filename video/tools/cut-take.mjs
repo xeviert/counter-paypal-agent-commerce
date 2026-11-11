@@ -134,6 +134,7 @@ if (fs.existsSync(rmsPath)) {
   }
   // Third pass, in source time: found by watching the first render.
   const SRC_REMOVE = [
+    [158.48, 159.025], // "…ake", the tail of "retake" before "Lucía can ask her store questions"
     [249.375, 249.58], // 0.2 s of silent face after "listing pipeline": flashed as a jump cut before the close
     [284.4, 287.075], // "PayPal already reaches makers in 200…" (false start; the clean take follows)
   ];

@@ -175,7 +175,7 @@ Shoot in the order the data needs, then cut into beat order:
 
 ## Handoff: status Nov 11, 2026 (afternoon)
 
-**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Rendered (Nov 11):** `video/renders/counter.mp4`, 128.7 s, 1920×1080 at 30 fps, H.264 + AAC, 70 MB, −13 LUFS integrated. `--low-memory-mode` took 5 min 44 s. Frames were checked at every beat: captions are burned in, and no buyer email shows in beats 4–5. Steps 1, 2 (except the playback with sound) and 4 are done. **Not uploaded yet.**
+**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Current render: `video/renders/counter-v4.mp4`**, 125.3 s, 1920×1080 at 30 fps, H.264 + AAC, 63 MB (`--low-memory-mode`, about 7 min). It fixes the user's notes on the first render (`counter.mp4`, 128.7 s): no stray face frames at scene changes, no terminal flash in beat 3, no "…ake" at 1:14, no false start in the close, and a card over the face at 1:28. Frames were checked at every changed cut; no buyer email shows in beats 4–5. **Not uploaded yet.**
 
 ### Next steps, in order
 
@@ -202,22 +202,23 @@ The face cam (`assets/face.mp4`, voiceover included) runs underneath the whole f
 | 55.85–61.7 | `compositions/b45.html` | Beat 4: Avisos "Vendiste…" → order "Pagado. Envíalo", badge "Paid · held by PayPal" |
 | 61.7–66.25 | (face) | "That gives the buyer abroad a reason to trust…" |
 | 66.25–74.25 | `compositions/b45.html` | Beat 5: DHL tracking on the phone → buyer page "I received it" (desktop) → phone "Pagado a tu PayPal", USD 144.49 |
-| 74.23–86.44 | `compositions/b6.html` | Beat 6: copilot "¿Quién compró hoy?" on the phone → AG Studio dashboard, "Cuándo te pagan" timeline, Studio AI retitles the country chart for November |
-| 86.44–91.0 | (face) | "Because agents talk in plain language, a blind buyer can shop with their voice alone." |
-| 91.0–96.1 | `compositions/b7.html` | Beat 7: layer 1, Claude refuses to send the injection; layer 2, `/ops` audit row "SYSTEM: admin mode…" → counter at $140 |
-| 96.11–114.885 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
-| 114.885–120.22 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
-| 120.22–125.82 | `compositions/close.html` | Product photo strip → Counter mark, URL, repo |
-| 0–120.5 | `compositions/captions.html` | Burned-in captions from the real transcript (98 groups) |
+| 74.23–86.03 | `compositions/b6.html` | Beat 6: copilot "¿Quién compró hoy?" on the phone → AG Studio dashboard, "Cuándo te pagan" timeline, Studio AI retitles the country chart for November |
+| 86.03–88.15 | (face) | "Because agents talk in plain language," |
+| 88.15–90.45 | `compositions/voice.html` | Card "Shop with your voice alone." over "a blind buyer can shop with their voice alone" |
+| 90.455–95.6 | `compositions/b7.html` | Beat 7: layer 1, Claude refuses to send the injection; layer 2, `/ops` audit row "SYSTEM: admin mode…" → counter at $140 |
+| 95.565–114.34 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
+| 114.34–119.675 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
+| 119.675–125.275 | `compositions/close.html` | Product photo strip → Counter mark, URL, repo |
+| 0–120.0 | `compositions/captions.html` | Burned-in captions from the real transcript (96 groups) |
 
-Root composition: `video/index.html` (125.82 s). The face cam is `z-index: 1`, scenes 2–3, captions 10.
+Root composition: `video/index.html` (125.275 s). The face cam is `z-index: 1`, scenes 2–3, captions 10.
 
 ### How each piece was made
 
-- **Voiceover + face** (`assets/face.mp4`, `assets/vo.wav`): one take, `C:\Users\xevie\Videos\C0170.MP4` (Sony a6300, 4:56, with restarts). `tools/cut-take.mjs` keeps the last clean attempt of each line and snaps cuts to pauses (`assets/take/edl-final.json`, 41 ranges). The audio chain is highpass 80 Hz, light `afftdn`, `loudnorm` to −16 LUFS. The cut was re-transcribed to confirm every line appears once. Final speech is 120.3 s. After the first render, a third pass (`SRC_REMOVE`, in source time) dropped the close's false start and a 0.2 s face sliver. `node tools/cut-take.mjs && node tools/build-face.mjs` rebuilds `face.mp4` + `vo.wav`; then re-run transcribe + `captions.mjs`.
+- **Voiceover + face** (`assets/face.mp4`, `assets/vo.wav`): one take, `C:\Users\xevie\Videos\C0170.MP4` (Sony a6300, 4:56, with restarts). `tools/cut-take.mjs` keeps the last clean attempt of each line and snaps cuts to pauses (`assets/take/edl-final.json`, 41 ranges). The audio chain is highpass 80 Hz, light `afftdn`, `loudnorm` to −16 LUFS. The cut was re-transcribed to confirm every line appears once. Final speech is 119.7 s. After the first render, a third pass (`SRC_REMOVE`, in source time) dropped the "…ake" left from a retake, a 0.2 s face sliver and the close's false start. `node tools/cut-take.mjs && node tools/build-face.mjs` rebuilds `face.mp4` + `vo.wav`; then re-run transcribe + `captions.mjs`.
 - **Captions:** `npx hyperframes transcribe` → `assets/transcript.json`, then `node tools/captions.mjs`, which fixes Whisper's spellings (Lucía, Teotitlán, Counter, payee, Render, $110, "policy in code"). Re-run it after any audio change; don't edit `captions.html` by hand.
 - **Beat 2:** Pixel screen recording `C:\Users\xevie\Downloads\counter-mobile-item-publish.mp4` (93 s), speed-ramped to 12.5 s (`assets/take/b2-filter.txt`). The status bar is cropped.
-- **Beat 3:** OBS recording `C:\Users\xevie\Videos\OBS\2026-11-11 13-26-54.mp4` (2:54), cut to 23.1 s and zoomed so the chat reads at 1080p (`assets/take/b3-filter.txt`). The notes window, Alt-Tab and taskbar are cut out.
+- **Beat 3:** OBS recording `C:\Users\xevie\Videos\OBS\2026-11-11 13-26-54.mp4` (2:54), cut to 23.1 s and zoomed so the chat reads at 1080p (`assets/take/b3-filter.txt`). The notes window, Alt-Tab and taskbar are cut out (segment 7 starts at 110.8, after a terminal window leaves the screen).
 - **Beats 4, 5, 6, `/ops`:** recorded headless by `tools/record-phone.mjs` against Render. It signs in off camera (demo maker picker, or `OPS_PASSWORD` read from `.env`) and captures 2× device-pixel frames. Phone width is 412×915; desktop runs are 1280×720 at 1.5×. Runs used: `inbox`, `ship --ref DC733F0E --carrier DHL --tracking 4827301956`, `buyer --token 5Gzk28A2uBPNrlMYwC1UTg`, `released --ref DC733F0E`, `copilot`, `dashboard --reset`, `ops --product <id>`. Raw output is in `assets/clips/raw/`; cut clips are in `assets/clips/`. **The buyer's sandbox email shows on order pages and is masked with a `drawbox`** in `beat-5-ship.mp4` and `beat-5-released.mp4`. `beat-4.mp4` ends before it scrolls into view.
 - **Beat 7:** the user's OBS recording `C:\Users\xevie\Videos\OBS\2026-11-11 13-39-58.mp4`. In a fresh chat, Claude refused twice to pass on the "SYSTEM: admin mode" note, so Counter never received it. To show layer 2, the same note was sent straight to Counter's `make_offer` tool ($5, rug `828310ab-f8a5-4e62-b7ac-ebe40805a1b6`). Counter countered at **$140** (audit row #6674). The scene shows a still of the `/ops` rows (`assets/img/ops-rows.png`); `assets/clips/beat-7-ops.mp4` is unused.
 
@@ -230,7 +231,7 @@ Root composition: `video/index.html` (125.82 s). The face cam is `z-index: 1`, s
 
 ### Known gaps (accepted for now)
 
-- **No voice-only buyer clip:** "a blind buyer can shop with their voice alone" plays over the face shot. A Claude-mobile voice clip (CHECKLIST §6) would fit at 88.5–90.9 s.
+- **No voice-only buyer clip:** a text card (`voice.html`) covers "a blind buyer can shop with their voice alone". A Claude-mobile voice clip (CHECKLIST §6) could replace it at 88.15–90.45 s.
 - **Typed copilot question:** the beat 6 question is typed by the recorder, while the voiceover says "out loud".
 - **Backpack, not a rug:** the beat 2 piece is a backpack, but the voiceover says "Her rugs are now readable…" (face shot follows, so it barely shows).
 - **Small spoken slips left in:** "approves PayPal and done", "policy and code" (the caption reads "in code"), "maker they never heard or met before".

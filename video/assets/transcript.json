@@ -1310,877 +1310,877 @@
   {
     "text": "delivery",
     "start": 70.54,
-    "end": 71,
+    "end": 70.94,
     "id": "w218"
   },
   {
     "text": "or",
-    "start": 71,
-    "end": 71.15,
+    "start": 70.94,
+    "end": 71.07,
     "id": "w219"
   },
   {
     "text": "the",
-    "start": 71.15,
-    "end": 71.37,
+    "start": 71.07,
+    "end": 71.27,
     "id": "w220"
   },
   {
     "text": "timer",
-    "start": 71.37,
-    "end": 71.74,
+    "start": 71.27,
+    "end": 71.61,
     "id": "w221"
   },
   {
     "text": "runs",
-    "start": 71.74,
-    "end": 72.02,
+    "start": 71.61,
+    "end": 71.88,
     "id": "w222"
   },
   {
     "text": "out,",
-    "start": 72.08,
-    "end": 72.41,
+    "start": 71.88,
+    "end": 72.2,
     "id": "w223"
   },
   {
     "text": "PayPal",
-    "start": 72.41,
-    "end": 72.64,
+    "start": 72.21,
+    "end": 72.54,
     "id": "w224"
   },
   {
     "text": "releases",
-    "start": 73.01,
-    "end": 73.46,
+    "start": 73,
+    "end": 73.16,
     "id": "w225"
   },
   {
     "text": "the",
-    "start": 73.46,
-    "end": 73.67,
+    "start": 73.18,
+    "end": 73.36,
     "id": "w226"
   },
   {
     "text": "funds",
-    "start": 73.68,
-    "end": 74.05,
+    "start": 73.36,
+    "end": 73.67,
     "id": "w227"
   },
   {
     "text": "to",
-    "start": 74.05,
-    "end": 74.16,
+    "start": 73.7,
+    "end": 73.82,
     "id": "w228"
   },
   {
     "text": "Lucia.",
-    "start": 74.2,
-    "end": 74.79,
+    "start": 73.83,
+    "end": 74.36,
     "id": "w229"
   },
   {
     "text": "Lucia",
-    "start": 74.79,
-    "end": 75.11,
+    "start": 74.36,
+    "end": 74.71,
     "id": "w230"
   },
   {
     "text": "can",
-    "start": 75.23,
-    "end": 75.38,
+    "start": 74.71,
+    "end": 74.9,
     "id": "w231"
   },
   {
     "text": "ask",
-    "start": 75.38,
-    "end": 75.6,
+    "start": 74.9,
+    "end": 75.11,
     "id": "w232"
   },
   {
     "text": "her",
-    "start": 75.6,
-    "end": 75.82,
+    "start": 75.23,
+    "end": 75.31,
     "id": "w233"
   },
   {
     "text": "store",
-    "start": 75.82,
-    "end": 76.32,
+    "start": 75.31,
+    "end": 75.76,
     "id": "w234"
   },
   {
     "text": "questions",
-    "start": 76.46,
-    "end": 76.91,
+    "start": 75.9,
+    "end": 76.35,
     "id": "w235"
   },
   {
     "text": "out",
-    "start": 76.91,
-    "end": 77.08,
+    "start": 76.35,
+    "end": 76.52,
     "id": "w236"
   },
   {
     "text": "loud",
-    "start": 77.1,
-    "end": 77.33,
+    "start": 76.54,
+    "end": 76.77,
     "id": "w237"
   },
   {
     "text": "in",
-    "start": 77.39,
-    "end": 77.49,
+    "start": 76.83,
+    "end": 76.93,
     "id": "w238"
   },
   {
     "text": "Spanish.",
-    "start": 77.49,
-    "end": 78.13,
+    "start": 76.93,
+    "end": 77.57,
     "id": "w239"
   },
   {
     "text": "Her",
-    "start": 78.14,
-    "end": 78.33,
+    "start": 77.58,
+    "end": 77.77,
     "id": "w240"
   },
   {
     "text": "dashboard",
-    "start": 78.33,
-    "end": 78.46,
+    "start": 77.77,
+    "end": 77.9,
     "id": "w241"
   },
   {
     "text": "is",
-    "start": 78.93,
-    "end": 79.05,
+    "start": 78.37,
+    "end": 78.49,
     "id": "w242"
   },
   {
     "text": "built",
-    "start": 79.05,
-    "end": 79.37,
+    "start": 78.49,
+    "end": 78.81,
     "id": "w243"
   },
   {
     "text": "on",
-    "start": 79.37,
-    "end": 79.5,
+    "start": 78.81,
+    "end": 78.94,
     "id": "w244"
   },
   {
     "text": "AG",
-    "start": 79.5,
-    "end": 79.63,
+    "start": 78.94,
+    "end": 79.07,
     "id": "w245"
   },
   {
     "text": "Studio",
-    "start": 79.63,
-    "end": 80.02,
+    "start": 79.07,
+    "end": 79.46,
     "id": "w246"
   },
   {
     "text": "with",
-    "start": 80.02,
-    "end": 80.28,
+    "start": 79.46,
+    "end": 79.72,
     "id": "w247"
   },
   {
     "text": "a",
-    "start": 80.28,
-    "end": 80.34,
+    "start": 79.72,
+    "end": 79.78,
     "id": "w248"
   },
   {
     "text": "custom",
-    "start": 80.34,
-    "end": 80.7,
+    "start": 79.78,
+    "end": 80.14,
     "id": "w249"
   },
   {
     "text": "payout",
-    "start": 81.14,
-    "end": 81.2,
+    "start": 80.58,
+    "end": 80.64,
     "id": "w250"
   },
   {
     "text": "timeline",
-    "start": 81.2,
-    "end": 81.6,
+    "start": 80.64,
+    "end": 81.04,
     "id": "w251"
   },
   {
     "text": "that",
-    "start": 81.74,
-    "end": 81.86,
+    "start": 81.18,
+    "end": 81.3,
     "id": "w252"
   },
   {
     "text": "shows",
-    "start": 81.86,
-    "end": 82.19,
+    "start": 81.3,
+    "end": 81.63,
     "id": "w253"
   },
   {
     "text": "when",
-    "start": 82.19,
-    "end": 82.45,
+    "start": 81.63,
+    "end": 81.89,
     "id": "w254"
   },
   {
     "text": "each",
-    "start": 82.45,
-    "end": 82.71,
+    "start": 81.89,
+    "end": 82.15,
     "id": "w255"
   },
   {
     "text": "sale",
-    "start": 82.71,
-    "end": 82.97,
+    "start": 82.15,
+    "end": 82.41,
     "id": "w256"
   },
   {
     "text": "reaches",
-    "start": 82.97,
-    "end": 83.44,
+    "start": 82.41,
+    "end": 82.88,
     "id": "w257"
   },
   {
     "text": "her.",
-    "start": 83.44,
-    "end": 83.76,
+    "start": 82.88,
+    "end": 83.2,
     "id": "w258"
   },
   {
     "text": "She",
-    "start": 83.76,
-    "end": 84.03,
+    "start": 83.2,
+    "end": 83.47,
     "id": "w259"
   },
   {
     "text": "can",
-    "start": 84.2,
-    "end": 84.24,
+    "start": 83.64,
+    "end": 83.68,
     "id": "w260"
   },
   {
     "text": "ask",
-    "start": 84.24,
-    "end": 84.44,
+    "start": 83.68,
+    "end": 83.88,
     "id": "w261"
   },
   {
     "text": "its",
-    "start": 84.44,
-    "end": 84.64,
+    "start": 83.88,
+    "end": 84.08,
     "id": "w262"
   },
   {
     "text": "AI",
-    "start": 84.64,
-    "end": 84.77,
+    "start": 84.08,
+    "end": 84.21,
     "id": "w263"
   },
   {
     "text": "for",
-    "start": 84.77,
-    "end": 84.95,
+    "start": 84.21,
+    "end": 84.39,
     "id": "w264"
   },
   {
     "text": "new",
-    "start": 84.96,
-    "end": 85.17,
+    "start": 84.4,
+    "end": 84.61,
     "id": "w265"
   },
   {
     "text": "charts",
-    "start": 85.17,
-    "end": 85.56,
+    "start": 84.61,
+    "end": 85,
     "id": "w266"
   },
   {
     "text": "in",
-    "start": 85.56,
-    "end": 85.68,
+    "start": 85,
+    "end": 85.12,
     "id": "w267"
   },
   {
     "text": "her",
-    "start": 85.68,
-    "end": 85.9,
+    "start": 85.12,
+    "end": 85.34,
     "id": "w268"
   },
   {
     "text": "own",
-    "start": 85.9,
-    "end": 86.05,
+    "start": 85.34,
+    "end": 85.49,
     "id": "w269"
   },
   {
     "text": "words.",
-    "start": 86.42,
-    "end": 86.72,
+    "start": 85.86,
+    "end": 86.16,
     "id": "w270"
   },
   {
     "text": "Because",
-    "start": 86.72,
-    "end": 87.12,
+    "start": 86.16,
+    "end": 86.56,
     "id": "w271"
   },
   {
     "text": "agents",
-    "start": 87.26,
-    "end": 87.49,
+    "start": 86.7,
+    "end": 86.93,
     "id": "w272"
   },
   {
     "text": "talk",
-    "start": 87.49,
-    "end": 87.73,
+    "start": 86.93,
+    "end": 87.17,
     "id": "w273"
   },
   {
     "text": "in",
-    "start": 87.73,
-    "end": 87.85,
+    "start": 87.17,
+    "end": 87.29,
     "id": "w274"
   },
   {
     "text": "plain",
-    "start": 87.85,
-    "end": 88.13,
+    "start": 87.29,
+    "end": 87.57,
     "id": "w275"
   },
   {
     "text": "language,",
-    "start": 88.18,
-    "end": 88.74,
+    "start": 87.62,
+    "end": 88.18,
     "id": "w276"
   },
   {
     "text": "a",
-    "start": 88.76,
-    "end": 88.83,
+    "start": 88.2,
+    "end": 88.27,
     "id": "w277"
   },
   {
     "text": "blind",
-    "start": 88.83,
-    "end": 89.14,
+    "start": 88.27,
+    "end": 88.58,
     "id": "w278"
   },
   {
     "text": "buyer",
-    "start": 89.14,
-    "end": 89.33,
+    "start": 88.58,
+    "end": 88.77,
     "id": "w279"
   },
   {
     "text": "can",
-    "start": 89.44,
-    "end": 89.62,
+    "start": 88.88,
+    "end": 89.06,
     "id": "w280"
   },
   {
     "text": "shop",
-    "start": 89.73,
-    "end": 89.87,
+    "start": 89.17,
+    "end": 89.31,
     "id": "w281"
   },
   {
     "text": "with",
-    "start": 89.9,
-    "end": 90.11,
+    "start": 89.34,
+    "end": 89.55,
     "id": "w282"
   },
   {
     "text": "their",
-    "start": 90.11,
-    "end": 90.39,
+    "start": 89.55,
+    "end": 89.83,
     "id": "w283"
   },
   {
     "text": "voice",
-    "start": 90.42,
-    "end": 90.73,
+    "start": 89.86,
+    "end": 90.17,
     "id": "w284"
   },
   {
     "text": "alone.",
-    "start": 90.73,
-    "end": 91.27,
+    "start": 90.17,
+    "end": 90.71,
     "id": "w285"
   },
   {
     "text": "And",
-    "start": 91.27,
-    "end": 91.41,
+    "start": 90.71,
+    "end": 90.85,
     "id": "w286"
   },
   {
     "text": "when",
-    "start": 91.41,
-    "end": 91.54,
+    "start": 90.85,
+    "end": 90.98,
     "id": "w287"
   },
   {
     "text": "an",
-    "start": 91.58,
-    "end": 91.66,
+    "start": 91.02,
+    "end": 91.1,
     "id": "w288"
   },
   {
     "text": "agent",
-    "start": 91.66,
-    "end": 92.06,
+    "start": 91.1,
+    "end": 91.5,
     "id": "w289"
   },
   {
     "text": "tries",
-    "start": 92.06,
-    "end": 92.22,
+    "start": 91.5,
+    "end": 91.66,
     "id": "w290"
   },
   {
     "text": "to",
-    "start": 92.22,
-    "end": 92.33,
+    "start": 91.66,
+    "end": 91.77,
     "id": "w291"
   },
   {
     "text": "inject",
-    "start": 92.35,
-    "end": 92.68,
+    "start": 91.79,
+    "end": 92.12,
     "id": "w292"
   },
   {
     "text": "instructions,",
-    "start": 92.7,
-    "end": 93.53,
+    "start": 92.14,
+    "end": 92.98,
     "id": "w293"
   },
   {
     "text": "the",
-    "start": 93.54,
-    "end": 93.71,
+    "start": 93.04,
+    "end": 93.15,
     "id": "w294"
   },
   {
     "text": "policy",
-    "start": 93.71,
-    "end": 94.04,
+    "start": 93.17,
+    "end": 93.48,
     "id": "w295"
   },
   {
     "text": "and",
-    "start": 94.04,
-    "end": 94.18,
+    "start": 93.48,
+    "end": 93.67,
     "id": "w296"
   },
   {
     "text": "code",
-    "start": 94.18,
-    "end": 94.53,
+    "start": 93.67,
+    "end": 93.97,
     "id": "w297"
   },
   {
     "text": "holds",
-    "start": 94.53,
-    "end": 94.8,
+    "start": 93.97,
+    "end": 94.25,
     "id": "w298"
   },
   {
     "text": "and",
-    "start": 94.8,
-    "end": 94.98,
+    "start": 94.25,
+    "end": 94.43,
     "id": "w299"
   },
   {
     "text": "the",
-    "start": 94.98,
-    "end": 95.16,
+    "start": 94.43,
+    "end": 94.61,
     "id": "w300"
   },
   {
     "text": "floor",
-    "start": 95.16,
-    "end": 95.46,
+    "start": 94.61,
+    "end": 94.91,
     "id": "w301"
   },
   {
     "text": "never",
-    "start": 95.46,
-    "end": 95.76,
+    "start": 94.91,
+    "end": 95.21,
     "id": "w302"
   },
   {
     "text": "moves.",
-    "start": 95.76,
-    "end": 96.24,
+    "start": 95.21,
+    "end": 95.75,
     "id": "w303"
   },
   {
     "text": "Under",
-    "start": 96.24,
-    "end": 96.55,
+    "start": 95.75,
+    "end": 95.99,
     "id": "w304"
   },
   {
     "text": "the",
-    "start": 96.55,
-    "end": 96.76,
+    "start": 95.99,
+    "end": 96.2,
     "id": "w305"
   },
   {
     "text": "hood,",
-    "start": 96.76,
-    "end": 96.96,
+    "start": 96.2,
+    "end": 96.4,
     "id": "w306"
   },
   {
     "text": "this",
-    "start": 96.96,
-    "end": 97.35,
+    "start": 96.4,
+    "end": 96.79,
     "id": "w307"
   },
   {
     "text": "app",
-    "start": 97.35,
-    "end": 97.74,
+    "start": 96.79,
+    "end": 97.18,
     "id": "w308"
   },
   {
     "text": "uses",
-    "start": 97.74,
-    "end": 97.79,
+    "start": 97.18,
+    "end": 97.23,
     "id": "w309"
   },
   {
     "text": "PayPal's",
-    "start": 97.79,
-    "end": 98.4,
+    "start": 97.23,
+    "end": 97.84,
     "id": "w310"
   },
   {
     "text": "platform",
-    "start": 98.4,
-    "end": 99.01,
+    "start": 97.84,
+    "end": 98.45,
     "id": "w311"
   },
   {
     "text": "APIs",
-    "start": 99.01,
-    "end": 99.31,
+    "start": 98.45,
+    "end": 98.75,
     "id": "w312"
   },
   {
     "text": "for",
-    "start": 99.31,
-    "end": 99.54,
+    "start": 98.75,
+    "end": 98.98,
     "id": "w313"
   },
   {
     "text": "one-click",
-    "start": 99.54,
-    "end": 100.22,
+    "start": 98.98,
+    "end": 99.66,
     "id": "w314"
   },
   {
     "text": "maker",
-    "start": 100.22,
-    "end": 100.6,
+    "start": 99.66,
+    "end": 100.04,
     "id": "w315"
   },
   {
     "text": "onboarding,",
-    "start": 100.6,
-    "end": 101.6,
+    "start": 100.04,
+    "end": 101.04,
     "id": "w316"
   },
   {
     "text": "paid",
-    "start": 101.74,
-    "end": 101.87,
+    "start": 101.18,
+    "end": 101.31,
     "id": "w317"
   },
   {
     "text": "routing,",
-    "start": 101.87,
-    "end": 102.48,
+    "start": 101.31,
+    "end": 101.92,
     "id": "w318"
   },
   {
     "text": "platform",
-    "start": 102.48,
-    "end": 103.02,
+    "start": 101.92,
+    "end": 102.46,
     "id": "w319"
   },
   {
     "text": "fees,",
-    "start": 103.02,
-    "end": 103.41,
+    "start": 102.46,
+    "end": 102.85,
     "id": "w320"
   },
   {
     "text": "delayed",
-    "start": 103.42,
-    "end": 103.74,
+    "start": 102.86,
+    "end": 103.18,
     "id": "w321"
   },
   {
     "text": "disbursement",
-    "start": 103.89,
-    "end": 104.71,
+    "start": 103.33,
+    "end": 104.15,
     "id": "w322"
   },
   {
     "text": "tracking,",
-    "start": 104.71,
-    "end": 105.44,
+    "start": 104.15,
+    "end": 104.88,
     "id": "w323"
   },
   {
     "text": "reference",
-    "start": 105.44,
-    "end": 105.93,
+    "start": 104.88,
+    "end": 105.37,
     "id": "w324"
   },
   {
     "text": "payouts",
-    "start": 105.93,
-    "end": 106.32,
+    "start": 105.37,
+    "end": 105.76,
     "id": "w325"
   },
   {
     "text": "and",
-    "start": 106.32,
-    "end": 106.44,
+    "start": 105.87,
+    "end": 105.94,
     "id": "w326"
   },
   {
     "text": "webhooks.",
-    "start": 106.44,
-    "end": 107.2,
+    "start": 105.94,
+    "end": 106.64,
     "id": "w327"
   },
   {
     "text": "Claude",
-    "start": 107.2,
-    "end": 107.6,
+    "start": 106.64,
+    "end": 107.04,
     "id": "w328"
   },
   {
     "text": "writes",
-    "start": 107.74,
-    "end": 108.01,
+    "start": 107.18,
+    "end": 107.45,
     "id": "w329"
   },
   {
     "text": "listings,",
-    "start": 108.03,
-    "end": 108.75,
+    "start": 107.47,
+    "end": 108.19,
     "id": "w330"
   },
   {
     "text": "negotiates,",
-    "start": 108.75,
-    "end": 109.61,
+    "start": 108.19,
+    "end": 109.05,
     "id": "w331"
   },
   {
     "text": "answers",
-    "start": 109.61,
-    "end": 109.84,
+    "start": 109.05,
+    "end": 109.28,
     "id": "w332"
   },
   {
     "text": "and",
-    "start": 110.21,
-    "end": 110.33,
+    "start": 109.65,
+    "end": 109.77,
     "id": "w333"
   },
   {
     "text": "runs",
-    "start": 110.33,
-    "end": 110.62,
+    "start": 109.77,
+    "end": 110.06,
     "id": "w334"
   },
   {
     "text": "a",
-    "start": 110.62,
-    "end": 110.69,
+    "start": 110.06,
+    "end": 110.13,
     "id": "w335"
   },
   {
     "text": "co-pilot.",
-    "start": 110.69,
-    "end": 111.47,
+    "start": 110.13,
+    "end": 110.91,
     "id": "w336"
   },
   {
     "text": "It's",
-    "start": 111.47,
-    "end": 111.75,
+    "start": 110.91,
+    "end": 111.19,
     "id": "w337"
   },
   {
     "text": "all",
-    "start": 111.75,
-    "end": 111.96,
+    "start": 111.19,
+    "end": 111.4,
     "id": "w338"
   },
   {
     "text": "hosted",
-    "start": 111.96,
-    "end": 111.98,
+    "start": 111.4,
+    "end": 111.42,
     "id": "w339"
   },
   {
     "text": "on",
-    "start": 112.44,
-    "end": 112.64,
+    "start": 111.88,
+    "end": 112.08,
     "id": "w340"
   },
   {
     "text": "renderer",
-    "start": 112.64,
-    "end": 112.96,
+    "start": 112.08,
+    "end": 112.47,
     "id": "w341"
   },
   {
     "text": "with",
-    "start": 112.96,
-    "end": 113.12,
+    "start": 112.47,
+    "end": 112.64,
     "id": "w342"
   },
   {
     "text": "workflows",
-    "start": 113.26,
-    "end": 113.64,
+    "start": 112.78,
+    "end": 113.15,
     "id": "w343"
   },
   {
     "text": "for",
-    "start": 113.64,
-    "end": 113.81,
+    "start": 113.15,
+    "end": 113.32,
     "id": "w344"
   },
   {
     "text": "the",
-    "start": 113.81,
-    "end": 113.98,
+    "start": 113.32,
+    "end": 113.49,
     "id": "w345"
   },
   {
     "text": "listings",
-    "start": 113.98,
-    "end": 114.44,
+    "start": 113.49,
+    "end": 113.94,
     "id": "w346"
   },
   {
     "text": "pipeline.",
-    "start": 114.44,
-    "end": 115.07,
+    "start": 113.94,
+    "end": 114.56,
     "id": "w347"
   },
   {
     "text": "PayPal",
-    "start": 115.07,
-    "end": 115.26,
+    "start": 114.56,
+    "end": 114.78,
     "id": "w348"
   },
   {
     "text": "already",
-    "start": 115.72,
-    "end": 115.83,
+    "start": 115.24,
+    "end": 115.3,
     "id": "w349"
   },
   {
     "text": "reaches",
-    "start": 115.83,
-    "end": 116.24,
+    "start": 115.3,
+    "end": 115.7,
     "id": "w350"
   },
   {
     "text": "makers",
-    "start": 116.24,
-    "end": 116.59,
+    "start": 115.7,
+    "end": 115.99,
     "id": "w351"
   },
   {
     "text": "in",
-    "start": 116.59,
-    "end": 116.7,
+    "start": 116.06,
+    "end": 116.15,
     "id": "w352"
   },
   {
     "text": "200",
-    "start": 116.7,
-    "end": 117.26,
+    "start": 116.15,
+    "end": 116.72,
     "id": "w353"
   },
   {
     "text": "markets.",
-    "start": 117.26,
-    "end": 118.16,
+    "start": 116.72,
+    "end": 117.6,
     "id": "w354"
   },
   {
     "text": "Canner",
-    "start": 118.16,
-    "end": 118.55,
+    "start": 117.6,
+    "end": 118,
     "id": "w355"
   },
   {
     "text": "just",
-    "start": 118.7,
-    "end": 118.74,
+    "start": 118.14,
+    "end": 118.19,
     "id": "w356"
   },
   {
     "text": "makes",
-    "start": 118.74,
-    "end": 118.97,
+    "start": 118.19,
+    "end": 118.41,
     "id": "w357"
   },
   {
     "text": "them",
-    "start": 118.97,
-    "end": 119.15,
+    "start": 118.43,
+    "end": 118.62,
     "id": "w358"
   },
   {
     "text": "reachable",
-    "start": 119.15,
-    "end": 119.56,
+    "start": 118.62,
+    "end": 119.02,
     "id": "w359"
   },
   {
     "text": "by",
-    "start": 119.56,
-    "end": 119.65,
+    "start": 119.07,
+    "end": 119.14,
     "id": "w360"
   },
   {
     "text": "agents",
-    "start": 119.65,
-    "end": 119.92,
+    "start": 119.14,
+    "end": 119.43,
     "id": "w361"
   },
   {
     "text": "as",
-    "start": 119.92,
-    "end": 120.01,
+    "start": 119.43,
+    "end": 119.52,
     "id": "w362"
   },
   {
     "text": "well.",
-    "start": 120.01,
-    "end": 120.24,
+    "start": 119.52,
+    "end": 119.76,
     "id": "w363"
   }
 ]

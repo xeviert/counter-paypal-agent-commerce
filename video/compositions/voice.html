@@ -1,0 +1,66 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Newsreader";
+      src: url("assets/fonts/newsreader-latin.woff2") format("woff2");
+      font-weight: 400 700;
+    }
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+      color: #251a15;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    #voice-card {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #voice-line {
+      font-family: "Newsreader", serif;
+      font-size: 104px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+    }
+    #voice-line span {
+      display: inline-block;
+    }
+    #voice-line .hl {
+      color: #ab331f;
+    }
+    #voice-tag {
+      margin-top: 34px;
+      font-size: 36px;
+      color: #695e55;
+    }
+  </style>
+  <div id="root" data-composition-id="voice" data-width="1920" data-height="1080">
+    <div id="voice-card" class="clip" data-start="0" data-duration="2.3">
+      <div id="voice-line">
+        <span>Shop</span> <span>with</span> <span>your</span> <span class="hl">voice</span> <span>alone.</span>
+      </div>
+      <div id="voice-tag">Agents speak plain language, so no screen is needed</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo(
+      "#voice-line span",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" },
+      0.05,
+    );
+    tl.fromTo("#voice-tag", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.5);
+    window.__timelines["voice"] = tl;
+  </script>
+</template>
