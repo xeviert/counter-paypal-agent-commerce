@@ -175,7 +175,7 @@ Shoot in the order the data needs, then cut into beat order:
 
 ## Handoff: status Nov 11, 2026 (afternoon)
 
-**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Not rendered yet:** the first delivery render was killed at 45% by Claude Code's low-memory guard (5 Chrome workers). Nothing is uploaded or committed.
+**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Rendered (Nov 11):** `video/renders/counter.mp4`, 128.7 s, 1920×1080 at 30 fps, H.264 + AAC, 70 MB, −13 LUFS integrated. `--low-memory-mode` took 5 min 44 s. Frames were checked at every beat: captions are burned in, and no buyer email shows in beats 4–5. Steps 1, 2 (except the playback with sound) and 4 are done. **Not uploaded yet.**
 
 ### Next steps, in order
 
