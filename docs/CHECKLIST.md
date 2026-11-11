@@ -80,7 +80,7 @@ Everything else below is skippable or happens during rehearsal. Work these, then
   - Send me corrections as a list (key → new text); I apply them
   - **Nov 7 cutoff:** no fil/sw reviewer by then → the video shows Spanish only; tell me and I'll make the README say the rest is Claude-drafted
 - [ ] **Real photos**, owned or licensed [§5.7, §6.2, §8.1]
-  - **Nov 10:** MX (14 products) done, seeded on Render. PH, KE and the 5 eval photos: come back Nov 11 if time. `eye-of-god-rug` and `wool-coaster-set` could use better photos
+  - **Nov 10:** MX (14 products) done, seeded on Render. **Nov 11:** PH + KE (16) done, seeded on Render; `/feed.json` 32 items. The 5 eval photos still open
   - The 30 seed products: `seed/photos/<slug>/`, source and license per photo in `seed/photos/README.md`
   - 5 for the listing eval: the fixture folders in `test/fixtures/listing-eval/` (see their README)
   - Then tell me: I run `pnpm eval:listing` (Sonnet vs Haiku) and record the result
@@ -180,8 +180,8 @@ Signed in as Lucía unless noted.
 
 ## 9. Demo data + judge access (Nov 7, after photos)
 
-- [ ] Against Render: `pnpm seed --photos-only`, then `pnpm seed:activity` [§8.3]. Done Nov 10 for MX; re-run after PH/KE photos
-- [ ] `/feed.json` now has items; product pages show photos
+- [x] Against Render: `pnpm seed --photos-only`, then `pnpm seed:activity` [§8.3]. Nov 11: all 30 products
+- [x] `/feed.json` now has items; product pages show photos (Nov 11: 32 items, 0 skipped)
 - [ ] Clean browser (incognito, no cookies): `/` loads; `/s/login` shows the demo makers and one tap signs in; the sandbox buyer can log in on a PayPal approval page; the `/ops` judge login works [§8.3]
 - [ ] Draft the Devpost testing instructions (submitted in §13) [§8.5]: connector URL + the 4 claude.ai steps (copy README "Try it"), a sample prompt, sandbox buyer email + password, "demo makers: one tap on `/s/login`", `/ops` judge password (`OPS_JUDGE_PASSWORD` in your `.env`)
 
