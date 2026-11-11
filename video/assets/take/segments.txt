@@ -1,0 +1,40 @@
+0.03|19.28| AI agents are becoming the way that people shop, but they only reach big retailers.
+19.29|25.04| Lucia weaves rugs in Teotitran del Valle Oaxaca like her family has for four generations.
+25.05|27.51| To an agent, she doesn't exist.
+27.53|30.54| My app Counter fixes that.
+30.55|36.08| Lucia connects her PayPal account once, then she takes a photo and talks in Spanish.
+36.09|43.07| Claude turns her words and photos into a listing in English and Spanish, with the price in dollars and pesos.
+43.09|45.59| She checks it and it publishes.
+45.61|53.30| Her rugs are now readable and viewed by any AI agent anywhere.
+53.31|55.95| Here's a buyer using Claude.
+55.97|61.76| Counter is an MCP server, so Claude can search Lucia's catalog.
+61.77|64.00| Read the full listing and ask about it.
+64.01|70.95| The buyer offers 110 counter.
+70.97|74.24| Here's a buyer using Claude.
+74.25|80.72| Counter is an MCP server, so Claude can search Lucia's catalog, read the full listing and ask about it.
+80.73|85.68| The buyer offers 110 counters negotiator counters for Lucia.
+85.69|90.12| Claude writes the reply, but the price is clamped to the floor in code.
+90.13|97.67| The buyer accepts and Counter creates a PayPal checkout for exactly the agreed upon price plus shipping.
+97.73|102.26| The buyer approves PayPal and done.
+102.27|108.44| Lucia gets the news in Spanish, the money is paid to her.
+108.45|110.51| Lucia gets the news in Spanish.
+110.53|117.40| The money is paid to her own PayPal account, but PayPal holds it until delivery.
+117.41|121.84| That gives the buyer abroad.
+121.85|128.72| That gives the buyer abroad a reason to trust.
+128.73|135.16| That gives the buyer abroad a reason to trust a maker they've never heard of or met before.
+135.17|137.06| Retake.
+137.07|145.84| That gives the buyer abroad a reason to trust a maker they've never heard or met before.
+145.85|149.20| She adds tracking and countersenses to PayPal on her behalf.
+149.21|155.68| When the buyer confirms delivery or the timer runs out, PayPal releases the funds to Lucia.
+155.69|163.72| Lucia can ask restore questions out loud in Spanish.
+163.73|168.93| Her dashboard is built on AG Studio with a custom payout timeline that shows when each sale reaches her.
+168.95|179.36| She can ask AI for its new charts in her own words.
+179.39|194.60| Because agents talk in plain language, a blind buyer can shop with their voice alone.
+194.61|202.96| When an agent tries to inject instructions, the policy and code holds, and the floor never moves.
+202.97|215.12| For the app, we're using PayPal's platform APIs for one-click maker onboarding, payee routing, platform fees, the loud disbursement, tracking, retake.
+215.13|229.84| Under the hood, PayPal uses PayPal's platform APIs for one-click maker onboarding, payee routing, platform fees, delayed disbursement, tracking, reference payouts, and webhooks.
+229.85|238.23| Claude writes listings, negotiates answers, and runs a co-pilot.
+238.25|251.60| It all runs on renderer with workflows for the listing pipeline.
+251.61|275.08| PayPal already reaches makers in 200 markets, PayPal already reaches makers in 200 markets, Counter just makes them accessible to everyone.
+275.09|278.32| PayPal already reaches makers in 200 markets.
+278.35|293.16| Counter simply makes them reachable by agents as well.

@@ -1,0 +1,195 @@
+<!doctype html>
+<html
+  lang="en"
+  data-composition-variables='[
+    {"id":"ground","type":"color","label":"Ground","default":"#fcf9f3"},
+    {"id":"ink","type":"color","label":"Ink","default":"#251a15"},
+    {"id":"accent","type":"color","label":"Accent (terracotta)","default":"#ab331f"}
+  ]'
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --ground: #fcf9f3;
+        --ink: #251a15;
+        --accent: #ab331f;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--ground);
+      }
+      #bg {
+        position: absolute;
+        inset: 0;
+        background: var(--ground);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="128.7"
+      data-width="1920"
+      data-height="1080"
+    >
+      <div id="bg"></div>
+
+      <!-- Face cam + voiceover: C0170 with retakes cut (tools/cut-take.mjs → assets/take/edl-final.json) -->
+      <video
+        id="face"
+        class="clip"
+        src="assets/face.mp4"
+        data-start="0"
+        data-duration="123.4"
+        data-track-index="0"
+        data-has-audio="true"
+        data-volume="1"
+        playsinline
+        style="position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; z-index: 1"
+      ></video>
+
+      <!-- Beat 1 -->
+      <div
+        id="hook"
+        style="z-index: 2"
+        data-composition-id="hook"
+        data-composition-src="compositions/hook.html"
+        data-start="4.6"
+        data-duration="7.65"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 2: Pixel recording, speed-ramped (assets/take/b2-filter.txt) -->
+      <div
+        id="b2"
+        style="z-index: 3"
+        data-composition-id="b2"
+        data-composition-src="compositions/b2.html"
+        data-start="14.1"
+        data-duration="12.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 3: claude.ai purchase, cut + zoomed (assets/take/b3-filter.txt) -->
+      <div
+        id="b3"
+        style="z-index: 3"
+        data-composition-id="b3"
+        data-composition-src="compositions/b3.html"
+        data-start="32.2"
+        data-duration="23.1"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beats 4–5: maker phone (tools/record-phone.mjs) + buyer confirm; buyer email masked -->
+      <div
+        id="b45"
+        style="z-index: 3"
+        data-composition-id="b45"
+        data-composition-src="compositions/b45.html"
+        data-start="55.85"
+        data-duration="18.4"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 7: Claude refuses the injection; the same note sent straight to Counter is countered at $140 (/ops) -->
+      <div
+        id="b7"
+        style="z-index: 3"
+        data-composition-id="b7"
+        data-composition-src="compositions/b7.html"
+        data-start="91.0"
+        data-duration="5.1"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 6: copilot on the phone, then the AG Studio dashboard -->
+      <div
+        id="b6"
+        style="z-index: 3"
+        data-composition-id="b6"
+        data-composition-src="compositions/b6.html"
+        data-start="74.23"
+        data-duration="12.21"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 8 -->
+      <div
+        id="arch"
+        style="z-index: 2"
+        data-composition-id="arch"
+        data-composition-src="compositions/arch.html"
+        data-start="96.11"
+        data-duration="19"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <!-- Beat 9 -->
+      <div
+        id="close"
+        style="z-index: 2"
+        data-composition-id="close"
+        data-composition-src="compositions/close.html"
+        data-start="123.1"
+        data-duration="5.6"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1920"
+        data-height="1080"
+      ></div>
+
+      <div
+        id="captions"
+        data-composition-id="captions"
+        data-composition-src="compositions/captions.html"
+        data-start="0"
+        data-duration="123.4"
+        data-track-index="2"
+        data-track-kind="captions"
+        data-width="1920"
+        data-height="1080"
+        style="z-index: 10"
+      ></div>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,187 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Newsreader";
+      src: url("assets/fonts/newsreader-latin.woff2") format("woff2");
+      font-weight: 400 700;
+    }
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      color: #251a15;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    #p45-b4,
+    #p45-b5a,
+    #p45-b5c {
+      position: absolute;
+      inset: 0;
+      background: #f2ece3;
+    }
+    .p45-phone {
+      position: absolute;
+      left: 430px;
+      top: 40px;
+      width: 472px;
+      height: 1002px;
+      border-radius: 44px;
+      border: 10px solid #251a15;
+      background: #fcf9f3;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(37, 26, 21, 0.22);
+    }
+    .p45-screen {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 452px;
+      height: 982px;
+      object-fit: cover;
+      object-position: top;
+    }
+    .p45-side {
+      position: absolute;
+      left: 1010px;
+      top: 300px;
+      width: 780px;
+    }
+    .p45-eyebrow {
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #ab331f;
+    }
+    .p45-head {
+      margin-top: 12px;
+      font-family: "Newsreader", serif;
+      font-size: 58px;
+      font-weight: 500;
+      line-height: 1.08;
+    }
+    .p45-badge {
+      display: inline-block;
+      margin-top: 30px;
+      padding: 10px 22px;
+      border-radius: 999px;
+      font-size: 32px;
+      font-weight: 600;
+    }
+    .wait {
+      background: #f4e7d0;
+      color: #7e4f04;
+    }
+    .moving {
+      background: #e1e8f4;
+      color: #36548c;
+    }
+    .done {
+      background: #dcebdf;
+      color: #236436;
+    }
+    #p45-buyer {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+    }
+    #p45-buyer-video {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    #p45-buyer-tag {
+      position: absolute;
+      left: 96px;
+      top: 64px;
+      padding: 12px 24px;
+      border-radius: 14px;
+      background: #251a15;
+      color: #fcfaf6;
+      font-size: 32px;
+      font-weight: 600;
+    }
+  </style>
+  <div id="root" data-composition-id="b45" data-width="1920" data-height="1080">
+    <!-- Beat 4 (0–5.85): inbox → order, paid and held -->
+    <div id="p45-b4" style="opacity: 0">
+      <div class="p45-phone">
+        <video id="p45-v4" class="clip p45-screen" src="assets/clips/beat-4.mp4" data-start="0" data-duration="5.85" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="p45-side">
+        <div class="p45-eyebrow">Lucía’s phone</div>
+        <div class="p45-head">“Vendiste…”: the sale arrives in Spanish</div>
+        <div class="p45-badge wait" id="p45-held">Paid · held by PayPal until delivery</div>
+      </div>
+    </div>
+
+    <!-- Beat 5 (10.4–18.4): tracking → buyer confirms → released -->
+    <div id="p45-b5a" style="opacity: 0">
+      <div class="p45-phone">
+        <video id="p45-v5a" class="clip p45-screen" src="assets/clips/beat-5-ship.mp4" data-start="10.4" data-duration="3.0" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="p45-side">
+        <div class="p45-eyebrow">Lucía’s phone</div>
+        <div class="p45-head">Adds tracking; Counter sends it to PayPal</div>
+        <div class="p45-badge moving">Shipped · DHL</div>
+      </div>
+    </div>
+    <div id="p45-buyer" style="opacity: 0">
+      <video id="p45-buyer-video" class="clip" src="assets/clips/beat-5-buyer.mp4" data-start="13.4" data-duration="2.8" data-track-index="0" muted playsinline></video>
+      <div id="p45-buyer-tag">Buyer’s order page · “I received it”</div>
+    </div>
+    <div id="p45-b5c" style="opacity: 0">
+      <div class="p45-phone">
+        <video id="p45-v5c" class="clip p45-screen" src="assets/clips/beat-5-released.mp4" data-start="16.2" data-duration="2.2" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="p45-side">
+        <div class="p45-eyebrow">Lucía’s phone</div>
+        <div class="p45-head">PayPal releases the funds to Lucía</div>
+        <div class="p45-badge done">Paid to her PayPal · USD 144.49</div>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Wrappers are untimed (their videos carry the timing); show each only in its window.
+    tl.set("#p45-b4", { opacity: 1 }, 0);
+    tl.set("#p45-b4", { opacity: 0 }, 5.85);
+    tl.set("#p45-b5a", { opacity: 1 }, 10.4);
+    tl.set("#p45-b5a", { opacity: 0 }, 13.4);
+    tl.set("#p45-buyer", { opacity: 1 }, 13.4);
+    tl.set("#p45-buyer", { opacity: 0 }, 16.2);
+    tl.set("#p45-b5c", { opacity: 1 }, 16.2);
+    tl.set("#p45-b5c", { opacity: 0 }, 18.4);
+    tl.fromTo("#p45-b4 .p45-phone", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, 0);
+    tl.fromTo(
+      ["#p45-b4 .p45-eyebrow", "#p45-b4 .p45-head"],
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.1, ease: "power4.out" },
+      0.2,
+    );
+    // "…but PayPal holds it until delivery" (film 59.7 s → 3.85 s here)
+    tl.fromTo("#p45-held", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 3.6);
+
+    tl.fromTo(
+      ["#p45-b5a .p45-eyebrow", "#p45-b5a .p45-head", "#p45-b5a .p45-badge"],
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.08, ease: "power4.out" },
+      10.45,
+    );
+    tl.fromTo("#p45-buyer-tag", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.35, ease: "expo.out" }, 13.5);
+    tl.fromTo(
+      ["#p45-b5c .p45-eyebrow", "#p45-b5c .p45-head", "#p45-b5c .p45-badge"],
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.08, ease: "power4.out" },
+      16.25,
+    );
+    window.__timelines["b45"] = tl;
+  </script>
+</template>

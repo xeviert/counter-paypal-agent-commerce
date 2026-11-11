@@ -1,0 +1,175 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Newsreader";
+      src: url("assets/fonts/newsreader-latin.woff2") format("woff2");
+      font-weight: 400 700;
+    }
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    @font-face {
+      font-family: "Geist Mono";
+      src: url("assets/fonts/geist-mono-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+      color: #251a15;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    #close-strip {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+    }
+    .close-ph {
+      width: 300px;
+      height: 300px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(37, 26, 21, 0.12);
+    }
+    .close-ph img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    #close-lockup {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #close-mark-row {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+    }
+    #close-tile {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      border-radius: 33px;
+      border: 6px solid #ab331f;
+      overflow: hidden;
+    }
+    #close-fill {
+      position: absolute;
+      inset: 0;
+      background: #ab331f;
+    }
+    #close-fret {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #close-word {
+      font-family: "Newsreader", serif;
+      font-size: 128px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    #close-url {
+      margin-top: 46px;
+      font-family: "Geist Mono", monospace;
+      font-size: 42px;
+      color: #ab331f;
+    }
+    #close-repo {
+      margin-top: 14px;
+      font-family: "Geist Mono", monospace;
+      font-size: 30px;
+      color: #695e55;
+    }
+  </style>
+  <div id="root" data-composition-id="close" data-width="1920" data-height="1080">
+    <div id="close-strip" class="clip" data-start="0" data-duration="2.2">
+      <div class="close-ph"><img src="assets/img/zapotec-fret-rug.jpg" alt="Zapotec fret rug" /></div>
+      <div class="close-ph"><img src="assets/img/cochineal-red-large-rug.jpg" alt="Cochineal red rug" /></div>
+      <div class="close-ph"><img src="assets/img/indigo-table-runner.jpg" alt="Indigo table runner" /></div>
+      <div class="close-ph"><img src="assets/img/marigold-small-rug.jpg" alt="Marigold small rug" /></div>
+      <div class="close-ph"><img src="assets/img/mountain-wall-hanging.jpg" alt="Mountain wall hanging" /></div>
+    </div>
+    <div id="close-lockup" class="clip" data-start="1.8" data-duration="3.8">
+      <div id="close-mark-row">
+        <div id="close-tile">
+          <div id="close-fill"></div>
+          <svg id="close-fret" viewBox="0 0 100 100" aria-hidden="true">
+            <polygon fill="#fbf7ef" points="74,26 32,26 32,40 26,40 26,60 32,60 32,74 74,74 74,60 46,60 46,40 74,40" />
+          </svg>
+        </div>
+        <div id="close-word">Counter</div>
+      </div>
+      <div id="close-url">counter-2cdt.onrender.com</div>
+      <div id="close-repo">github.com/xeviert/counter-paypal-agent-commerce</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo(
+      ".close-ph",
+      { opacity: 0, x: 90, filter: "blur(10px)" },
+      { opacity: 1, x: 0, filter: "blur(0px)", duration: 0.7, stagger: 0.07, ease: "expo.out" },
+      0.1,
+    );
+    // The strip gathers into the mark.
+    tl.to(
+      ".close-ph",
+      {
+        x: (i) => (2 - i) * 328,
+        scale: 0.45,
+        opacity: 0,
+        duration: 0.45,
+        ease: "power3.in",
+      },
+      1.6,
+    );
+    tl.fromTo(
+      "#close-tile",
+      { scale: 0.6, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(1.4)" },
+      1.9,
+    );
+    tl.fromTo(
+      "#close-fill",
+      { clipPath: "inset(100% 0% 0% 0%)" },
+      { clipPath: "inset(0% 0% 0% 0%)", duration: 0.4, ease: "power3.inOut" },
+      2.05,
+    );
+    tl.fromTo(
+      "#close-fret",
+      { opacity: 0, scale: 0.8, transformOrigin: "50% 50%" },
+      { opacity: 1, scale: 1, duration: 0.35, ease: "expo.out" },
+      2.3,
+    );
+    tl.fromTo(
+      "#close-word",
+      { clipPath: "inset(0% 100% 0% 0%)", x: -16 },
+      { clipPath: "inset(0% 0% 0% 0%)", x: 0, duration: 0.55, ease: "expo.out" },
+      2.35,
+    );
+    tl.fromTo(
+      ["#close-url", "#close-repo"],
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.12, ease: "power4.out" },
+      2.7,
+    );
+
+    window.__timelines["close"] = tl;
+  </script>
+</template>

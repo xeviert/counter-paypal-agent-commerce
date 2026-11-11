@@ -1,0 +1,284 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Newsreader";
+      src: url("assets/fonts/newsreader-latin.woff2") format("woff2");
+      font-weight: 400 700;
+    }
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+      color: #251a15;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    #hook-card {
+      position: absolute;
+      left: 170px;
+      top: 0;
+      width: 1580px;
+      height: 1080px;
+      display: flex;
+      align-items: center;
+      gap: 72px;
+    }
+    #hook-photo {
+      width: 860px;
+      height: 574px;
+      flex: none;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #fffdfa;
+      box-shadow: 0 30px 80px rgba(37, 26, 21, 0.14);
+    }
+    #hook-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    #hook-text {
+      width: 650px;
+    }
+    #hook-title {
+      font-family: "Newsreader", serif;
+      font-size: 64px;
+      font-weight: 500;
+      line-height: 1.08;
+      letter-spacing: -0.01em;
+    }
+    #hook-title span {
+      display: inline-block;
+    }
+    #hook-es {
+      margin-top: 18px;
+      font-size: 32px;
+      color: #695e55;
+    }
+    #hook-maker {
+      margin-top: 22px;
+      font-size: 32px;
+      line-height: 1.3;
+    }
+    #hook-maker .w {
+      display: inline-block;
+    }
+    #hook-name {
+      position: relative;
+      display: inline-block;
+    }
+    #hook-underline {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -6px;
+      height: 5px;
+      border-radius: 3px;
+      background: #ab331f;
+      transform-origin: left center;
+    }
+    #hook-price {
+      margin-top: 30px;
+      font-size: 44px;
+      font-weight: 700;
+    }
+    #hook-mxn {
+      margin-top: 6px;
+      font-size: 28px;
+      color: #695e55;
+    }
+    #hook-quote {
+      margin-top: 34px;
+      padding-left: 24px;
+      border-left: 5px solid #e1dacf;
+      font-family: "Newsreader", serif;
+      font-size: 34px;
+      line-height: 1.3;
+      color: #312620;
+    }
+    #hook-gen {
+      color: #312620;
+    }
+    #hook-veil {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+      transform-origin: left center;
+    }
+    #hook-line {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 470px;
+      text-align: center;
+      font-family: "Newsreader", serif;
+      font-size: 104px;
+      font-weight: 500;
+      letter-spacing: -0.015em;
+    }
+    #hook-line span {
+      display: inline-block;
+    }
+    #hook-line .hl {
+      color: #ab331f;
+    }
+    #hook-lockup {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #hook-mark-row {
+      display: flex;
+      align-items: center;
+      gap: 34px;
+    }
+    #hook-tile {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      border-radius: 33px;
+      border: 6px solid #ab331f;
+      overflow: hidden;
+    }
+    #hook-fill {
+      position: absolute;
+      inset: 0;
+      background: #ab331f;
+    }
+    #hook-fret {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #hook-word {
+      font-family: "Newsreader", serif;
+      font-size: 128px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+    #hook-tag {
+      margin-top: 38px;
+      font-size: 36px;
+      color: #695e55;
+    }
+  </style>
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="hook-card" class="clip" data-start="0" data-duration="7.4">
+      <div id="hook-photo">
+        <img id="hook-img" src="assets/img/zapotec-fret-rug.jpg" alt="Zapotec fret wool rug" />
+      </div>
+      <div id="hook-text">
+        <div id="hook-title">
+          <span>Zapotec</span> <span>fret</span> <span>wool</span> <span>rug,</span> <span>natural</span>
+          <span>dyes</span>
+        </div>
+        <div id="hook-es">Tapete zapoteco de grecas, tintes naturales</div>
+        <div id="hook-maker">
+          <span class="w">By</span>
+          <span id="hook-name" class="w">Lucía Hernández<span id="hook-underline"></span></span>
+          <span class="w">· Teotitlán del Valle,</span> <span class="w">Oaxaca, Mexico</span>
+        </div>
+        <div id="hook-price">$145.00 USD</div>
+        <div id="hook-mxn">≈ 2,697 MXN (approx.)</div>
+        <div id="hook-quote">
+          Weaves on a pedal loom, as her family has for
+          <span id="hook-gen">four generations.</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="hook-veil" class="clip" data-start="5.4" data-duration="2.2" data-layout-allow-occlusion></div>
+
+    <div id="hook-line" data-layout-allow-overlap class="clip" data-start="5.7" data-duration="1.9">
+      <span>To</span> <span>an</span> <span class="hl">agent,</span> <span>she</span> <span>doesn’t</span>
+      <span>exist.</span>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+
+    tl.fromTo(
+      "#hook-photo",
+      { clipPath: "inset(0% 0% 0% 100%)" },
+      { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.out" },
+      0,
+    );
+    tl.fromTo(
+      "#hook-title span",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" },
+      0.35,
+    );
+    tl.fromTo(
+      "#hook-es",
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.18, ease: "power4.out" },
+      0.6,
+    );
+    tl.fromTo(
+      "#hook-maker .w",
+      { opacity: 0, color: "#c9c0b4" },
+      { opacity: 1, color: "#251a15", duration: 0.25, stagger: 0.08, ease: "power2.out" },
+      0.3,
+    );
+    tl.fromTo(
+      ["#hook-price", "#hook-mxn"],
+      { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: "expo.out" },
+      1.1,
+    );
+
+    // "Lucía weaves rugs in Teotitlán…"
+    tl.fromTo(
+      "#hook-underline",
+      { scaleX: 0 },
+      { scaleX: 1, duration: 0.55, ease: "power3.out" },
+      0.45,
+    );
+    tl.fromTo(
+      "#hook-quote",
+      { opacity: 0, filter: "blur(8px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.2, ease: "power4.out" },
+      3.0,
+    );
+    // "…for four generations."
+    tl.fromTo(
+      "#hook-gen",
+      { color: "#312620" },
+      { color: "#ab331f", duration: 0.3, ease: "power2.out" },
+      4.25,
+    );
+
+    // "To an agent, she doesn't exist."
+    tl.fromTo(
+      "#hook-veil",
+      { scaleX: 0 },
+      { scaleX: 1, duration: 0.6, ease: "power2.inOut" },
+      5.4,
+    );
+    tl.fromTo(
+      "#hook-line span",
+      { opacity: 0, filter: "blur(6px)" },
+      { opacity: 1, filter: "blur(0px)", duration: 0.13, stagger: 0.067, ease: "power4.out" },
+      5.75,
+    );
+    tl.to(
+      "#hook-line span",
+      { opacity: 0, filter: "blur(8px)", duration: 0.18, stagger: 0.03, ease: "power2.in" },
+      7.35,
+    );
+
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

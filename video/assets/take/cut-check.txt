@@ -1,0 +1,17 @@
+B1 [0.0-14.1] AI agents are becoming the way that people shop, but they only reach big retailers. Lucia weaves rugs in Teotitran del Valle Oaxaca like her family has for four generations. To an agent, she doesn't exist. My app counter fixes that.
+
+B2 [14.1-30.4] Lucia connects her PayPal account once, then she takes a photo and talks in Spanish. Claude turns her words and photos into a listing in English and Spanish with the price in dollars and pesos. She checks it and it publishes. Her rugs are now readable and viewed by any AI agent anywhere.
+
+B3 [30.4-55.9] Here's a buyer using Claude. Counter is an MCP server, so Claude can search Lucia's catalog, read the full listing and ask about it. The buyer offers 110. Counter's negotiator counters for Lucia. Claude writes the reply, but the price is clamped to the floor in code. The buyer accepts and Counter creates a PayPal checkout for exactly the agreed upon price plus shipping. The buyer approves PayPal and done.
+
+B4 [55.9-66.3] Lucia gets the news in Spanish. The money is paid to her own PayPal account, but PayPal holds it until delivery. That gives the buyer abroad a reason to trust a maker they never heard or met before.
+
+B5 [66.3-74.3] She adds tracking and Counter senses a PayPal on her behalf. When the buyer confirms delivery or the timer runs out, PayPal releases the funds to Lucia. Lucia
+
+B6 [74.3-91.3] Lucia can ask her store questions uh retake. Lucia can ask her store questions out loud in Spanish. Her dashboard is built on AG Studio with the custom payout timeline that shows when each sale reaches her. She can ask AI for its new charts. She can ask its AI for new charts in her own words.
+
+B7 [91.3-107.2] Because agents talk in plain because agents talk in plain language. Because agents talk in plain language. Because agents talk in plain language, a blind buyer can shop with their voice alone. And when an agent tries to inject instructions, the policy and code holds and the floor never moves.
+
+B8 [107.2-132.7] Under the hood, PayPal uses. This app uses PayPal's platform APIs for one-click maker onboarding, paid routing, platform fees, delayed disbursement tracking, reference payouts and webhooks. Claude writes listing, negotiates answers. Claude writes listings, negotiates, answers and runs a co-pilot. It all runs on renderer with work. It's all hosted on renderer with workflows for the listings pipeline. PayPal already
+
+B9 [132.7-147.2] reaches makers in 200 markets. Canner simply makes them reachable. PayPal already reaches makers in 200 markets. Canner just makes them reachable by agents as well.

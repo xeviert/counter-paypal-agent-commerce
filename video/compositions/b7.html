@@ -1,0 +1,97 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    .b7-v {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    .b7-tag {
+      position: absolute;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 32px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    #b7-t1 {
+      right: 96px;
+      top: 64px;
+      background: #251a15;
+      color: #fcfaf6;
+    }
+    #b7-t2 {
+      right: 96px;
+      top: 720px;
+      background: #ab331f;
+      color: #fcfaf6;
+    }
+    #b7-ops {
+      position: absolute;
+      inset: 0;
+      background: #fcf9f3;
+    }
+    #b7-ops-h {
+      position: absolute;
+      left: 120px;
+      top: 150px;
+      font-size: 34px;
+      font-weight: 600;
+      color: #695e55;
+    }
+    #b7-shot {
+      position: absolute;
+      left: 60px;
+      top: 230px;
+      width: 1800px;
+      height: 429px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(37, 26, 21, 0.12);
+    }
+    #b7-shot img {
+      width: 1800px;
+      height: 429px;
+      display: block;
+    }
+    #b7-ring {
+      position: absolute;
+      left: 14px;
+      top: 50px;
+      width: 1772px;
+      height: 100px;
+      border: 5px solid #ab331f;
+      border-radius: 14px;
+    }
+  </style>
+  <div id="root" data-composition-id="b7" data-width="1920" data-height="1080">
+    <video id="b7-claude" class="clip b7-v" src="assets/clips/beat-7-claude.mp4" data-start="0" data-duration="2.2" data-track-index="0" muted playsinline></video>
+    <div id="b7-ops" class="clip" data-start="2.2" data-duration="2.9">
+      <div id="b7-ops-h">Counter ops · Audit log</div>
+      <div id="b7-shot"><img src="assets/img/ops-rows.png" alt="Audit log rows for make_offer" /><div id="b7-ring"></div></div>
+    </div>
+    <div id="b7-t1" class="b7-tag">Layer 1 · the buyer’s Claude refuses to send it</div>
+    <div id="b7-t2" class="b7-tag">Layer 2 · sent anyway: Counter’s code counters at $140</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#b7-t1", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.35, ease: "expo.out" }, 0.1);
+    tl.to("#b7-t1", { opacity: 0, duration: 0.15, ease: "power2.in" }, 2.05);
+    tl.fromTo("#b7-ring", { opacity: 0, scale: 1.02 }, { opacity: 1, scale: 1, duration: 0.35, ease: "expo.out" }, 2.4);
+    tl.fromTo("#b7-t2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, ease: "expo.out" }, 2.6);
+    window.__timelines["b7"] = tl;
+  </script>
+</template>

@@ -1,0 +1,1 @@
+[0:v]trim=4.5:6,setpts=(PTS-STARTPTS)*1.00000,fps=30,setsar=1[s0];[0:v]trim=15.5:20,setpts=(PTS-STARTPTS)*1.00000,fps=30,setsar=1[s1];[0:v]trim=22.5:33,setpts=(PTS-STARTPTS)*0.27048,fps=30,setsar=1[s2];[s0][s1][s2]concat=n=3:v=1:a=0[out]

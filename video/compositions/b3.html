@@ -1,0 +1,67 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      background: #ffffff;
+      font-family: "Geist", sans-serif;
+      overflow: hidden;
+    }
+    #b3-screen {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+      object-fit: cover;
+    }
+    .b3-tag {
+      position: absolute;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 32px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    #b3-who {
+      left: 96px;
+      top: 64px;
+      background: #251a15;
+      color: #fcfaf6;
+    }
+    #b3-floor {
+      right: 96px;
+      top: 64px;
+      background: #ab331f;
+      color: #fcfaf6;
+    }
+  </style>
+  <div id="root" data-composition-id="b3" data-width="1920" data-height="1080">
+    <video
+      id="b3-screen"
+      class="clip"
+      src="assets/clips/beat-3.mp4"
+      data-start="0"
+      data-duration="23.1"
+      data-track-index="0"
+      muted
+      playsinline
+    ></video>
+    <div id="b3-who" class="b3-tag">Buyer’s agent · Claude + Counter connector</div>
+    <div id="b3-floor" class="b3-tag" data-layout-allow-overlap>Price clamped to Lucía’s floor in code, not by the model</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#b3-who", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 0.2);
+    tl.to("#b3-who", { opacity: 0, duration: 0.2, ease: "power2.in" }, 9.8);
+    // The $138 counter is on screen 10.0–14.2 s (assets/take/b3-filter.txt).
+    tl.fromTo("#b3-floor", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.4, ease: "expo.out" }, 10.3);
+    tl.to("#b3-floor", { opacity: 0, duration: 0.2, ease: "power2.in" }, 14.4);
+    window.__timelines["b3"] = tl;
+  </script>
+</template>

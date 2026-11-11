@@ -1,0 +1,116 @@
+<template>
+  <style>
+    @font-face {
+      font-family: "Newsreader";
+      src: url("assets/fonts/newsreader-latin.woff2") format("woff2");
+      font-weight: 400 700;
+    }
+    @font-face {
+      font-family: "Geist";
+      src: url("assets/fonts/geist-latin.woff2") format("woff2");
+      font-weight: 100 900;
+    }
+    #root {
+      position: absolute;
+      inset: 0;
+      font-family: "Geist", sans-serif;
+      color: #251a15;
+      overflow: hidden;
+    }
+    #b6-phone-scene {
+      position: absolute;
+      inset: 0;
+      background: #f2ece3;
+    }
+    #b6-phone {
+      position: absolute;
+      left: 430px;
+      top: 40px;
+      width: 472px;
+      height: 1002px;
+      border-radius: 44px;
+      border: 10px solid #251a15;
+      background: #fcf9f3;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(37, 26, 21, 0.22);
+    }
+    #b6-copilot {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 452px;
+      height: 982px;
+      object-fit: cover;
+      object-position: top;
+    }
+    #b6-side {
+      position: absolute;
+      left: 1010px;
+      top: 330px;
+      width: 780px;
+    }
+    #b6-eyebrow {
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #ab331f;
+    }
+    #b6-head {
+      margin-top: 12px;
+      font-family: "Newsreader", serif;
+      font-size: 58px;
+      font-weight: 500;
+      line-height: 1.08;
+    }
+    #b6-dash {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1920px;
+      height: 1080px;
+    }
+    .b6-tag {
+      position: absolute;
+      right: 96px;
+      top: 150px;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 32px;
+      font-weight: 600;
+      white-space: nowrap;
+      background: #251a15;
+      color: #fcfaf6;
+    }
+    #b6-t3 {
+      background: #ab331f;
+    }
+  </style>
+  <div id="root" data-composition-id="b6" data-width="1920" data-height="1080">
+    <div id="b6-phone-scene" style="opacity: 0">
+      <div id="b6-phone">
+        <video id="b6-copilot" class="clip" src="assets/clips/beat-6-copilot.mp4" data-start="0" data-duration="3.4" data-track-index="0" muted playsinline></video>
+      </div>
+      <div id="b6-side">
+        <div id="b6-eyebrow">Asistente · Lucía’s phone</div>
+        <div id="b6-head">“¿Quién compró hoy?” answered from her real orders</div>
+      </div>
+    </div>
+    <video id="b6-dash" class="clip" src="assets/clips/beat-6-dashboard.mp4" data-start="3.4" data-duration="8.83" data-track-index="0" muted playsinline></video>
+    <div id="b6-t1" class="b6-tag">AG Studio dashboard</div>
+    <div id="b6-t2" class="b6-tag">Custom widget · “Cuándo te pagan” payout timeline</div>
+    <div id="b6-t3" class="b6-tag">Studio’s AI: “Muéstrame mis ventas por país este mes”</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.set("#b6-phone-scene", { opacity: 1 }, 0);
+    tl.set("#b6-phone-scene", { opacity: 0 }, 3.4);
+    tl.fromTo(["#b6-eyebrow", "#b6-head"], { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.2, stagger: 0.1, ease: "power4.out" }, 0.15);
+    // Dashboard clip: 0–1.5 overview, 1.5–6.0 payout timeline, 6.0–8.83 AI chart (assets/take/b6-filter.txt).
+    [["#b6-t1", 3.5, 4.85], ["#b6-t2", 4.95, 9.3], ["#b6-t3", 9.45, 12.2]].forEach(([id, a, b]) => {
+      tl.fromTo(id, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.3, ease: "expo.out" }, a);
+      tl.to(id, { opacity: 0, duration: 0.12, ease: "power2.in" }, b - 0.12);
+    });
+    window.__timelines["b6"] = tl;
+  </script>
+</template>

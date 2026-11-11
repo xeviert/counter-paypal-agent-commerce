@@ -1,0 +1,266 @@
+[
+  {
+    "beat": 1,
+    "ranges": [
+      [
+        13.3,
+        15.625
+      ],
+      [
+        15.925,
+        18.175
+      ],
+      [
+        18.975,
+        24.425
+      ],
+      [
+        24.725,
+        26.975
+      ],
+      [
+        27.225,
+        29.05
+      ]
+    ],
+    "text": "AI agents are becoming the way that people shop, but they only reach big retailers. Lucia weaves rugs in Teotitran del Valle Oaxaca like her family has for four generations. To an agent, she doesn't exist. My app Counter fixes that.",
+    "start": 0,
+    "end": 14.1
+  },
+  {
+    "beat": 2,
+    "ranges": [
+      [
+        30.45,
+        32.675
+      ],
+      [
+        32.975,
+        35.325
+      ],
+      [
+        35.825,
+        41.475
+      ],
+      [
+        42.725,
+        44.875
+      ],
+      [
+        45.325,
+        49.3
+      ]
+    ],
+    "text": "Lucia connects her PayPal account once, then she takes a photo and talks in Spanish. Claude turns her words and photos into a listing in English and Spanish, with the price in dollars and pesos. She checks it and it publishes. Her rugs are now readable and viewed by any AI agent anywhere.",
+    "start": 14.1,
+    "end": 30.45
+  },
+  {
+    "beat": 3,
+    "ranges": [
+      [
+        70.65,
+        72.275
+      ],
+      [
+        74.025,
+        80.075
+      ],
+      [
+        80.425,
+        82.425
+      ],
+      [
+        82.575,
+        85.175
+      ],
+      [
+        85.275,
+        89.475
+      ],
+      [
+        89.825,
+        91.175
+      ],
+      [
+        91.225,
+        96.325
+      ],
+      [
+        97.375,
+        99.175
+      ],
+      [
+        99.275,
+        99.95
+      ]
+    ],
+    "text": "Here's a buyer using Claude. Counter is an MCP server, so Claude can search Lucia's catalog, read the full listing and ask about it. The buyer offers 110 counters negotiator counters for Lucia. Claude writes the reply, but the price is clamped to the floor in code. The buyer accepts and Counter creates a PayPal checkout for exactly the agreed upon price plus shipping. The buyer approves PayPal and done.",
+    "start": 30.45,
+    "end": 55.85
+  },
+  {
+    "beat": 4,
+    "ranges": [
+      [
+        108.25,
+        110.075
+      ],
+      [
+        110.225,
+        114.35
+      ],
+      [
+        136.75,
+        141.2
+      ]
+    ],
+    "text": "Lucia gets the news in Spanish. The money is paid to her own PayPal account, but PayPal holds it until delivery. That gives the buyer abroad a reason to trust a maker they've never heard or met before.",
+    "start": 55.85,
+    "end": 66.25
+  },
+  {
+    "beat": 5,
+    "ranges": [
+      [
+        145.6,
+        148.675
+      ],
+      [
+        148.875,
+        153.8
+      ]
+    ],
+    "text": "She adds tracking and countersenses to PayPal on her behalf. When the buyer confirms delivery or the timer runs out, PayPal releases the funds to Lucia.",
+    "start": 66.25,
+    "end": 74.25
+  },
+  {
+    "beat": 6,
+    "ranges": [
+      [
+        155.55,
+        157.675
+      ],
+      [
+        158.025,
+        159.025
+      ],
+      [
+        159.775,
+        163.325
+      ],
+      [
+        163.425,
+        168.575
+      ],
+      [
+        168.625,
+        170.825
+      ],
+      [
+        171.625,
+        174.6
+      ]
+    ],
+    "text": "Lucia can ask restore questions out loud in Spanish. Her dashboard is built on AG Studio with a custom payout timeline that shows when each sale reaches her. She can ask AI for its new charts in her own words.",
+    "start": 74.25,
+    "end": 91.25
+  },
+  {
+    "beat": 7,
+    "ranges": [
+      [
+        178.95,
+        181.025
+      ],
+      [
+        181.275,
+        183.275
+      ],
+      [
+        185.925,
+        188.075
+      ],
+      [
+        189.625,
+        194.275
+      ],
+      [
+        194.475,
+        199.55
+      ]
+    ],
+    "text": "Because agents talk in plain language, a blind buyer can shop with their voice alone. When an agent tries to inject instructions, the policy and code holds, and the floor never moves.",
+    "start": 91.25,
+    "end": 107.2
+  },
+  {
+    "beat": 8,
+    "ranges": [
+      [
+        214.8,
+        216.875
+      ],
+      [
+        219.225,
+        228.975
+      ],
+      [
+        229.525,
+        232.325
+      ],
+      [
+        233.275,
+        237.775
+      ],
+      [
+        237.925,
+        239.925
+      ],
+      [
+        241.075,
+        244.425
+      ],
+      [
+        249.375,
+        250.4
+      ]
+    ],
+    "text": "Under the hood, PayPal uses PayPal's platform APIs for one-click maker onboarding, payee routing, platform fees, delayed disbursement, tracking, reference payouts, and webhooks. Claude writes listings, negotiates answers, and runs a co-pilot. It all runs on renderer with workflows for the listing pipeline.",
+    "start": 107.2,
+    "end": 132.7
+  },
+  {
+    "beat": 9,
+    "ranges": [
+      [
+        274.9,
+        277.775
+      ],
+      [
+        277.875,
+        279.525
+      ],
+      [
+        282.125,
+        283.775
+      ],
+      [
+        284.175,
+        287.075
+      ],
+      [
+        287.775,
+        290.725
+      ],
+      [
+        290.775,
+        293.2
+      ]
+    ],
+    "text": "PayPal already reaches makers in 200 markets. Counter simply makes them reachable by agents as well.",
+    "start": 132.7,
+    "end": 147.15
+  }
+]

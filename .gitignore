@@ -65,3 +65,15 @@ desktop.ini
 
 # Local agent tooling (Serena MCP)
 .serena/
+
+# HyperFrames video project: keep source, skip capture, history and renders
+video/capture/
+video/.hyperframes/
+video/renders/
+video/*.mp4
+video/assets/clips/
+# Large media: face-cam cut, voiceover audio, transcription scratch
+video/assets/face.mp4
+video/assets/*.wav
+video/assets/take/*.wav
+video/assets/take/chk*/
