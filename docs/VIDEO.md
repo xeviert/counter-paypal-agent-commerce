@@ -175,7 +175,7 @@ Shoot in the order the data needs, then cut into beat order:
 
 ## Handoff: status Nov 11, 2026 (afternoon)
 
-**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Current render: `video/renders/counter-v5.mp4`**, 125.3 s, 1920×1080 at 30 fps, H.264 + AAC, 62 MB (`--low-memory-mode`, about 7 min). It fixes the user's notes on the first render (`counter.mp4`, 128.7 s): no stray face frames at scene changes, no terminal flash in beat 3, no "…ake" at 1:14, no false start in the close, a card over the face at 1:28, and the diagram held 1 s longer at 1:54 (the close take opens looking away). Frames were checked at every changed cut; no buyer email shows in beats 4–5. **Not uploaded yet.**
+**Every beat is built.** The film lives in `video/` (a HyperFrames project: HTML scenes rendered to MP4). `npx hyperframes check` passes. **Current render: `video/renders/counter-v5.mp4`**, 125.3 s, 1920×1080 at 30 fps, H.264 + AAC, 62 MB (`--low-memory-mode`, about 7 min). It fixes the user's notes on the first render (`counter.mp4`, 128.7 s): no stray face frames at scene changes, no terminal flash in beat 3, no "…ake" at 1:14, no false start in the close, a card over the face at 1:28, and the diagram held 1 s longer at 1:54 (the close take opens looking away). Frames were checked at every changed cut; no buyer email shows in beats 4–5. **Uploaded Nov 11, public: https://youtu.be/8rpaKf0BuNg** (linked in the README).
 
 ### Next steps, in order
 
