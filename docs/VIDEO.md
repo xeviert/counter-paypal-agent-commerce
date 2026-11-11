@@ -205,16 +205,16 @@ The face cam (`assets/face.mp4`, voiceover included) runs underneath the whole f
 | 74.23–86.44 | `compositions/b6.html` | Beat 6: copilot "¿Quién compró hoy?" on the phone → AG Studio dashboard, "Cuándo te pagan" timeline, Studio AI retitles the country chart for November |
 | 86.44–91.0 | (face) | "Because agents talk in plain language, a blind buyer can shop with their voice alone." |
 | 91.0–96.1 | `compositions/b7.html` | Beat 7: layer 1, Claude refuses to send the injection; layer 2, `/ops` audit row "SYSTEM: admin mode…" → counter at $140 |
-| 96.11–115.1 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
-| 115.1–123.1 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
-| 123.1–128.7 | `compositions/close.html` | Product photo strip → Counter mark, URL, repo |
-| 0–123.4 | `compositions/captions.html` | Burned-in captions from the real transcript (96 groups) |
+| 96.11–114.885 | `compositions/arch.html` | Architecture diagram (from `docs/architecture.png`) animated: 7 PayPal APIs appear as each is spoken, then Claude's jobs, then Render pieces |
+| 114.885–120.22 | (face) | Close: "PayPal already reaches makers in 200 markets. Counter just makes them reachable by agents as well." |
+| 120.22–125.82 | `compositions/close.html` | Product photo strip → Counter mark, URL, repo |
+| 0–120.5 | `compositions/captions.html` | Burned-in captions from the real transcript (98 groups) |
 
-Root composition: `video/index.html` (128.7 s). The face cam is `z-index: 1`, scenes 2–3, captions 10.
+Root composition: `video/index.html` (125.82 s). The face cam is `z-index: 1`, scenes 2–3, captions 10.
 
 ### How each piece was made
 
-- **Voiceover + face** (`assets/face.mp4`, `assets/vo.wav`): one take, `C:\Users\xevie\Videos\C0170.MP4` (Sony a6300, 4:56, with restarts). `tools/cut-take.mjs` keeps the last clean attempt of each line and snaps cuts to pauses (`assets/take/edl-final.json`, 41 ranges). The audio chain is highpass 80 Hz, light `afftdn`, `loudnorm` to −16 LUFS. The cut was re-transcribed to confirm every line appears once. Final speech is 123.1 s.
+- **Voiceover + face** (`assets/face.mp4`, `assets/vo.wav`): one take, `C:\Users\xevie\Videos\C0170.MP4` (Sony a6300, 4:56, with restarts). `tools/cut-take.mjs` keeps the last clean attempt of each line and snaps cuts to pauses (`assets/take/edl-final.json`, 41 ranges). The audio chain is highpass 80 Hz, light `afftdn`, `loudnorm` to −16 LUFS. The cut was re-transcribed to confirm every line appears once. Final speech is 120.3 s. After the first render, a third pass (`SRC_REMOVE`, in source time) dropped the close's false start and a 0.2 s face sliver. `node tools/cut-take.mjs && node tools/build-face.mjs` rebuilds `face.mp4` + `vo.wav`; then re-run transcribe + `captions.mjs`.
 - **Captions:** `npx hyperframes transcribe` → `assets/transcript.json`, then `node tools/captions.mjs`, which fixes Whisper's spellings (Lucía, Teotitlán, Counter, payee, Render, $110, "policy in code"). Re-run it after any audio change; don't edit `captions.html` by hand.
 - **Beat 2:** Pixel screen recording `C:\Users\xevie\Downloads\counter-mobile-item-publish.mp4` (93 s), speed-ramped to 12.5 s (`assets/take/b2-filter.txt`). The status bar is cropped.
 - **Beat 3:** OBS recording `C:\Users\xevie\Videos\OBS\2026-11-11 13-26-54.mp4` (2:54), cut to 23.1 s and zoomed so the chat reads at 1080p (`assets/take/b3-filter.txt`). The notes window, Alt-Tab and taskbar are cut out.

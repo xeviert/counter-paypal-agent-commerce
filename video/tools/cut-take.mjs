@@ -132,6 +132,17 @@ if (fs.existsSync(rmsPath)) {
     }
     for (const [x, y] of segs) final.push({ beat: p.beat, src: [+(p.s0 + x - p.o0).toFixed(3), +(p.s0 + y - p.o0).toFixed(3)] });
   }
+  // Third pass, in source time: found by watching the first render.
+  const SRC_REMOVE = [
+    [249.375, 249.58], // 0.2 s of silent face after "listing pipeline": flashed as a jump cut before the close
+    [284.4, 287.075], // "PayPal already reaches makers in 200…" (false start; the clean take follows)
+  ];
+  for (const [a, b] of SRC_REMOVE) {
+    for (let i = final.length - 1; i >= 0; i--) {
+      const [x, y] = final[i].src;
+      if (a <= x && b >= y) final.splice(i, 1);
+    }
+  }
   const out = [];
   let pos2 = 0;
   for (const { beat } of BEATS) {

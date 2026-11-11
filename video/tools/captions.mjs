@@ -36,6 +36,7 @@ const FIX = {
   "Lucia,": "Lucía,",
   Teotitran: "Teotitlán",
   counter: "Counter",
+  Canner: "Counter",
   renderer: "Render",
   "co-pilot.": "copilot.",
   "110.": "$110.",
