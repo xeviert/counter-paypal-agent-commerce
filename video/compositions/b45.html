@@ -113,7 +113,7 @@
     <!-- Beat 4 (0–5.85): inbox → order, paid and held -->
     <div id="p45-b4" style="opacity: 0">
       <div class="p45-phone">
-        <video id="p45-v4" class="clip p45-screen" src="assets/clips/beat-4.mp4" data-start="0" data-duration="5.85" data-track-index="0" muted playsinline></video>
+        <video id="p45-v4" class="clip p45-screen" src="assets/clips/beat-4.mp4" data-start="0" data-duration="5.95" data-track-index="0" muted playsinline></video>
       </div>
       <div class="p45-side">
         <div class="p45-eyebrow">Lucía’s phone</div>
@@ -152,7 +152,7 @@
     const tl = gsap.timeline({ paused: true });
     // Wrappers are untimed (their videos carry the timing); show each only in its window.
     tl.set("#p45-b4", { opacity: 1 }, 0);
-    tl.set("#p45-b4", { opacity: 0 }, 5.85);
+    tl.set("#p45-b4", { opacity: 0 }, 5.95);
     tl.set("#p45-b5a", { opacity: 1 }, 10.4);
     tl.set("#p45-b5a", { opacity: 0 }, 13.4);
     tl.set("#p45-buyer", { opacity: 1 }, 13.4);
